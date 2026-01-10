@@ -167,6 +167,99 @@
         }
         /* Ensure the grid gap is still applied if you used it previously: */
         /* #service-cards-container { ... gap: 25px; ... } */
+
+        /* --- Mobile Responsive Styles --- */
+        @media (max-width: 768px) {
+            .booking-layout-container {
+                display: flex;
+                flex-direction: column;
+                gap: 20px;
+                align-items: stretch;
+                margin-top: 1.5rem;
+            }
+
+            #service-cards-container {
+                flex: 1;
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            #booking-summary-sidebar {
+                flex: 1;
+                position: static;
+                width: 100%;
+                margin-bottom: 20px;
+                background-color: #f8f8f8;
+                border: 1px solid #e0e0e0;
+                padding: 20px;
+                border-radius: var(--border-radius);
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+                order: -1; /* Move sidebar to top on mobile */
+            }
+
+            #service-cards-container {
+                grid-template-columns: 1fr;
+            }
+
+            .service-card {
+                margin-bottom: 10px;
+            }
+
+            .summary-details p {
+                font-size: 0.95rem;
+            }
+
+            #summary-price {
+                font-size: 1.3rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .booking-layout-container {
+                gap: 15px;
+            }
+
+            #booking-summary-sidebar {
+                padding: 15px;
+            }
+
+            #booking-summary-sidebar h3 {
+                font-size: 1.2rem;
+                margin-bottom: 10px;
+            }
+
+            .summary-inclusions {
+                margin-top: 12px;
+                padding: 10px 12px;
+            }
+
+            .summary-inclusions ul {
+                padding-left: 15px;
+                font-size: 0.9rem;
+            }
+
+            #sidebar-proceed-button {
+                padding: 12px !important;
+                font-size: 0.95rem;
+            }
+
+            .service-card img {
+                height: 150px;
+            }
+
+            .card-content {
+                padding: 1rem;
+            }
+
+            .card-content h3 {
+                font-size: 1rem;
+            }
+
+            .card-content .price {
+                font-size: 1rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -290,9 +383,7 @@
             <div class="footer-section quick-links">
                 <h3>Quick Links</h3>
                 <ul>
-                    <li><a href="services-list.html">Reserve Now</a></li>
-                    <li><a href="checkin-demo.html">Check-in Demo</a></li>
-                    <li><a href="admin-dashboard.html">Admin Dashboard</a></li>
+                    <!-- Dynamically populated by renderFooterQuickLinks() -->
                 </ul>
             </div>
 

@@ -19,9 +19,15 @@
         </nav>
     </header>
 	<main class="has-fixed-header-offset reserve-parallax">
+		<!-- Page Hero Section -->
+		<section class="page-hero-section" style="margin-bottom: 3rem;">
+			<div class="hero-content">
+				<h1>Complete Your Reservation</h1>
+				<p>Secure your perfect getaway</p>
+			</div>
+		</section>
+
 		<div class="reserve-parallax-inner">
-			<section id="reservation-form-area">
-				<h2>Complete Your Reservation</h2>
 				<form id="reservationForm">
 
 	        	<input type="hidden" id="serviceIdInput" name="serviceId" value="">
@@ -161,7 +167,10 @@
 				<input type="hidden" id="discountValueInput" name="discountValue" value="0" />
 				<div style="display: flex; gap: 1rem; flex-wrap: wrap;">
 					<button type="button" class="button-secondary" id="viewSummaryBtn">View Reservation Summary</button>
-					<button type="submit" class="button-primary">Confirm & Submit Reservation</button>
+				<button type="button" class="btn-add-to-cart" id="addToCartBtn" style="flex: 1;">
+					🛒 Add to Cart
+				</button>
+				<button type="submit" class="button-primary" style="flex: 1;">Confirm & Submit Reservation</button>
 				</div>
 				</form>
 			</section>
@@ -259,9 +268,7 @@
             <div class="footer-section quick-links">
                 <h3>Quick Links</h3>
                 <ul>
-                    <li><a href="services-list.html">Reserve Now</a></li>
-                    <li><a href="checkin-demo.html">Check-in Demo</a></li>
-                    <li><a href="admin-dashboard.html">Admin Dashboard</a></li>
+                    <!-- Dynamically populated by renderFooterQuickLinks() -->
                 </ul>
             </div>
 
@@ -372,6 +379,7 @@
 	// View Reservation Summary Modal Functionality
 	document.addEventListener('DOMContentLoaded', function() {
 	    const viewSummaryBtn = document.getElementById('viewSummaryBtn');
+	    const addToCartBtn = document.getElementById('addToCartBtn');
 	    const summaryModal = document.getElementById('reservationSummaryModal');
 
 	    viewSummaryBtn.addEventListener('click', function(e) {
@@ -380,6 +388,14 @@
 	        summaryModal.style.display = 'flex';
 	    });
 
+	    // Add to Cart button handler
+	    if (addToCartBtn) {
+	        addToCartBtn.addEventListener('click', function(e) {
+	            e.preventDefault();
+	            handleAddToCart();
+	        });
+	    }
+
 	    // Close modal when clicking outside the content
 	    window.addEventListener('click', function(e) {
 	        if (e.target === summaryModal) {
@@ -387,6 +403,63 @@
 	        }
 	    });
 	});
+
+	// Handler for Add to Cart button
+	function handleAddToCart() {
+	    const serviceId = sessionStorage.getItem('selectedServiceId');
+	    const serviceName = sessionStorage.getItem('selectedServiceName');
+	    const serviceType = sessionStorage.getItem('selectedServiceType');
+	    const durationId = sessionStorage.getItem('selectedDuration');
+	    const durationLabel = sessionStorage.getItem('selectedDurationLabel');
+	    const price = parseFloat(document.getElementById('finalTotalInput')?.value) || 0;
+	    const checkIn = document.getElementById('checkin')?.value;
+	    const checkOut = document.getElementById('checkout')?.value;
+	    const guests = document.getElementById('guests')?.value;
+
+	    // Validation
+	    if (!serviceId || !serviceName || !checkIn || !checkOut || !guests || price <= 0) {
+	        showModal('Incomplete Details', 
+	            '<p>Please complete all required fields before adding to cart:</p><ul><li>Service selection</li><li>Check-in and Check-out dates</li><li>Number of guests</li></ul>', 
+	            'warning');
+	        return;
+	    }
+
+	    // Add to cart
+	    const cartItem = addToCart({
+	        serviceId: serviceId,
+	        serviceName: serviceName,
+	        serviceType: serviceType,
+	        durationId: durationId,
+	        durationLabel: durationLabel,
+	        checkIn: checkIn,
+	        checkOut: checkOut,
+	        guests: guests,
+	        price: price
+	    });
+
+	    if (cartItem) {
+	        // Ask user if they want to continue shopping or go to cart
+	        showConfirm(
+	            'Added to Cart!',
+	            `<p><strong>${serviceName}</strong> has been added to your cart.</p><p>What would you like to do next?</p>`,
+	            () => {
+	                window.location.href = 'cart.html';
+	            },
+	            () => {
+	                // Continue shopping - go back to services list
+	                window.location.href = 'services-list.html';
+	            },
+	            {
+	                confirmText: 'View Cart',
+	                cancelText: 'Continue Shopping',
+	                type: 'success'
+	            }
+	        );
+	    }
+	}
+
+	// View Reservation Summary Modal Functionality
+	// document.addEventListener('DOMContentLoaded', function() {
 
 	// Function to populate the reservation summary modal with current form data
 	function populateReservationSummary() {

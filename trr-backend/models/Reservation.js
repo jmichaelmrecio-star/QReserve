@@ -35,6 +35,12 @@ const ReservationSchema = new mongoose.Schema({
     discountValue: { type: Number, default: 0 },
     finalTotal: { type: Number, required: true },
     
+    // Downpayment Information
+    totalAmount: { type: Number, required: false }, // Total reservation cost
+    downpaymentAmount: { type: Number, required: false }, // Amount paid as downpayment
+    remainingBalance: { type: Number, required: false }, // Amount remaining to be paid
+    paymentType: { type: String, enum: ['full', 'downpayment'], default: 'downpayment' }, // Payment type
+    
     // System Status
     dateCreated: {
         type: Date,
@@ -42,6 +48,11 @@ const ReservationSchema = new mongoose.Schema({
         // REMOVE 'required: true' if it exists
     },
     status: { type: String, default: 'pending' }, // e.g., 'pending', 'confirmed', 'cancelled'
+    
+    // Check-in and Check-out Tracking
+    checkInTime: { type: Date, required: false }, // Time when guest checked in
+    checkOutTime: { type: Date, required: false }, // Time when guest checked out
+    checkoutPerformedBy: { type: String, required: false }, // Email/ID of admin who performed checkout
 
     // CRITICAL: DOES THIS FIELD EXIST IN YOUR SCHEMA?
     gcashReferenceNumber: {
@@ -59,9 +70,31 @@ const ReservationSchema = new mongoose.Schema({
         sparse: true, // Allows null values but enforces uniqueness for non-null values
     },
     
+    // Formal Reservation ID (Human-readable format: TRR-YYYYMMDD-###)
+    reservationId: {
+        type: String,
+        required: false,
+        unique: true,
+        sparse: true,
+    },
+    
     // Payment Data
     paymentRef: { type: String }, // Now less critical, will be replaced by PayMongo ID
     paymentStatus: { type: String, default: 'pending' }, // e.g., 'pending', 'paid', 'failed'
+    
+    // GCash Receipt Image (for payment proof)
+    receiptImage: {
+        type: String, // Base64 encoded image or file path
+        required: false,
+    },
+    receiptFileName: {
+        type: String,
+        required: false,
+    },
+    receiptUploadedAt: {
+        type: Date,
+        required: false,
+    },
     
     // QR Code Data
     qrCodeData: { type: String }

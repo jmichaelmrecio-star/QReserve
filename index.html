@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Tito Renz Norzagaray Resort</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <header>
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <nav>
         <a href="index.html" class="nav-logo" aria-label="Tito Renz Resort">
           <img src="images/logo.png" alt="Tito Renz Resort Logo" />
@@ -265,9 +265,7 @@
         <div class="footer-section quick-links">
           <h3>Quick Links</h3>
           <ul>
-            <li><a href="services-list.html">Reserve Now</a></li>
-            <li><a href="checkin-demo.html">Check-in Demo</a></li>
-            <li><a href="admin-dashboard.html">Admin Dashboard</a></li>
+            <!-- Dynamically populated by renderFooterQuickLinks() -->
           </ul>
         </div>
 
@@ -288,5 +286,6 @@
     <script src="notifications.js"></script>
     <script src="script.js"></script>
     <script src="incomplete-reservation-tracker.js"></script>
+    <script src="mobile-responsive.js"></script>
   </body>
 </html>

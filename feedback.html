@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guest Feedback & Reviews | Tito Renz Resort</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Standard Navigation Header (matching index.html) -->
+    <header>
+        <nav>
+            <a href="index.html" class="nav-logo" aria-label="Tito Renz Resort">
+                <img src="images/logo.png" alt="Tito Renz Resort Logo">
+            </a>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="amenities.html">Amenities</a></li>
+                <li><a href="help.html">Help</a></li>
+            </ul>
+            <div class="nav-right" id="navRight"></div>
+        </nav>
+    </header>
+
+    <!-- Page Header with Hero Background -->
+    <section class="page-hero-section">
+        <div class="hero-content">
+            <h1>What Our Guests Say</h1>
+            <p>Read authentic reviews from travelers who stayed at Tito Renz Resort</p>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="feedback-container">
+        <!-- Rating Summary Section -->
+        <section class="rating-summary">
+            <div class="summary-card">
+                <div class="rating-score" id="overall-rating">0.0</div>
+                <div class="rating-label">Overall Rating</div>
+                <div class="rating-stars" id="overall-stars">
+                    <span class="star">☆</span>
+                    <span class="star">☆</span>
+                    <span class="star">☆</span>
+                    <span class="star">☆</span>
+                    <span class="star">☆</span>
+                </div>
+                <p class="rating-count" id="review-count">Based on 0 reviews</p>
+            </div>
+
+            <div class="summary-stats" id="category-stats">
+                <p style="text-align: center; color: #666;">No ratings yet. Be the first to review!</p>
+            </div>
+        </section>
+
+        <!-- Testimonials Grid -->
+        <section class="testimonials-section">
+            <h2>Guest Testimonials</h2>
+            <div class="testimonials-grid" id="testimonials-grid">
+                <!-- Testimonials will be loaded dynamically from localStorage -->
+                <p style="text-align: center; color: #666; padding: 2rem;">Loading testimonials...</p>
+            </div>
+        </section>
+
+        <!-- CTA Section with Dynamic Feedback Form -->
+        <section class="feedback-cta">
+            <h2>Share Your Experience</h2>
+            <p>Have you stayed with us? We'd love to hear about your experience!</p>
+            <div class="cta-buttons">
+                <button class="btn btn-primary" onclick="toggleFeedbackForm()">Leave Feedback</button>
+                <a href="reserve.html" class="btn btn-secondary">Book Now</a>
+            </div>
+        </section>
+
+        <!-- Dynamic Feedback Submission Form -->
+        <section id="feedback-form-section" class="feedback-form-section" style="display: none; margin: 3rem 0; padding: 2rem; background: #f8f9fa; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+            <h2 style="text-align: center; margin-bottom: 2rem;">Submit Your Feedback</h2>
+            
+            <form id="guestFeedbackForm" class="feedback-form" style="max-width: 600px; margin: 0 auto;">
+                <!-- Guest Name -->
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label for="guestName" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Your Name *</label>
+                    <input type="text" id="guestName" name="guestName" placeholder="Enter your full name" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem;">
+                </div>
+
+                <!-- Guest Email -->
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label for="guestEmail" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Your Email *</label>
+                    <input type="email" id="guestEmail" name="guestEmail" placeholder="your.email@example.com" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem;">
+                </div>
+
+                <!-- Location/City -->
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label for="guestLocation" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">City/Country</label>
+                    <input type="text" id="guestLocation" name="guestLocation" placeholder="e.g., Manila, Philippines" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem;">
+                </div>
+
+                <!-- Rating -->
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label style="display: block; margin-bottom: 0.75rem; font-weight: 600;">Your Rating *</label>
+                    <div class="rating-input" style="display: flex; gap: 0.5rem; font-size: 2rem;">
+                        <span class="star-input" data-rating="1" style="cursor: pointer; color: #ddd; transition: color 0.2s;">★</span>
+                        <span class="star-input" data-rating="2" style="cursor: pointer; color: #ddd; transition: color 0.2s;">★</span>
+                        <span class="star-input" data-rating="3" style="cursor: pointer; color: #ddd; transition: color 0.2s;">★</span>
+                        <span class="star-input" data-rating="4" style="cursor: pointer; color: #ddd; transition: color 0.2s;">★</span>
+                        <span class="star-input" data-rating="5" style="cursor: pointer; color: #ddd; transition: color 0.2s;">★</span>
+                    </div>
+                    <input type="hidden" id="guestRating" name="guestRating" required>
+                    <small id="rating-display" style="color: #999; display: block; margin-top: 0.5rem;"></small>
+                </div>
+
+                <!-- Visit Date -->
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label for="visitDate" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Date of Visit</label>
+                    <input type="date" id="visitDate" name="visitDate" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem;">
+                </div>
+
+                <!-- Feedback Categories -->
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label style="display: block; margin-bottom: 0.75rem; font-weight: 600;">What did you enjoy most? (Select all that apply)</label>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                            <input type="checkbox" name="feedbackCategory" value="Cleanliness" style="width: 18px; height: 18px;">
+                            <span>Cleanliness</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                            <input type="checkbox" name="feedbackCategory" value="Service Quality" style="width: 18px; height: 18px;">
+                            <span>Service Quality</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                            <input type="checkbox" name="feedbackCategory" value="Facilities" style="width: 18px; height: 18px;">
+                            <span>Facilities</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                            <input type="checkbox" name="feedbackCategory" value="Food & Dining" style="width: 18px; height: 18px;">
+                            <span>Food & Dining</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                            <input type="checkbox" name="feedbackCategory" value="Value for Money" style="width: 18px; height: 18px;">
+                            <span>Value for Money</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                            <input type="checkbox" name="feedbackCategory" value="Activities & Entertainment" style="width: 18px; height: 18px;">
+                            <span>Activities</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Feedback Comment -->
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label for="feedbackComment" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Your Feedback *</label>
+                    <textarea id="feedbackComment" name="feedbackComment" placeholder="Share your experience, what you loved, and any suggestions..." required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; min-height: 150px; font-family: inherit; resize: vertical;"></textarea>
+                    <small style="color: #999;">Minimum 20 characters required</small>
+                </div>
+
+                <!-- Photo Upload (Optional) -->
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label for="feedbackPhoto" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Upload Photo (Optional)</label>
+                    <div style="border: 2px dashed #ddd; border-radius: 6px; padding: 2rem; text-align: center; cursor: pointer; transition: all 0.3s;" id="photo-upload-area">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">📷</div>
+                        <p style="margin: 0; font-weight: 600;">Click to upload or drag and drop</p>
+                        <p style="margin: 0.5rem 0 0 0; color: #999; font-size: 0.9rem;">PNG, JPG or GIF (max. 5MB)</p>
+                    </div>
+                    <input type="file" id="feedbackPhoto" name="feedbackPhoto" accept="image/*" style="display: none;">
+                    <div id="photo-preview" style="margin-top: 1rem; display: none;">
+                        <img id="photo-preview-img" src="" alt="Photo Preview" style="max-width: 100%; max-height: 300px; border-radius: 6px;">
+                        <button type="button" onclick="removePhoto()" style="display: block; margin-top: 0.5rem; padding: 0.5rem 1rem; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">Remove Photo</button>
+                    </div>
+                </div>
+
+                <!-- Consent Checkbox -->
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label style="display: flex; align-items: flex-start; gap: 0.5rem; cursor: pointer;">
+                        <input type="checkbox" id="consentCheckbox" name="consent" required style="width: 18px; height: 18px; margin-top: 0.25rem;">
+                        <span style="font-size: 0.95rem;">I consent to my feedback being published on the website and social media</span>
+                    </label>
+                </div>
+
+                <!-- Submit Button -->
+                <div style="display: flex; gap: 1rem;">
+                    <button type="submit" class="btn btn-primary" style="flex: 1; padding: 1rem; font-size: 1rem; font-weight: 600; border: none; cursor: pointer;">Submit Feedback</button>
+                    <button type="button" class="btn btn-secondary" onclick="toggleFeedbackForm()" style="flex: 1; padding: 1rem; font-size: 1rem; font-weight: 600; border: none; cursor: pointer;">Cancel</button>
+                </div>
+
+                <!-- Success Message -->
+                <div id="feedback-success-message" style="display: none; margin-top: 1rem; padding: 1rem; background: #d4edda; color: #155724; border-radius: 6px; text-align: center; font-weight: 600;">
+                    ✓ Thank you! Your feedback has been submitted successfully.
+                </div>
+            </form>
+        </section>
+    </main>
+
+    <!-- Footer (Standard) -->
+    <footer id="footerQuickLinks"></footer>
+
+    <script src="notifications.js"></script>
+    <script src="script.js"></script>
+    
+    <script>
+        // Toggle feedback form visibility
+        function toggleFeedbackForm() {
+            const formSection = document.getElementById('feedback-form-section');
+            formSection.style.display = formSection.style.display === 'none' ? 'block' : 'none';
+            if (formSection.style.display === 'block') {
+                formSection.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        // Star rating interaction
+        document.querySelectorAll('.star-input').forEach(star => {
+            star.addEventListener('click', function() {
+                const rating = this.getAttribute('data-rating');
+                document.getElementById('guestRating').value = rating;
+                
+                // Update display
+                document.getElementById('rating-display').textContent = '⭐ ' + rating + ' out of 5 stars';
+                
+                // Highlight stars
+                document.querySelectorAll('.star-input').forEach(s => {
+                    if (s.getAttribute('data-rating') <= rating) {
+                        s.style.color = '#ffc107';
+                    } else {
+                        s.style.color = '#ddd';
+                    }
+                });
+            });
+
+            star.addEventListener('mouseover', function() {
+                const rating = this.getAttribute('data-rating');
+                document.querySelectorAll('.star-input').forEach(s => {
+                    if (s.getAttribute('data-rating') <= rating) {
+                        s.style.color = '#ffc107';
+                    } else {
+                        s.style.color = '#ddd';
+                    }
+                });
+            });
+        });
+
+        document.getElementById('rating-input')?.addEventListener('mouseleave', function() {
+            const currentRating = document.getElementById('guestRating').value;
+            document.querySelectorAll('.star-input').forEach(s => {
+                if (currentRating && s.getAttribute('data-rating') <= currentRating) {
+                    s.style.color = '#ffc107';
+                } else {
+                    s.style.color = '#ddd';
+                }
+            });
+        });
+
+        // Photo upload handling
+        const photoUploadArea = document.getElementById('photo-upload-area');
+        const photoInput = document.getElementById('feedbackPhoto');
+        const photoPreview = document.getElementById('photo-preview');
+
+        photoUploadArea.addEventListener('click', () => photoInput.click());
+
+        photoUploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            photoUploadArea.style.borderColor = '#007bff';
+            photoUploadArea.style.backgroundColor = '#e7f3ff';
+        });
+
+        photoUploadArea.addEventListener('dragleave', () => {
+            photoUploadArea.style.borderColor = '#ddd';
+            photoUploadArea.style.backgroundColor = 'transparent';
+        });
+
+        photoUploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            photoUploadArea.style.borderColor = '#ddd';
+            photoUploadArea.style.backgroundColor = 'transparent';
+            
+            if (e.dataTransfer.files.length > 0) {
+                photoInput.files = e.dataTransfer.files;
+                handlePhotoUpload();
+            }
+        });
+
+        photoInput.addEventListener('change', handlePhotoUpload);
+
+        function handlePhotoUpload() {
+            const file = photoInput.files[0];
+            if (file && file.type.startsWith('image/')) {
+                if (file.size <= 5 * 1024 * 1024) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        document.getElementById('photo-preview-img').src = e.target.result;
+                        photoPreview.style.display = 'block';
+                        photoUploadArea.style.display = 'none';
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    showToast('Image size must be less than 5MB', 'warning');
+                }
+            } else {
+                showToast('Please upload a valid image file', 'warning');
+            }
+        }
+
+        function removePhoto() {
+            photoInput.value = '';
+            photoPreview.style.display = 'none';
+            photoUploadArea.style.display = 'block';
+        }
+
+        // Form submission
+        document.getElementById('guestFeedbackForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            // Validate feedback length
+            const feedback = document.getElementById('feedbackComment').value;
+            if (feedback.length < 20) {
+                showToast('Feedback must be at least 20 characters', 'warning');
+                return;
+            }
+
+            // Collect form data
+            const formData = new FormData();
+            formData.append('name', document.getElementById('guestName').value);
+            formData.append('email', document.getElementById('guestEmail').value);
+            formData.append('location', document.getElementById('guestLocation').value);
+            formData.append('rating', document.getElementById('guestRating').value);
+            formData.append('visitDate', document.getElementById('visitDate').value);
+            formData.append('comment', feedback);
+            formData.append('consent', document.getElementById('consentCheckbox').checked);
+
+            // Get selected categories
+            const categories = Array.from(document.querySelectorAll('input[name="feedbackCategory"]:checked'))
+                .map(cb => cb.value);
+            formData.append('categories', JSON.stringify(categories));
+
+            // Add photo if uploaded
+            if (photoInput.files[0]) {
+                formData.append('photo', photoInput.files[0]);
+            }
+
+            // Store feedback locally and in localStorage
+            try {
+                const feedbackData = {
+                    id: Date.now(),
+                    name: formData.get('name'),
+                    email: formData.get('email'),
+                    location: formData.get('location'),
+                    rating: parseInt(formData.get('rating')),
+                    visitDate: formData.get('visitDate'),
+                    comment: formData.get('comment'),
+                    categories: categories,
+                    consent: formData.get('consent') === 'on',
+                    submittedAt: new Date().toISOString(),
+                    photoUrl: null
+                };
+
+                // Store feedback list
+                let feedbackList = JSON.parse(localStorage.getItem('guestFeedback') || '[]');
+                feedbackList.push(feedbackData);
+                localStorage.setItem('guestFeedback', JSON.stringify(feedbackList));
+
+                // Show success message
+                document.getElementById('feedback-success-message').style.display = 'block';
+                this.reset();
+                document.getElementById('guestRating').value = '';
+                document.getElementById('rating-display').textContent = '';
+                photoPreview.style.display = 'none';
+                photoUploadArea.style.display = 'block';
+
+                showToast('Thank you for your feedback!', 'success');
+
+                // Reload testimonials and ratings
+                loadTestimonials();
+                updateRatingSummary();
+
+                // Hide form after 2 seconds
+                setTimeout(() => {
+                    toggleFeedbackForm();
+                    document.getElementById('feedback-success-message').style.display = 'none';
+                }, 2000);
+
+            } catch (error) {
+                console.error('Error submitting feedback:', error);
+                showToast('Error submitting feedback. Please try again.', 'error');
+            }
+        });
+
+        // Load and display testimonials dynamically
+        function loadTestimonials() {
+            const testimonials = JSON.parse(localStorage.getItem('guestFeedback') || '[]');
+            const grid = document.getElementById('testimonials-grid');
+            
+            if (!grid) return;
+
+            if (testimonials.length === 0) {
+                grid.innerHTML = '<p style="text-align: center; color: #666; padding: 2rem;">No testimonials yet. Be the first to share your experience!</p>';
+                return;
+            }
+
+            // Sort by date (newest first)
+            testimonials.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
+
+            grid.innerHTML = testimonials.map(testimonial => {
+                const initials = testimonial.name.split(' ').map(n => n[0]).join('').toUpperCase();
+                const stars = '★'.repeat(testimonial.rating) + '☆'.repeat(5 - testimonial.rating);
+                const date = new Date(testimonial.visitDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                
+                return `
+                    <div class="testimonial-card">
+                        <div class="testimonial-header">
+                            <img src="https://via.placeholder.com/60x60?text=${initials}" alt="${testimonial.name}" class="guest-avatar">
+                            <div class="guest-info">
+                                <h3>${testimonial.name}</h3>
+                                <span class="guest-location">🌍 ${testimonial.location}</span>
+                                <span class="visit-date">Visited: ${date}</span>
+                            </div>
+                        </div>
+                        <div class="testimonial-stars">
+                            ${stars.split('').map(star => `<span class="star">${star}</span>`).join('')}
+                        </div>
+                        <p class="testimonial-text">"${testimonial.comment}"</p>
+                        ${testimonial.photoUrl ? `
+                            <div class="testimonial-image">
+                                <img src="${testimonial.photoUrl}" alt="Guest photo">
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Calculate and update rating summary
+        function updateRatingSummary() {
+            const testimonials = JSON.parse(localStorage.getItem('guestFeedback') || '[]');
+            
+            if (testimonials.length === 0) {
+                document.getElementById('overall-rating').textContent = '0.0';
+                document.getElementById('overall-stars').innerHTML = '☆☆☆☆☆'.split('').map(star => `<span class="star">${star}</span>`).join('');
+                document.getElementById('review-count').textContent = 'Based on 0 reviews';
+                document.getElementById('category-stats').innerHTML = '<p style="text-align: center; color: #666;">No ratings yet. Be the first to review!</p>';
+                return;
+            }
+
+            // Calculate overall rating
+            const totalRating = testimonials.reduce((sum, t) => sum + t.rating, 0);
+            const avgRating = (totalRating / testimonials.length).toFixed(1);
+            
+            // Update overall rating display
+            document.getElementById('overall-rating').textContent = avgRating;
+            document.getElementById('review-count').textContent = `Based on ${testimonials.length} verified review${testimonials.length > 1 ? 's' : ''}`;
+            
+            // Update star display
+            const fullStars = Math.floor(avgRating);
+            const hasHalfStar = avgRating % 1 >= 0.5;
+            const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+            const starsHtml = '★'.repeat(fullStars) + (hasHalfStar ? '⯨' : '') + '☆'.repeat(emptyStars);
+            document.getElementById('overall-stars').innerHTML = starsHtml.split('').map(star => `<span class="star">${star}</span>`).join('');
+
+            // Calculate category statistics (based on selected categories in feedback)
+            const categoryCount = {};
+            const categoryNames = {
+                'cleanliness': 'Cleanliness',
+                'service': 'Service Quality',
+                'value': 'Value for Money',
+                'facilities': 'Facilities',
+                'food': 'Food & Dining',
+                'location': 'Location',
+                'staff': 'Staff Friendliness',
+                'amenities': 'Amenities'
+            };
+
+            testimonials.forEach(t => {
+                if (t.categories && Array.isArray(t.categories)) {
+                    t.categories.forEach(cat => {
+                        if (!categoryCount[cat]) {
+                            categoryCount[cat] = { total: 0, count: 0 };
+                        }
+                        categoryCount[cat].total += t.rating;
+                        categoryCount[cat].count += 1;
+                    });
+                }
+            });
+
+            // Display top 4 categories
+            const sortedCategories = Object.entries(categoryCount)
+                .sort((a, b) => b[1].count - a[1].count)
+                .slice(0, 4);
+
+            if (sortedCategories.length > 0) {
+                document.getElementById('category-stats').innerHTML = sortedCategories.map(([cat, data]) => {
+                    const catAvg = (data.total / data.count).toFixed(1);
+                    const percentage = (catAvg / 5) * 100;
+                    return `
+                        <div class="stat-item">
+                            <span class="stat-label">${categoryNames[cat] || cat}</span>
+                            <div class="stat-bar">
+                                <div class="stat-fill" style="width: ${percentage}%"></div>
+                            </div>
+                            <span class="stat-score">${catAvg}/5</span>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                // If no categories selected, show generic positive message
+                document.getElementById('category-stats').innerHTML = `
+                    <p style="text-align: center; color: #666; padding: 1rem;">
+                        ${testimonials.length} guest${testimonials.length > 1 ? 's have' : ' has'} shared their experience!
+                    </p>
+                `;
+            }
+        }
+
+        // Load testimonials and ratings on page load
+        loadTestimonials();
+        updateRatingSummary();
+    </script>

@@ -48,6 +48,7 @@ const promoCodeRoutes = require('./routes/promoCodeRoutes');
 const blockedDateRoutes = require('./routes/blockedDateRoutes');
 const authRoutes = require('./routes/authRoutes');
 const serviceRoutes = require('./routes/serviceRoutes');
+const contactRoutes = require('./routes/contactRoutes');
 const path = require('path');
 // Note the '..' path to go up one directory from trr-backend to new website
 app.use(express.static(path.join(__dirname, '..'))); // <--- CORRECTED PATH!
@@ -57,6 +58,7 @@ app.use('/api/auth', authRoutes);
 // USE THE NEW PROMO CODE ROUTE
 app.use('/api/promocodes', promoCodeRoutes);
 app.use('/api/blocked-dates', blockedDateRoutes);
+app.use('/api/contact', contactRoutes);
 
 // Service management (all routes now use MongoDB database)
 app.use('/api/services', serviceRoutes);

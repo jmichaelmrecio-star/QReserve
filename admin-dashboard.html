@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QReserve: Admin Dashboard</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <style>
         /* Specific styling for the dashboard */
@@ -44,13 +45,44 @@
     <main class="has-fixed-header-offset">
 
         <section id="admin-actions" class="container" style="margin-top: 20px;">
+            <!-- Role Badge Display -->
+            <div id="roleBadge" style="
+                display: inline-block;
+                padding: 8px 16px;
+                border-radius: 20px;
+                font-size: 0.85rem;
+                font-weight: 600;
+                margin-bottom: 15px;
+                background: #e7f3ff;
+                color: #007bff;
+                border: 2px solid #007bff;
+            ">
+                <span id="roleText">Loading...</span>
+            </div>
+            
+            <!-- Manager Info Box - Only visible to managers -->
+            <div id="managerInfoBox" style="
+                display: none;
+                background: #f8f9fa;
+                border-left: 4px solid #007bff;
+                padding: 12px 16px;
+                margin-bottom: 15px;
+                border-radius: 4px;
+            ">
+                <p style="margin: 0; font-size: 0.9rem; color: #495057;">
+                    <strong>ℹ️ Manager Access:</strong> You can manage daily operations (Schedule, Reservations, Check-in). 
+                    For user management, service configuration, or promo codes, contact an Administrator.
+                </p>
+            </div>
+            
             <div class="admin-tabs">
                 <div class="tab-buttons" role="tablist" aria-label="Admin Sections">
                     <button class="tab-button active" data-target="schedule-management" role="tab" aria-selected="true">Schedule</button>
-                    <button class="tab-button" data-target="nav-promocodes" role="tab" aria-selected="false">Promo Codes</button>
-                    <button class="tab-button" data-target="user-management" role="tab" aria-selected="false">Users</button>
-                    <button class="tab-button" data-target="service-management" role="tab" aria-selected="false">Services</button>
+                    <button class="tab-button admin-only" data-target="nav-promocodes" role="tab" aria-selected="false" style="display: none;">Promo Codes</button>
+                    <button class="tab-button admin-only" data-target="user-management" role="tab" aria-selected="false" style="display: none;">Users</button>
+                    <button class="tab-button admin-only" data-target="service-management" role="tab" aria-selected="false" style="display: none;">Services</button>
                     <button class="tab-button" data-target="dashboard-area" role="tab" aria-selected="false">Reservations</button>
+                    <button class="tab-button customer-view-tab" data-target="customer-view-section" role="tab" aria-selected="false" style="display: none;">My Reservations</button>
                     <a class="tab-button" href="checkin.html">QR Check-in</a>
                 </div>
             </div>
@@ -61,12 +93,12 @@
                 <h2>🗓️ Manage Resort Schedule</h2>
                 <p>Block dates for maintenance, holidays, or full capacity.</p>
                 <form id="blockDateForm" style="margin-top: 15px;">
-                    <div class="form-group" style="display: flex; gap: 20px;">
-                        <div style="flex: 1;">
+                    <div class="form-group" style="display: flex; gap: 20px; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 200px;">
                             <label for="blockStartDate">Block START Date (YYYY-MM-DD):</label>
                             <input type="date" id="blockStartDate" required>
                         </div>
-                        <div style="flex: 1;">
+                        <div style="flex: 1; min-width: 200px;">
                             <label for="blockEndDate">Block END Date (YYYY-MM-DD):</label>
                             <input type="date" id="blockEndDate" required> 
                         </div>
@@ -251,6 +283,40 @@
                 <div>
                     <h2>Admin: User Accounts Management</h2>
                     <p>List of all accounts registered in the database. Use this section to manage roles and accounts.</p>
+                    
+                    <!-- Role Capabilities Reference -->
+                    <details style="margin-top: 10px; background: #f8f9fa; padding: 12px; border-radius: 4px; border: 1px solid #dee2e6;">
+                        <summary style="cursor: pointer; font-weight: 600; color: #495057;">
+                            📋 Role Capabilities Reference
+                        </summary>
+                        <div style="margin-top: 10px; font-size: 0.9rem;">
+                            <p style="margin: 8px 0;"><strong>👑 Administrator:</strong></p>
+                            <ul style="margin: 0 0 12px 20px; padding: 0;">
+                                <li>Full system access</li>
+                                <li>Manage users, services, and promo codes</li>
+                                <li>Configure blocked dates and schedules</li>
+                                <li>View and manage all reservations</li>
+                                <li>QR check-in capabilities</li>
+                            </ul>
+                            
+                            <p style="margin: 8px 0;"><strong>👔 Manager:</strong></p>
+                            <ul style="margin: 0 0 12px 20px; padding: 0;">
+                                <li>Daily operations management</li>
+                                <li>Manage blocked dates and schedules</li>
+                                <li>View and manage all reservations</li>
+                                <li>QR check-in capabilities</li>
+                                <li><em>Cannot: Manage users, services, or promo codes</em></li>
+                            </ul>
+                            
+                            <p style="margin: 8px 0;"><strong>👤 Customer:</strong></p>
+                            <ul style="margin: 0 0 0 20px; padding: 0;">
+                                <li>Make reservations</li>
+                                <li>View personal booking history</li>
+                                <li>Update profile information</li>
+                                <li><em>No admin dashboard access</em></li>
+                            </ul>
+                        </div>
+                    </details>
                 </div>
                 <button class="button-primary" onclick="openCreateAccountModal()" style="height: fit-content;">
                     ➕ Add Account
@@ -368,9 +434,7 @@
             <div class="footer-section quick-links">
                 <h3>Quick Links</h3>
                 <ul>
-                    <li><a href="services-list.html">Reserve Now</a></li>
-                    <li><a href="checkin-demo.html">Check-in Demo</a></li>
-                    <li><a href="admin-dashboard.html">Admin Dashboard</a></li>
+                    <!-- Dynamically populated by renderFooterQuickLinks() -->
                 </ul>
             </div>
 
@@ -383,6 +447,37 @@
                 </ul>
             </div>
         </div>
+        
+        <!-- Customer View Section -->
+        <section id="customer-view-section" class="container tab-pane" style="display: none;">
+            <div class="row">
+                <div class="col-12 mb-4">
+                    <h2>👤 My Reservations</h2>
+                    <p>View and manage your resort reservations</p>
+                </div>
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div id="customer-profile-info"></div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-12">
+                    <div id="customer-reservations-list"></div>
+                </div>
+            </div>
+            
+            <div class="row mt-4">
+                <div class="col-12 text-center">
+                    <a href="services-list.html" class="btn btn-primary btn-lg">
+                        Make New Reservation
+                    </a>
+                </div>
+            </div>
+        </section>
+        
         <div class="footer-bottom">
             <p>&copy; 2025 QReserve Project - All Rights Reserved.</p>
         </div>
@@ -390,6 +485,8 @@
 
     <script src="notifications.js"></script>
     <script src="script.js"></script>
+    <script src="customer-dashboard.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
     // Tab switching for admin dashboard
     (function(){
@@ -414,7 +511,7 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             // Ensure sections have .tab-pane class
-            ['schedule-management','nav-promocodes','service-management','user-management','dashboard-area'].forEach(id => {
+            ['schedule-management','nav-promocodes','service-management','user-management','dashboard-area','customer-view-section'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.classList.add('tab-pane');
             });
@@ -429,8 +526,104 @@
                     showTab(target);
                 });
             });
+            
+            // Role-based UI: Show/hide tabs based on user role
+            initializeRoleBasedUI();
+            
+            // Initialize customer dashboard if on customer view
+            if (typeof initCustomerDashboard === 'function') {
+                initCustomerDashboard();
+            }
         });
     })();
+    
+    // Initialize role-based UI visibility
+    function initializeRoleBasedUI() {
+        const userRole = localStorage.getItem('qreserve_user_role');
+        const adminOnlyElements = document.querySelectorAll('.admin-only');
+        const customerViewTab = document.querySelector('.customer-view-tab');
+        const roleBadge = document.getElementById('roleBadge');
+        const roleText = document.getElementById('roleText');
+        const managerInfoBox = document.getElementById('managerInfoBox');
+        
+        console.log('Initializing role-based UI. User role:', userRole);
+        
+        // Show admin-only tabs if user is admin (not manager)
+        if (userRole === 'admin') {
+            adminOnlyElements.forEach(el => {
+                el.style.display = '';
+            });
+            
+            // Hide customer view for admins
+            if (customerViewTab) {
+                customerViewTab.style.display = 'none';
+            }
+            
+            // Update role badge
+            if (roleBadge && roleText) {
+                roleText.textContent = '👑 Administrator - Full Access';
+                roleBadge.style.background = '#fff3cd';
+                roleBadge.style.color = '#856404';
+                roleBadge.style.borderColor = '#ffc107';
+            }
+            
+            // Hide manager info box
+            if (managerInfoBox) {
+                managerInfoBox.style.display = 'none';
+            }
+            
+            console.log('✅ Admin tabs visible (Users, Services, Promo Codes)');
+        } else if (userRole === 'manager') {
+            adminOnlyElements.forEach(el => {
+                el.style.display = 'none';
+            });
+            
+            // Hide customer view for managers
+            if (customerViewTab) {
+                customerViewTab.style.display = 'none';
+            }
+            
+            // Update role badge
+            if (roleBadge && roleText) {
+                roleText.textContent = '👔 Manager - Limited Access';
+                roleBadge.style.background = '#e7f3ff';
+                roleBadge.style.color = '#007bff';
+                roleBadge.style.borderColor = '#007bff';
+            }
+            
+            // Show manager info box
+            if (managerInfoBox) {
+                managerInfoBox.style.display = 'block';
+            }
+            
+            console.log('ℹ️ Manager view: Limited tabs (Schedule, Reservations, Check-in)');
+        } else {
+            // Customer view - hide admin-only tabs, show customer view
+            adminOnlyElements.forEach(el => {
+                el.style.display = 'none';
+            });
+            
+            // Show customer view tab for customers
+            if (customerViewTab) {
+                customerViewTab.style.display = '';
+            }
+            
+            // Update role badge for customers
+            if (roleBadge && roleText) {
+                roleText.textContent = '👤 Customer View';
+                roleBadge.style.background = '#d4edda';
+                roleBadge.style.color = '#155724';
+                roleBadge.style.borderColor = '#28a745';
+            }
+            
+            if (managerInfoBox) {
+                managerInfoBox.style.display = 'none';
+            }
+            
+            console.log('👤 Customer view enabled');
+        }
+    }
     </script>
 </body>
 </html>
+

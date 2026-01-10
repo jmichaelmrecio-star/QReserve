@@ -18,8 +18,20 @@ const AccountSchema = new mongoose.Schema({
     phone: { type: String, required: true },
     
     password: { type: String, required: true, select: false },
+    
+    // Email verification fields
+    isEmailVerified: { type: Boolean, default: false },
+    emailVerificationToken: { type: String, select: false },
+    emailVerificationExpires: { type: Date, select: false },
+    
+    // Password reset fields
+    passwordResetToken: { type: String, select: false },
+    passwordResetExpires: { type: Date, select: false },
+    passwordResetOTP: { type: String, select: false },
+    
     isActive: { type: Boolean, default: true }, // For deactivation without deletion
-    created_at: { type: Date, default: Date.now }
+    created_at: { type: Date, default: Date.now },
+    updated_at: { type: Date, default: Date.now }
 });
 
 // CRITICAL PRE-SAVE HOOK: HASH the password before saving to the database

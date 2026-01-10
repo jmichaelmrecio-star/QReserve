@@ -12,6 +12,36 @@ function generateQRCodeString() {
     return crypto.randomUUID();
 }
 
+// Helper function to generate formal reservation ID (TRR-YYYYMMDD-###)
+async function generateFormalReservationId() {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const datePrefix = `TRR-${year}${month}${day}`;
+    
+    // Find the last reservation created today
+    const startOfDay = new Date(today.setHours(0, 0, 0, 0));
+    const endOfDay = new Date(today.setHours(23, 59, 59, 999));
+    
+    const todaysReservations = await Reservation.find({
+        dateCreated: { $gte: startOfDay, $lte: endOfDay }
+    }).sort({ dateCreated: -1 }).limit(1);
+    
+    let sequenceNumber = 1;
+    if (todaysReservations.length > 0 && todaysReservations[0].reservationId) {
+        // Extract the sequence number from the last reservation ID
+        const lastId = todaysReservations[0].reservationId;
+        const match = lastId.match(/-(\d{3})$/);
+        if (match) {
+            sequenceNumber = parseInt(match[1]) + 1;
+        }
+    }
+    
+    const formattedSequence = String(sequenceNumber).padStart(3, '0');
+    return `${datePrefix}-${formattedSequence}`;
+}
+
 // Helper function to calculate price from service data
 function calculateServicePrice(service, durationId, guestCount = 1) {
     if (!service) return null;
@@ -236,8 +266,9 @@ exports.createReservation = async (req, res) => {
             });
         }
 
-        // --- E. Generate Reservation Hash ---
+        // --- E. Generate Reservation Hash and Formal Reservation ID ---
         const reservationHash = crypto.randomBytes(16).toString('hex');
+        const formalReservationId = await generateFormalReservationId();
         
         // --- F. Create Reservation Record ---
         const newReservation = new Reservation({
@@ -256,6 +287,7 @@ exports.createReservation = async (req, res) => {
             discountCode: discountCode || null,
             discountValue: discountValue || 0,
             reservationHash: reservationHash, // CRITICAL: Correctly defined and used here
+            reservationId: formalReservationId, // Formal reservation ID (e.g., TRR-20260110-001)
             // NEW: Duration-based pricing fields
             selectedDuration: selectedDuration || null,
             selectedTimeSlot: selectedTimeSlot || null,
@@ -272,6 +304,7 @@ exports.createReservation = async (req, res) => {
             success: true, 
             message: 'Reservation created successfully. Proceed to payment.', 
             reservationId: newReservation._id,
+            formalReservationId: formalReservationId, // Return formal ID
             reservationHash: reservationHash // CRITICAL: Correct key returned in the response
         });
 
@@ -291,11 +324,25 @@ exports.createReservation = async (req, res) => {
 exports.finalizeReservation = async (req, res) => {
     // 1. Destructure the required fields from the frontend payload
     // FIX 1: Change expected input field from qrCodeHash to reservationHash
-    const { reservationHash, gcashReferenceNumber } = req.body; 
+    const { 
+        reservationHash, 
+        gcashReferenceNumber,
+        totalAmount,
+        downpaymentAmount,
+        remainingBalance,
+        paymentType,
+        receiptImage,
+        receiptFileName
+    } = req.body; 
 
     // 2. Basic Validation
     if (!reservationHash || !gcashReferenceNumber) {
         return res.status(400).json({ success: false, message: "Missing hash or GCash reference number in the request body." });
+    }
+
+    // Validate receipt image is provided
+    if (!receiptImage) {
+        return res.status(400).json({ success: false, message: "Payment receipt image is required." });
     }
 
     try {
@@ -315,9 +362,24 @@ exports.finalizeReservation = async (req, res) => {
 
         // 5. Update the payment and reservation statuses
         reservation.gcashReferenceNumber = gcashReferenceNumber;
-        reservation.paymentStatus = 'PAID';
-        // Auto-update status to PAID when payment is received
-        reservation.status = 'PAID'; 
+        
+        // Store receipt image information
+        reservation.receiptImage = receiptImage;
+        reservation.receiptFileName = receiptFileName || 'receipt.jpg';
+        reservation.receiptUploadedAt = new Date();
+        
+        // Handle downpayment or full payment
+        if (paymentType === 'downpayment' && downpaymentAmount) {
+            reservation.paymentStatus = 'DOWNPAYMENT_PAID';
+            reservation.totalAmount = totalAmount;
+            reservation.downpaymentAmount = downpaymentAmount;
+            reservation.remainingBalance = remainingBalance;
+            reservation.paymentType = 'downpayment';
+            reservation.status = 'PAID'; // Still mark as PAID to allow check-in
+        } else {
+            reservation.paymentStatus = 'PAID';
+            reservation.status = 'PAID';
+        }
         
         // Save the updated reservation
         const updatedReservation = await reservation.save();
@@ -325,7 +387,9 @@ exports.finalizeReservation = async (req, res) => {
         // 6. Success Response
         res.status(200).json({
             success: true,
-            message: "Payment confirmed and reservation finalized.",
+            message: paymentType === 'downpayment' 
+                ? "Downpayment confirmed. Remaining balance will be paid upon check-in."
+                : "Payment confirmed and reservation finalized.",
             // FIX 3: Return the correct hash field in the response
             reservationHash: updatedReservation.reservationHash 
         });
@@ -581,6 +645,84 @@ exports.staffCheckIn = async (req, res) => {
     } catch (error) {
         console.error('Error during staff check-in:', error);
         res.status(500).json({ success: false, message: 'Internal server error during check-in.', status: 'ERROR' });
+    }
+};
+
+// Manual Checkout Override - Admin/Staff Only
+exports.checkoutReservation = async (req, res) => {
+    try {
+        const { id: reservationId } = req.params;
+        const { checkoutOverride, performedBy } = req.body;
+
+        // Validate reservation ID
+        if (!reservationId) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Reservation ID is required.' 
+            });
+        }
+
+        // Find the reservation
+        const reservation = await Reservation.findById(reservationId);
+        
+        if (!reservation) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Reservation not found.' 
+            });
+        }
+
+        // Check if already completed
+        if (reservation.status === 'COMPLETED') {
+            return res.status(200).json({ 
+                success: true, 
+                message: 'Reservation is already marked as completed.',
+                status: 'ALREADY_COMPLETED',
+                reservation
+            });
+        }
+
+        // Verify reservation is checked-in before allowing checkout
+        if (reservation.status !== 'CHECKED_IN') {
+            return res.status(400).json({ 
+                success: false, 
+                message: `Cannot checkout. Reservation status is ${reservation.status}. Must be CHECKED_IN to checkout.`,
+                currentStatus: reservation.status
+            });
+        }
+
+        // Perform checkout
+        reservation.status = 'COMPLETED';
+        reservation.checkOutTime = new Date();
+        
+        // Track who performed the checkout (optional)
+        if (performedBy) {
+            reservation.checkoutPerformedBy = performedBy;
+        }
+
+        await reservation.save();
+
+        res.status(200).json({ 
+            success: true, 
+            message: `Checkout successful for ${reservation.full_name || 'Guest'}.`,
+            status: 'COMPLETED',
+            reservation: {
+                id: reservation._id,
+                guestName: reservation.full_name,
+                service: reservation.serviceType,
+                checkInTime: reservation.checkInTime,
+                checkOutTime: reservation.checkOutTime,
+                status: reservation.status
+            }
+        });
+
+    } catch (error) {
+        console.error('Error during checkout:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Internal server error during checkout.',
+            error: error.message 
+        });
     }
 };
 

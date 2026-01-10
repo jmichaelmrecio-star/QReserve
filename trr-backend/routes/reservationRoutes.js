@@ -5,7 +5,8 @@ const Reservation = require('../models/Reservation'); // Import your Mongoose mo
 // Assuming you have a reservationController file:
 const reservationController = require('../controllers/reservationController');
 // --- ADD THIS LINE ---
-const { verifyToken, requireRole } = require('../middleware/authMiddleware');// --- CRITICAL FIX: Place SPECIFIC routes FIRST ---
+const { verifyToken, requireRole } = require('../middleware/authMiddleware');
+const { requireAdmin, requireAdminOrManager, requireCustomer } = require('../middleware/roleMiddleware');// --- CRITICAL FIX: Place SPECIFIC routes FIRST ---
 
 // --- 1. NEW ROUTE (Specific name: 'pending') - MUST be first!
 router.get('/pending', reservationController.getPendingReservations);
@@ -39,6 +40,14 @@ router.patch(
     verifyToken, // <-- STEP 1: Authenticate via JWT
     requireRole('Staff', 'Admin', 'Manager'), // <-- STEP 2: Authorize role
     reservationController.staffCheckIn
+);
+
+// Manual Checkout Override Route (Admin/Manager Only)
+router.put(
+    '/:id/checkout',
+    verifyToken, // JWT Authentication
+    requireRole('Admin', 'Manager'), // Only Admin and Manager can checkout
+    reservationController.checkoutReservation
 );
 
 // --- 3. GENERIC SINGLE PARAMETER ROUTES (Must be last) ---
