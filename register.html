@@ -28,10 +28,11 @@
       class="container page-content has-fixed-header-offset"
       id="register-area"
     >
-      <div class="form-box">
-        <h2>New User Registration</h2>
-        <p>Register to manage your reservations and profile.</p>
-        <form id="registerForm">
+      <div class="form-box form-box-hero">
+        <div class="form-content">
+          <h2>New User Registration</h2>
+          <p>Register to manage your reservations and profile.</p>
+          <form id="registerForm">
           <div class="form-row">
             <div class="form-group">
               <input
@@ -95,8 +96,9 @@
                 type="password"
                 id="registerPassword"
                 name="password"
-                minlength="6"
+                minlength="8"
                 required
+                autocomplete="new-password"
               />
               <button
                 type="button"
@@ -107,6 +109,27 @@
                 👁️
               </button>
             </div>
+            <!-- Password Strength Meter -->
+            <div id="passwordStrengthContainer" style="margin-top: 0.75rem;">
+              <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+                <div id="strength-bar-1" class="strength-bar"></div>
+                <div id="strength-bar-2" class="strength-bar"></div>
+                <div id="strength-bar-3" class="strength-bar"></div>
+                <div id="strength-bar-4" class="strength-bar"></div>
+              </div>
+              <span id="passwordStrengthText" style="font-size: 0.85rem; font-weight: 600; color: #666;">Password strength: —</span>
+            </div>
+            <!-- Password Requirements -->
+            <div id="passwordRequirementsContainer" style="margin-top: 0.75rem; padding: 0.75rem; background: #f8f9fa; border-radius: 6px; font-size: 0.85rem;">
+              <p style="margin: 0 0 0.5rem 0; font-weight: 600; color: #333;">Password must contain:</p>
+              <ul style="margin: 0; padding-left: 1.5rem; list-style: none;">
+                <li id="req-length" style="color: #999; margin-bottom: 0.25rem;">✓ At least 8 characters</li>
+                <li id="req-uppercase" style="color: #999; margin-bottom: 0.25rem;">✓ Uppercase letter (A-Z)</li>
+                <li id="req-lowercase" style="color: #999; margin-bottom: 0.25rem;">✓ Lowercase letter (a-z)</li>
+                <li id="req-number" style="color: #999; margin-bottom: 0.25rem;">✓ Number (0-9)</li>
+                <li id="req-special" style="color: #999;">✓ Special character (!@#$%^&*)</li>
+              </ul>
+            </div>
           </div>
 
           <div class="form-group">
@@ -116,8 +139,9 @@
                 type="password"
                 id="registerConfirmPassword"
                 name="confirmPassword"
-                minlength="6"
+                minlength="8"
                 required
+                autocomplete="new-password"
               />
               <button
                 type="button"
@@ -128,6 +152,10 @@
                 👁️
               </button>
             </div>
+            <!-- Password Match Indicator -->
+            <div id="passwordMatchContainer" style="margin-top: 0.5rem; font-size: 0.85rem;">
+              <span id="passwordMatchText" style="color: #999;">Passwords will be checked as you type</span>
+            </div>
           </div>
 
           <button type="submit" class="button-primary">Register Account</button>
@@ -135,10 +163,11 @@
             Already have an account? <a href="login.html">Login Here</a>.
           </p>
         </form>
+        </div>
       </div>
     </main>
-    <!--
-    <footer>
+
+    <footer id="footerQuickLinks">
       <div class="footer-content">
         <div class="footer-section contact-info">
           <h3>Tito Renz Resort</h3>
@@ -151,9 +180,7 @@
         <div class="footer-section quick-links">
           <h3>Quick Links</h3>
           <ul>
-            <li><a href="services-list.html">Reserve Now</a></li>
-            <li><a href="checkin-demo.html">Check-in Demo</a></li>
-            <li><a href="admin-dashboard.html">Admin Dashboard</a></li>
+            <!-- Dynamically populated by renderFooterQuickLinks() -->
           </ul>
         </div>
 
@@ -170,9 +197,33 @@
         <p>&copy; 2025 QReserve Project - All Rights Reserved.</p>
       </div>
     </footer>
-    -->
 
     <script src="notifications.js"></script>
     <script src="script.js"></script>
+    <script>
+      // Initialize password strength validation on register.html
+      document.addEventListener('DOMContentLoaded', function() {
+        const passwordInput = document.getElementById("registerPassword");
+        const confirmPasswordInput = document.getElementById("registerConfirmPassword");
+        const registerForm = document.getElementById("registerForm");
+
+        // Add real-time password strength validation
+        if (passwordInput) {
+          passwordInput.addEventListener('input', updatePasswordStrength);
+        }
+
+        // Add real-time password match validation
+        if (confirmPasswordInput) {
+          confirmPasswordInput.addEventListener('input', function() {
+            checkPasswordMatch();
+          });
+        }
+
+        // Handle form submission
+        if (registerForm) {
+          registerForm.addEventListener('submit', registerUser);
+        }
+      });
+    </script>
   </body>
 </html>

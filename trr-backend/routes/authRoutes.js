@@ -7,6 +7,18 @@ const { verifyToken } = require('../middleware/authMiddleware');
 router.post('/register', authController.registerUser);
 router.post('/login', authController.loginUser);
 
+// Email verification routes
+router.post('/verify-email', authController.verifyEmail);
+router.post('/resend-verification', authController.resendVerificationEmail);
+
+// Password reset routes
+router.post('/request-password-reset', authController.requestPasswordReset);
+router.post('/verify-password-otp', authController.verifyPasswordResetOTP);
+router.post('/reset-password', authController.resetPassword);
+
+// Password strength validation
+router.post('/validate-password', authController.validatePassword);
+
 // NEW: Endpoint to generate staff check-in token (no authentication required)
 router.get('/staff-token', authController.getStaffToken);
 

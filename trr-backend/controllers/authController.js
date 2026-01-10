@@ -3,6 +3,9 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const mongoose = require('mongoose'); // Included for potential ObjectId checks
 const Reservation = require('../models/Reservation');
+const crypto = require('crypto');
+const { validatePasswordStrength } = require('../utils/passwordValidator');
+const { sendVerificationEmail, sendPasswordResetEmail } = require('../utils/emailService');
 
 // Secret key for JWT (Make sure this matches your environment variable)
 const jwtSecret = process.env.JWT_SECRET || 'your_default_secret_key'; 
@@ -21,10 +24,24 @@ exports.registerUser = async (req, res) => {
     try {
         const { first_name, middle_name, last_name, email, phone, password, role_id } = req.body;
         
+        // Validate password strength
+        const passwordValidation = validatePasswordStrength(password);
+        if (!passwordValidation.isValid) {
+            return res.status(400).json({ 
+                message: 'Password does not meet security requirements',
+                errors: passwordValidation.errors,
+                warnings: passwordValidation.warnings
+            });
+        }
+        
         let user = await Account.findOne({ email });
         if (user) {
             return res.status(400).json({ message: 'User already exists with this email address.' });
         }
+
+        // Generate email verification token
+        const verificationToken = crypto.randomBytes(32).toString('hex');
+        const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
         user = await Account.create({
             email,
@@ -33,12 +50,24 @@ exports.registerUser = async (req, res) => {
             middle_name: middle_name || null, 
             last_name,
             phone,
-            role_id, 
+            role_id,
+            emailVerificationToken: verificationToken,
+            emailVerificationExpires: verificationExpires
         });
 
+        // Send verification email
+        try {
+            const userName = `${first_name} ${last_name}`;
+            await sendVerificationEmail(email, verificationToken, userName);
+        } catch (emailError) {
+            console.error('Failed to send verification email:', emailError);
+            // Continue with registration even if email fails
+        }
+
         return res.status(201).json({ 
-            message: 'Registration successful. Please log in.', 
+            message: 'Registration successful. Please check your email to verify your account.', 
             redirect: 'login.html',
+            emailSent: true
         }); 
 
     } catch (error) {
@@ -382,5 +411,248 @@ exports.updateProfile = async (req, res) => {
     } catch (error) {
         console.error('Error updating profile:', error);
         res.status(500).json({ success: false, message: 'Server error during profile update.', error: error.message });
+    }
+};
+
+// --- Verify Email ---
+exports.verifyEmail = async (req, res) => {
+    try {
+        const { token } = req.body;
+
+        if (!token) {
+            return res.status(400).json({ success: false, message: 'Verification token is required' });
+        }
+
+        const user = await Account.findOne({
+            emailVerificationToken: token,
+            emailVerificationExpires: { $gt: Date.now() }
+        }).select('+emailVerificationToken +emailVerificationExpires');
+
+        if (!user) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Invalid or expired verification token' 
+            });
+        }
+
+        user.isEmailVerified = true;
+        user.emailVerificationToken = undefined;
+        user.emailVerificationExpires = undefined;
+        await user.save();
+
+        return res.status(200).json({
+            success: true,
+            message: 'Email verified successfully. You can now log in.',
+            redirect: 'login.html'
+        });
+
+    } catch (error) {
+        console.error('Error verifying email:', error);
+        res.status(500).json({ success: false, message: 'Server error during email verification.', error: error.message });
+    }
+};
+
+// --- Resend Verification Email ---
+exports.resendVerificationEmail = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        const user = await Account.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'Account not found' });
+        }
+
+        if (user.isEmailVerified) {
+            return res.status(400).json({ success: false, message: 'Email is already verified' });
+        }
+
+        // Generate new verification token
+        const verificationToken = crypto.randomBytes(32).toString('hex');
+        const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+        user.emailVerificationToken = verificationToken;
+        user.emailVerificationExpires = verificationExpires;
+        await user.save();
+
+        // Send verification email
+        const userName = `${user.first_name} ${user.last_name}`;
+        await sendVerificationEmail(email, verificationToken, userName);
+
+        return res.status(200).json({
+            success: true,
+            message: 'Verification email sent successfully. Please check your inbox.'
+        });
+
+    } catch (error) {
+        console.error('Error resending verification email:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to send verification email. Please try again later.',
+            error: error.message 
+        });
+    }
+};
+
+// --- Request Password Reset (Send OTP) ---
+exports.requestPasswordReset = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        const user = await Account.findOne({ email });
+        if (!user) {
+            // Don't reveal that user doesn't exist for security
+            return res.status(200).json({
+                success: true,
+                message: 'If an account exists with this email, a password reset code has been sent.'
+            });
+        }
+
+        // Generate 6-digit OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const resetToken = crypto.randomBytes(32).toString('hex');
+        const resetExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+        user.passwordResetOTP = otp;
+        user.passwordResetToken = resetToken;
+        user.passwordResetExpires = resetExpires;
+        await user.save();
+
+        // Send password reset email with OTP
+        const userName = `${user.first_name} ${user.last_name}`;
+        await sendPasswordResetEmail(email, otp, userName);
+
+        return res.status(200).json({
+            success: true,
+            message: 'Password reset code has been sent to your email.',
+            resetToken: resetToken // Send to frontend to use with verify OTP
+        });
+
+    } catch (error) {
+        console.error('Error requesting password reset:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to send password reset email. Please try again later.',
+            error: error.message 
+        });
+    }
+};
+
+// --- Verify Password Reset OTP ---
+exports.verifyPasswordResetOTP = async (req, res) => {
+    try {
+        const { email, otp, resetToken } = req.body;
+
+        const user = await Account.findOne({
+            email,
+            passwordResetToken: resetToken,
+            passwordResetExpires: { $gt: Date.now() }
+        }).select('+passwordResetOTP +passwordResetToken +passwordResetExpires');
+
+        if (!user) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Invalid or expired reset request' 
+            });
+        }
+
+        if (user.passwordResetOTP !== otp) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Invalid OTP code' 
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'OTP verified successfully. You can now reset your password.'
+        });
+
+    } catch (error) {
+        console.error('Error verifying OTP:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Server error during OTP verification.',
+            error: error.message 
+        });
+    }
+};
+
+// --- Reset Password (After OTP Verification) ---
+exports.resetPassword = async (req, res) => {
+    try {
+        const { email, otp, resetToken, newPassword } = req.body;
+
+        // Validate new password strength
+        const passwordValidation = validatePasswordStrength(newPassword);
+        if (!passwordValidation.isValid) {
+            return res.status(400).json({ 
+                success: false,
+                message: 'New password does not meet security requirements',
+                errors: passwordValidation.errors,
+                warnings: passwordValidation.warnings
+            });
+        }
+
+        const user = await Account.findOne({
+            email,
+            passwordResetToken: resetToken,
+            passwordResetExpires: { $gt: Date.now() }
+        }).select('+password +passwordResetOTP +passwordResetToken +passwordResetExpires');
+
+        if (!user) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Invalid or expired reset request' 
+            });
+        }
+
+        if (user.passwordResetOTP !== otp) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Invalid OTP code' 
+            });
+        }
+
+        // Update password
+        user.password = newPassword;
+        user.passwordResetOTP = undefined;
+        user.passwordResetToken = undefined;
+        user.passwordResetExpires = undefined;
+        await user.save();
+
+        return res.status(200).json({
+            success: true,
+            message: 'Password reset successfully. You can now log in with your new password.',
+            redirect: 'login.html'
+        });
+
+    } catch (error) {
+        console.error('Error resetting password:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Server error during password reset.',
+            error: error.message 
+        });
+    }
+};
+
+// --- Validate Password Strength Endpoint ---
+exports.validatePassword = async (req, res) => {
+    try {
+        const { password } = req.body;
+        const validation = validatePasswordStrength(password);
+        
+        return res.status(200).json({
+            success: true,
+            validation: validation
+        });
+
+    } catch (error) {
+        console.error('Error validating password:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Server error during password validation.',
+            error: error.message 
+        });
     }
 };

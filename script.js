@@ -780,6 +780,200 @@ let reservations =
 // --- NEW DATA STORE: Promotions and Discounts ---
 let promotions = JSON.parse(localStorage.getItem("qreserve_promotions")) || [];
 
+// ========== CART MANAGEMENT SYSTEM ==========
+
+// Cart storage in localStorage
+function getCart() {
+  const cart = localStorage.getItem('reservationCart');
+  return cart ? JSON.parse(cart) : [];
+}
+
+function saveCart(cart) {
+  localStorage.setItem('reservationCart', JSON.stringify(cart));
+  updateCartBadge();
+}
+
+function addToCart(serviceData) {
+  const cart = getCart();
+  
+  // Create cart item with unique ID
+  const cartItem = {
+    id: Date.now() + Math.random(), // Unique ID for cart item
+    serviceId: serviceData.serviceId,
+    serviceName: serviceData.serviceName,
+    serviceType: serviceData.serviceType,
+    durationId: serviceData.durationId,
+    durationLabel: serviceData.durationLabel,
+    checkIn: serviceData.checkIn,
+    checkOut: serviceData.checkOut,
+    guests: serviceData.guests,
+    price: serviceData.price,
+    addedAt: new Date().toISOString()
+  };
+  
+  cart.push(cartItem);
+  saveCart(cart);
+  
+  showToast(`${serviceData.serviceName} added to cart!`, 'success');
+  return cartItem;
+}
+
+function removeFromCart(cartItemId) {
+  let cart = getCart();
+  cart = cart.filter(item => item.id !== cartItemId);
+  saveCart(cart);
+  renderCartItems();
+}
+
+function clearCart() {
+  localStorage.removeItem('reservationCart');
+  updateCartBadge();
+}
+
+function updateCartBadge() {
+  const cart = getCart();
+  const badge = document.getElementById('cart-badge');
+  const count = cart.length;
+  
+  if (badge) {
+    if (count > 0) {
+      badge.textContent = count;
+      badge.style.display = 'inline-block';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+}
+
+function calculateCartTotal() {
+  const cart = getCart();
+  return cart.reduce((total, item) => total + parseFloat(item.price || 0), 0);
+}
+
+function renderCartItems() {
+  const cartContainer = document.getElementById('cart-items-container');
+  const cartEmptyMessage = document.getElementById('cart-empty-message');
+  const cartSummary = document.getElementById('cart-summary');
+  const cart = getCart();
+  
+  if (!cartContainer) return;
+  
+  if (cart.length === 0) {
+    if (cartEmptyMessage) cartEmptyMessage.style.display = 'block';
+    if (cartSummary) cartSummary.style.display = 'none';
+    cartContainer.innerHTML = '';
+    return;
+  }
+  
+  if (cartEmptyMessage) cartEmptyMessage.style.display = 'none';
+  if (cartSummary) cartSummary.style.display = 'block';
+  
+  cartContainer.innerHTML = cart.map(item => `
+    <div class="cart-item" data-cart-id="${item.id}">
+      <div class="cart-item-details">
+        <h4>${item.serviceName}</h4>
+        <p><strong>Duration:</strong> ${item.durationLabel || 'N/A'}</p>
+        <p><strong>Check-in:</strong> ${formatDate(item.checkIn)}</p>
+        <p><strong>Check-out:</strong> ${formatDate(item.checkOut)}</p>
+        <p><strong>Guests:</strong> ${item.guests}</p>
+        <p class="cart-item-price"><strong>Price:</strong> ₱${parseFloat(item.price).toLocaleString()}</p>
+      </div>
+      <button class="btn-remove-cart" onclick="removeFromCart(${item.id})" title="Remove from cart">
+        ✕
+      </button>
+    </div>
+  `).join('');
+  
+  // Update cart total
+  const totalElement = document.getElementById('cart-total-amount');
+  if (totalElement) {
+    totalElement.textContent = `₱${calculateCartTotal().toLocaleString()}`;
+  }
+  
+  const downpaymentElement = document.getElementById('cart-downpayment-amount');
+  if (downpaymentElement) {
+    const downpayment = calculateCartTotal() * 0.5;
+    downpaymentElement.textContent = `₱${downpayment.toLocaleString()}`;
+  }
+}
+
+function formatDate(dateString) {
+  if (!dateString) return 'N/A';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', { 
+    year: 'numeric', 
+    month: 'short', 
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
+function proceedToCartCheckout() {
+  const cart = getCart();
+  if (cart.length === 0) {
+    showModal('Empty Cart', '<p>Your cart is empty. Please add services before checking out.</p>', 'warning');
+    return;
+  }
+  
+  // Save cart to sessionStorage for payment page
+  sessionStorage.setItem('checkoutCart', JSON.stringify(cart));
+  window.location.href = 'payment.html';
+}
+
+function handleCartCheckout() {
+  const cartJson = sessionStorage.getItem('checkoutCart');
+  if (!cartJson) {
+    window.location.href = 'cart.html';
+    return;
+  }
+  
+  const cart = JSON.parse(cartJson);
+  const total = calculateCartTotalFromItems(cart);
+  const downpayment = total * 0.5;
+  
+  // Display cart items on payment page
+  const cartItemsList = document.getElementById('cart-items-for-payment');
+  if (cartItemsList) {
+    cartItemsList.innerHTML = cart.map((item, idx) => `
+      <div style="padding: 1rem; background: #f8f9fa; border-radius: 6px; margin-bottom: 0.75rem;">
+        <div style="display: flex; justify-content: space-between;">
+          <div>
+            <p style="margin: 0 0 0.5rem 0;"><strong>${idx + 1}. ${item.serviceName}</strong></p>
+            <p style="margin: 0.25rem 0; font-size: 0.9rem; color: #666;">
+              Check-in: ${formatDate(item.checkIn)}<br>
+              Guests: ${item.guests}
+            </p>
+          </div>
+          <div style="text-align: right;">
+            <p style="margin: 0; font-weight: bold; color: var(--danger-color);">₱${parseFloat(item.price).toLocaleString()}</p>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+  
+  // Update total amount display
+  const totalEl = document.getElementById('total-amount-payment');
+  if (totalEl) {
+    totalEl.textContent = `₱${total.toLocaleString()}`;
+  }
+  
+  const downpaymentEl = document.getElementById('downpayment-amount-payment');
+  if (downpaymentEl) {
+    downpaymentEl.textContent = `₱${downpayment.toLocaleString()}`;
+  }
+  
+  // Store cart for submission
+  sessionStorage.setItem('checkoutCartItems', JSON.stringify(cart));
+}
+
+function calculateCartTotalFromItems(cartItems) {
+  return cartItems.reduce((total, item) => total + parseFloat(item.price || 0), 0);
+}
+
+// ========== END CART MANAGEMENT ==========
+
 // --- Debounce Utility Function ---
 // Ensures a function runs only once after a delay, ignoring rapid repeated calls.
 function debounce(func, delay) {
@@ -1127,9 +1321,21 @@ function normalizeCurrencyValue(value) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function formatReservationId(idValue) {
+function formatReservationId(idValue, formalId = null) {
+  // Prioritize formal reservation ID if available
+  if (formalId) {
+    return formalId;
+  }
+  
   if (!idValue) return "N/A";
   const str = idValue.toString();
+  
+  // Check if it's already a formal ID (TRR-YYYYMMDD-###)
+  if (str.match(/^TRR-\d{8}-\d{3}$/)) {
+    return str;
+  }
+  
+  // Otherwise, truncate MongoDB ObjectId
   return str.length > 8 ? `${str.substring(0, 8)}...` : str;
 }
 
@@ -1217,7 +1423,7 @@ function populateUserReservationTable(listElement, data = []) {
       : "Pending";
 
     row.innerHTML = `
-            <td>${formatReservationId(res._id || res.id)}</td>
+            <td>${formatReservationId(res._id || res.id, res.reservationId)}</td>
             <td>${res.serviceType || "N/A"}</td>
             <td>${formatReservationDate(res.check_in || res.checkin_date)}</td>
             <td>₱${normalizeCurrencyValue(res.finalTotal).toFixed(2)}</td>
@@ -1260,18 +1466,25 @@ function populateAdminReservationTable(listElement, data = []) {
     }
     const statusValue = getReservationStatus(res);
     const statusClass = getStatusClass(statusValue);
-    row.innerHTML = `
-            <td>${formatReservationId(res._id || res.id)}</td>
-            <td>${res.full_name || res.customer_name || "N/A"}</td>
-            <td>${res.email || "N/A"}</td>
-            <td>${res.serviceType || "N/A"}</td>
-            <td>${formatReservationDate(res.check_in || res.checkin_date)}</td>
-            <td>₱${normalizeCurrencyValue(res.finalTotal).toFixed(2)}</td>
-            <td><span class="${statusClass}">${getDisplayStatusText(
-      statusValue
-    )}</span></td>
-            <td>${res.gcashReferenceNumber || "MISSING"}</td>
-            <td>
+    
+    // Build action buttons conditionally
+    let actionButtonsHTML = '';
+    if (statusValue === 'checked-in') {
+      // Show Checkout Override button for checked-in reservations
+      actionButtonsHTML = `
+                <span class="status-badge" style="background-color: #28a745; color: white; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.85rem; margin-right: 0.5rem;">Checked-in</span>
+                <button 
+                    class="bg-purple-600 hover:bg-purple-800 text-white py-1 px-3 rounded text-sm"
+                    onclick="checkoutReservation('${res._id || res.id}')"
+                    title="Mark as completed and checkout"
+                >✓ Checkout</button>
+            `;
+    } else if (statusValue === 'completed') {
+      // Show completed badge only
+      actionButtonsHTML = '<span class="status-badge" style="background-color: #6c757d; color: white; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.85rem;">Completed</span>';
+    } else {
+      // Show action buttons for non-checked-in reservations
+      actionButtonsHTML = `
                 <button 
                     class="bg-blue-500 hover:bg-blue-700 text-white py-1 px-3 rounded text-sm"
                     onclick="markReservationAsPaid('${res._id || res.id}')"
@@ -1284,6 +1497,34 @@ function populateAdminReservationTable(listElement, data = []) {
                     class="bg-red-500 hover:bg-red-700 text-white py-1 px-3 rounded text-sm ml-1"
                     onclick="cancelReservation('${res._id || res.id}')"
                 >Cancel</button>
+            `;
+    }
+    
+    // Format payment amount display based on payment type
+    let paymentDisplay = '';
+    if (res.paymentType === 'downpayment' && res.downpaymentAmount) {
+      paymentDisplay = `
+        <span title="Total: ₱${normalizeCurrencyValue(res.totalAmount || res.finalTotal).toFixed(2)} | Downpayment: ₱${normalizeCurrencyValue(res.downpaymentAmount).toFixed(2)} | Balance: ₱${normalizeCurrencyValue(res.remainingBalance).toFixed(2)}" style="cursor: help; border-bottom: 1px dotted #666;">
+          ₱${normalizeCurrencyValue(res.downpaymentAmount).toFixed(2)} <small>(50% paid)</small>
+        </span>
+      `;
+    } else {
+      paymentDisplay = `₱${normalizeCurrencyValue(res.finalTotal).toFixed(2)}`;
+    }
+    
+    row.innerHTML = `
+            <td>${formatReservationId(res._id || res.id, res.reservationId)}</td>
+            <td>${res.full_name || res.customer_name || "N/A"}</td>
+            <td>${res.email || "N/A"}</td>
+            <td>${res.serviceType || "N/A"}</td>
+            <td>${formatReservationDate(res.check_in || res.checkin_date)}</td>
+            <td>${paymentDisplay}</td>
+            <td><span class="${statusClass}">${getDisplayStatusText(
+      statusValue
+    )}</span></td>
+            <td>${res.gcashReferenceNumber || "MISSING"}</td>
+            <td>
+                ${actionButtonsHTML}
             </td>
         `;
 
@@ -1358,6 +1599,133 @@ function logout() {
 
 // --- NEW AUTHENTICATION FUNCTIONS (DFD 1.0) ---
 
+// --- Password Validation Functions ---
+
+/**
+ * Validates password strength based on 5 requirements
+ * @param {string} password - The password to validate
+ * @returns {object} - Object with requirements met status and strength level
+ */
+function validatePasswordStrength(password) {
+  const requirements = {
+    length: password.length >= 8,
+    uppercase: /[A-Z]/.test(password),
+    lowercase: /[a-z]/.test(password),
+    number: /[0-9]/.test(password),
+    specialChar: /[!@#$%^&*()_\-+=\[\]{};':"\\|,.<>\/?]/.test(password)
+  };
+
+  const metCount = Object.values(requirements).filter(Boolean).length;
+  let strength = 'weak';
+  
+  if (metCount === 5) strength = 'strong';
+  else if (metCount === 4) strength = 'good';
+  else if (metCount === 3) strength = 'fair';
+  else strength = 'weak';
+
+  return { requirements, strength, metCount };
+}
+
+/**
+ * Updates the password strength meter and requirements display
+ */
+function updatePasswordStrength() {
+  const password = document.getElementById("registerPassword").value;
+  const { requirements, strength, metCount } = validatePasswordStrength(password);
+
+  // Update strength bars (4 bars total)
+  const bars = document.querySelectorAll(".strength-bar");
+  bars.forEach((bar, index) => {
+    bar.classList.remove('weak', 'fair', 'good', 'strong');
+    
+    // Display filled bars based on strength
+    if (metCount === 5) {
+      bar.classList.add('strong');
+    } else if (metCount === 4) {
+      if (index < 3) bar.classList.add('good');
+      else bar.classList.remove('good', 'fair', 'weak');
+    } else if (metCount === 3) {
+      if (index < 2) bar.classList.add('fair');
+      else bar.classList.remove('good', 'fair', 'weak');
+    } else if (metCount >= 1) {
+      if (index < 1) bar.classList.add('weak');
+      else bar.classList.remove('good', 'fair', 'weak');
+    } else {
+      bar.classList.remove('good', 'fair', 'weak', 'strong');
+    }
+  });
+
+  // Update strength text label
+  const strengthText = document.getElementById("passwordStrengthText");
+  if (strengthText) {
+    if (metCount === 5) {
+      strengthText.textContent = "Password strength: Strong ✓";
+      strengthText.style.color = "var(--primary-color)";
+    } else if (metCount === 4) {
+      strengthText.textContent = "Password strength: Good";
+      strengthText.style.color = "#17a2b8";
+    } else if (metCount === 3) {
+      strengthText.textContent = "Password strength: Fair";
+      strengthText.style.color = "#ffc107";
+    } else if (metCount >= 1) {
+      strengthText.textContent = "Password strength: Weak";
+      strengthText.style.color = "#dc3545";
+    } else {
+      strengthText.textContent = "Password strength: —";
+      strengthText.style.color = "#666";
+    }
+  }
+
+  // Update requirements checklist
+  const requirementsList = document.getElementById("passwordRequirementsContainer");
+  if (requirementsList) {
+    const items = requirementsList.querySelectorAll("li");
+    items[0].classList.toggle('met', requirements.length);
+    items[1].classList.toggle('met', requirements.uppercase);
+    items[2].classList.toggle('met', requirements.lowercase);
+    items[3].classList.toggle('met', requirements.number);
+    items[4].classList.toggle('met', requirements.specialChar);
+  }
+
+  // Check password match
+  checkPasswordMatch();
+}
+
+/**
+ * Checks if password and confirm password fields match
+ */
+function checkPasswordMatch() {
+  const password = document.getElementById("registerPassword").value;
+  const confirmPassword = document.getElementById("registerConfirmPassword").value;
+  const matchText = document.getElementById("passwordMatchText");
+
+  if (!confirmPassword) {
+    matchText.classList.remove('match-success', 'match-error');
+    matchText.textContent = "";
+    return;
+  }
+
+  if (password === confirmPassword) {
+    matchText.classList.remove('match-error');
+    matchText.classList.add('match-success');
+    matchText.textContent = "✓ Passwords match";
+  } else {
+    matchText.classList.remove('match-success');
+    matchText.classList.add('match-error');
+    matchText.textContent = "✗ Passwords do not match";
+  }
+}
+
+/**
+ * Validates that password meets all requirements
+ * @param {string} password - The password to validate
+ * @returns {boolean} - True if password meets all requirements
+ */
+function isPasswordValid(password) {
+  const { requirements } = validatePasswordStrength(password);
+  return Object.values(requirements).every(Boolean);
+}
+
 // --- Authentication Handlers (Client-Side) ---
 
 /**
@@ -1383,6 +1751,34 @@ async function registerUser(event) {
   const email = document.getElementById("registerEmail").value.trim();
   const phone = document.getElementById("registerContactNumber").value.trim();
   const password = document.getElementById("registerPassword").value;
+  const confirmPassword = document.getElementById("registerConfirmPassword").value;
+
+  // 1a. Validate password meets all requirements
+  if (!isPasswordValid(password)) {
+    showModal(
+      "Password Requirements Not Met",
+      `<p>Your password must contain:</p>
+       <ul>
+         <li>At least 8 characters</li>
+         <li>At least one uppercase letter (A-Z)</li>
+         <li>At least one lowercase letter (a-z)</li>
+         <li>At least one number (0-9)</li>
+         <li>At least one special character (!@#$%^&*)</li>
+       </ul>`,
+      "warning"
+    );
+    return;
+  }
+
+  // 1b. Validate password match
+  if (password !== confirmPassword) {
+    showModal(
+      "Password Mismatch",
+      "<p>The password and confirm password fields do not match. Please ensure both fields contain the same value.</p>",
+      "warning"
+    );
+    return;
+  }
 
   // 2. Construct the payload, INCLUDING the required Customer Role ID
   const payload = {
@@ -1524,9 +1920,10 @@ function checkAuthAndRedirect(requireAdmin = false) {
   const user = getLoggedInUser();
 
   // Check if on a page that should require auth (like profile or admin)
+  const isAdminPage = window.location.pathname.includes("admin-dashboard.html");
   const requiresAuth =
     window.location.pathname.includes("profile.html") ||
-    window.location.pathname.includes("admin-dashboard.html");
+    isAdminPage;
 
   if (!requiresAuth) return;
 
@@ -1542,6 +1939,20 @@ function checkAuthAndRedirect(requireAdmin = false) {
     return;
   }
 
+  // Admin dashboard requires admin or manager role
+  if (isAdminPage && user.role !== "Admin" && user.role !== "Manager") {
+    showModal(
+      "Access Denied",
+      "<p>Admin privileges required to access this page. Redirecting...</p>",
+      "error"
+    );
+    setTimeout(() => {
+      window.location.href = "index.html";
+    }, 1500);
+    return;
+  }
+
+  // For other pages, just ensure user is logged in
   if (requireAdmin && user.role !== "Admin" && user.role !== "Manager") {
     showModal(
       "Access Denied",
@@ -2508,6 +2919,75 @@ async function cancelReservation(reservationId) {
     { confirmText: "Cancel Reservation", cancelText: "Go Back", type: "danger" }
   );
 }
+
+// Manual Checkout Override - Admin/Staff Only
+async function checkoutReservation(reservationId) {
+  // Check if user is admin/manager
+  const currentRole = localStorage.getItem('userRole');
+  if (currentRole !== 'admin' && currentRole !== 'manager') {
+    showModal(
+      "Access Denied",
+      "<p>Only administrators and managers can perform manual checkout.</p>",
+      "error"
+    );
+    return;
+  }
+
+  showConfirm(
+    "Checkout Override",
+    '<p><strong>Confirm Checkout</strong></p><p>Mark this reservation as <strong>COMPLETED</strong> and record checkout time?</p><p>This action indicates the guest has checked out.</p>',
+    async () => {
+      try {
+        const response = await fetch(
+          `http://localhost:3000/api/reservations/${reservationId}/checkout`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ 
+              checkoutOverride: true,
+              performedBy: localStorage.getItem('userEmail') || 'admin'
+            }),
+          }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          showModal(
+            "Checkout Failed",
+            `<p>${data.message || "Server error during checkout."}</p>`,
+            "error"
+          );
+          console.error("Checkout server error:", data);
+          return;
+        }
+
+        showToast(
+          "Guest checked out successfully! Reservation marked as completed.",
+          "success"
+        );
+
+        updateLocalReservation(reservationId, {
+          status: "completed",
+          checkOutTime: new Date().toISOString(),
+        });
+
+        // Refresh the admin reservations table
+        if (typeof renderAdminReservations === "function")
+          renderAdminReservations();
+      } catch (error) {
+        console.error("Network error during checkout:", error);
+        showModal(
+          "Network Error",
+          "<p>A network error occurred. Could not process checkout. Please try again.</p>",
+          "error"
+        );
+      }
+    },
+    { confirmText: "Checkout Guest", cancelText: "Cancel", type: "primary" }
+  );
+}
+
 function setMinDate() {
   // Format the date for the 'min' attribute
   const today = new Date();
@@ -2926,22 +3406,89 @@ function showAlert(message, type = "info") {
 function getAuthToken() {
   return localStorage.getItem("token") || localStorage.getItem("authToken");
 }
+
+// --- Downpayment Configuration ---
+const DOWNPAYMENT_PERCENTAGE = 0.5; // 50% downpayment required
+const DOWNPAYMENT_ENABLED = true; // Set to false to require full payment
+
+function calculateDownpayment(totalAmount) {
+  if (!DOWNPAYMENT_ENABLED) {
+    return parseFloat(totalAmount);
+  }
+  return parseFloat(totalAmount) * DOWNPAYMENT_PERCENTAGE;
+}
+
+function calculateRemainingBalance(totalAmount, downpayment) {
+  return parseFloat(totalAmount) - parseFloat(downpayment);
+}
+
 // --- Dynamic Navigation Data and Renderer ---
 const navLinks = {
   public: [
     { text: "Amenities", href: "amenities.html" },
     { text: "Reserve Now", href: "services-list.html" },
+    { text: "Reviews", href: "feedback.html" },
+    { text: "🛒 Cart", href: "cart.html", id: "cart-link" },
   ],
   customer: [
     { text: "Amenities", href: "amenities.html" },
     { text: "Reserve Now", href: "services-list.html" },
+    { text: "Reviews", href: "feedback.html" },
+    { text: "🛒 Cart", href: "cart.html", id: "cart-link" },
   ],
   admin: [
-    { text: "Reserve Now", href: "services-list.html" },
     { text: "Admin Dashboard", href: "admin-dashboard.html" },
     { text: "Amenities", href: "amenities.html" },
   ],
 };
+
+// --- Dynamic Footer Quick Links Configuration ---
+const footerQuickLinks = {
+  public: [
+    { text: "Reserve Now", href: "services-list.html" },
+    { text: "Check-in Demo", href: "checkin-demo.html" },
+    // Admin Dashboard hidden for public users
+  ],
+  customer: [
+    { text: "Reserve Now", href: "services-list.html" },
+    { text: "Check-in Demo", href: "checkin-demo.html" },
+    // Admin Dashboard hidden for customers
+  ],
+  admin: [
+    { text: "Check-in Demo", href: "checkin-demo.html" },
+    { text: "Admin Dashboard", href: "admin-dashboard.html" },
+  ],
+  manager: [
+    { text: "Check-in Demo", href: "checkin-demo.html" },
+    { text: "Admin Dashboard", href: "admin-dashboard.html" },
+  ],
+};
+
+// --- Footer Quick Links Renderer ---
+function renderFooterQuickLinks() {
+  const footerQuickLinksUl = document.querySelector(".footer-section.quick-links ul");
+  if (!footerQuickLinksUl) return;
+
+  let role = getCurrentRole();
+  
+  // Map manager role to admin for link selection
+  if (role === "manager") {
+    role = "admin";
+  }
+  
+  // Default to public if role not found
+  const links = footerQuickLinks[role] || footerQuickLinks.public;
+  
+  // Clear and rebuild the list
+  footerQuickLinksUl.innerHTML = "";
+  
+  links.forEach((link) => {
+    const li = document.createElement("li");
+    li.innerHTML = `<a href="${link.href}">${link.text}</a>`;
+    footerQuickLinksUl.appendChild(li);
+  });
+}
+
 window.changeUserRole = changeUserRole;
 
 // Re-define the dropdown toggle function to be callable externally
@@ -3023,9 +3570,24 @@ function renderNavigation() {
   // 2. Add role-specific links
   links.forEach((link) => {
     const li = document.createElement("li");
-    li.innerHTML = `<a href="${link.href}">${link.text}</a>`;
+    
+    // Special handling for cart link with badge
+    if (link.id === 'cart-link') {
+      li.innerHTML = `
+        <a href="${link.href}" class="cart-icon-wrapper">
+          ${link.text}
+          <span id="cart-badge" style="display: none;">0</span>
+        </a>
+      `;
+    } else {
+      li.innerHTML = `<a href="${link.href}">${link.text}</a>`;
+    }
+    
     navUl.appendChild(li);
   });
+  
+  // Update cart badge after rendering
+  setTimeout(() => updateCartBadge(), 100);
 
   // 3. Add Help/Guides (always visible)
   const helpLi = document.createElement("li");
@@ -5755,6 +6317,12 @@ async function reserveNow(event) {
         "current_reservation_hash",
         result.reservationHash
       );
+      
+      // Store formal reservation ID if available
+      if (result.formalReservationId) {
+        sessionStorage.setItem("current_formal_reservation_id", result.formalReservationId);
+        console.log("✅ Formal Reservation ID:", result.formalReservationId);
+      }
 
       // 1.c Store form data in BOTH sessionStorage AND localStorage for payment page to retrieve
       const paymentData = {
@@ -5936,6 +6504,16 @@ async function processGCashPayment(event, reservationId, reservationHash) {
     sessionStorage.getItem("payment_reservation_hash") ||
     sessionStorage.getItem("current_reservation_hash");
 
+  // Validate receipt image is uploaded
+  if (!window.gcashReceiptBase64) {
+    showModal(
+      "Missing Payment Proof",
+      "<p>⚠️ Please upload a receipt image showing your GCash payment before proceeding.</p>",
+      "warning"
+    );
+    return;
+  }
+
   // --- 1. VALIDATION CHECK BLOCK ---
   if (
     !finalReservationHash ||
@@ -5979,14 +6557,25 @@ async function processGCashPayment(event, reservationId, reservationHash) {
     submitBtn.textContent = "Processing Payment...";
   }
 
-  // 2. Build the Final Payload
+  // Get downpayment information from sessionStorage
+  const totalAmount = parseFloat(sessionStorage.getItem("reservationTotalAmount") || 0);
+  const downpaymentAmount = parseFloat(sessionStorage.getItem("reservationDownpayment") || 0);
+  const remainingBalance = parseFloat(sessionStorage.getItem("reservationRemainingBalance") || 0);
+
+  // 2. Build the Final Payload with receipt image
   const finalPayload = {
     reservationHash: finalReservationHash,
     gcashReferenceNumber: gcashReferenceNumber,
     paymentRef: gcashReferenceNumber,
+    totalAmount: totalAmount,
+    downpaymentAmount: downpaymentAmount,
+    remainingBalance: remainingBalance,
+    paymentType: "downpayment",
+    receiptImage: window.gcashReceiptBase64, // Include base64 encoded receipt image
+    receiptFileName: window.gcashReceiptFile ? window.gcashReceiptFile.name : "receipt.jpg"
   };
 
-  console.log("Processing GCash payment with payload:", finalPayload);
+  console.log("Processing GCash payment with payload:", { ...finalPayload, receiptImage: "[BASE64_ENCODED_IMAGE]" });
 
   // 3. Send the data to the API to finalize the reservation
   try {
@@ -6025,9 +6614,13 @@ async function processGCashPayment(event, reservationId, reservationHash) {
       { id: finalReservationId, hash: finalReservationHash },
       {
         status: "paid",
-        paymentStatus: "paid",
+        paymentStatus: "downpayment_paid",
         gcashReferenceNumber,
         qrCodeHash: finalReservationHash || data.reservationHash || null,
+        totalAmount: totalAmount,
+        downpaymentAmount: downpaymentAmount,
+        remainingBalance: remainingBalance,
+        paymentType: "downpayment",
       }
     );
 
@@ -6127,8 +6720,29 @@ async function fetchAndDisplaySummary(reservationId, reservationHash) {
     document.getElementById("summaryCustomerName").textContent =
       reservation.full_name || "Guest User";
 
-    const total = parseFloat(reservation.finalTotal || 0).toFixed(2);
-    document.getElementById("paymentAmount").textContent = total;
+    const totalAmount = parseFloat(reservation.finalTotal || 0);
+    const downpayment = calculateDownpayment(totalAmount);
+    const remainingBalance = calculateRemainingBalance(totalAmount, downpayment);
+    
+    // Display total reservation cost
+    const totalCostEl = document.getElementById("totalReservationCost");
+    if (totalCostEl) {
+      totalCostEl.textContent = totalAmount.toFixed(2);
+    }
+    
+    // Display downpayment amount (what customer pays now)
+    document.getElementById("paymentAmount").textContent = downpayment.toFixed(2);
+    
+    // Display remaining balance
+    const remainingBalanceEl = document.getElementById("remainingBalance");
+    if (remainingBalanceEl) {
+      remainingBalanceEl.textContent = remainingBalance.toFixed(2);
+    }
+    
+    // Store downpayment info in sessionStorage for form submission
+    sessionStorage.setItem("reservationTotalAmount", totalAmount.toFixed(2));
+    sessionStorage.setItem("reservationDownpayment", downpayment.toFixed(2));
+    sessionStorage.setItem("reservationRemainingBalance", remainingBalance.toFixed(2));
   } catch (error) {
     console.error("Network error during summary fetch:", error);
   }
@@ -6140,6 +6754,7 @@ async function fetchAndDisplaySummary(reservationId, reservationHash) {
 document.addEventListener("DOMContentLoaded", () => {
   // Call functions that run on all pages
   renderNavigation();
+  renderFooterQuickLinks();
 
   // Run authentication checks on pages that require them
   checkAuthAndRedirect(

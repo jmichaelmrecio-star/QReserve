@@ -74,6 +74,25 @@
     <div id="confirmationCard" class="confirmation-card">
         <h1>✅ Reservation Confirmed</h1>
         <p>Thank you for booking with Tito Renz Resort! Scan the QR code below for check-in.</p>
+        
+        <!-- Prominent Reservation ID Display -->
+        <div style="
+            background: #e7f3ff;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        ">
+            <p style="margin: 0 0 5px 0; font-size: 0.85rem; color: #6c757d;">Your Reservation ID</p>
+            <p id="formalReservationIdDisplay" style="
+                margin: 0;
+                font-size: 1.5rem;
+                font-weight: bold;
+                color: #007bff;
+                letter-spacing: 1px;
+            ">Loading...</p>
+        </div>
 
         <div id="qrcode-container">
             <div id="qrcodeCanvas"></div>
@@ -84,15 +103,7 @@
             <span id="serviceDisplay" class="detail-value">Loading...</span>
         </div>
         
-        <div class="detail-item">
-            <span class="detail-label">Confirmation Hash:</span>
-            <span id="qrCodeHashDisplay" style="font-size: 0.9rem;">Loading...</span>
-        </div>
-        
-        <div class="detail-item">
-            <span class="detail-label">System ID:</span>
-            <span id="reservationIdDisplay" style="font-size: 0.9rem;">Loading...</span>
-        </div>
+
         
         <p style="margin-top: 30px; font-size: 0.8rem; color: #999;">
             Please present this page (printed or digital) upon arrival.
@@ -162,6 +173,7 @@
         
         const hashDisplay = document.getElementById('qrCodeHashDisplay');
         const idDisplay = document.getElementById('reservationIdDisplay');
+        const formalIdDisplay = document.getElementById('formalReservationIdDisplay');
         const serviceDisplay = document.getElementById('serviceDisplay');
         const card = document.getElementById('confirmationCard');
 
@@ -175,12 +187,21 @@
 
             if (reservation) {
                 // 3. Display the real data
-                idDisplay.textContent = reservation._id;
+                idDisplay.textContent = reservation.reservationId || reservation._id;
+                
+                // Display formal reservation ID prominently
+                if (formalIdDisplay) {
+                    formalIdDisplay.textContent = reservation.reservationId || 'N/A';
+                }
+                
                 serviceDisplay.textContent = `${reservation.serviceType} Booking`; 
 
             } else {
                 // Handle fetch failure
                 idDisplay.textContent = 'N/A';
+                if (formalIdDisplay) {
+                    formalIdDisplay.textContent = 'N/A';
+                }
                 serviceDisplay.textContent = 'N/A';
                 card.querySelector('h1').textContent = "Details Unavailable";
                 card.querySelector('p').textContent = "We confirmed your payment, but failed to retrieve full details. Please contact the resort.";

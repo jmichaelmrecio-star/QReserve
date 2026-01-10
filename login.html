@@ -28,10 +28,10 @@
       class="container page-content has-fixed-header-offset"
       id="login-area"
     >
-      <div class="form-box">
-        <h2>Login</h2>
-        <p>Welcome back!</p>
-        <form id="loginForm">
+      <div class="form-box form-box-hero">
+        <div class="form-content">
+          <h2>Login to Your Account</h2>
+          <form id="loginForm">
           <p
             id="loginMessage"
             class="message-area"
@@ -81,10 +81,11 @@
             Don't have an account? <a href="register.html">Register Here</a>.
           </p>
         </form>
+        </div>
       </div>
     </main>
-    <!--
-    <footer>
+
+    <footer id="footerQuickLinks">
       <div class="footer-content">
         <div class="footer-section contact-info">
           <h3>Tito Renz Resort</h3>
@@ -97,9 +98,7 @@
         <div class="footer-section quick-links">
           <h3>Quick Links</h3>
           <ul>
-            <li><a href="services-list.html">Reserve Now</a></li>
-            <li><a href="checkin-demo.html">Check-in Demo</a></li>
-            <li><a href="admin-dashboard.html">Admin Dashboard</a></li>
+            <!-- Dynamically populated by renderFooterQuickLinks() -->
           </ul>
         </div>
 
@@ -116,7 +115,6 @@
         <p>&copy; 2025 QReserve Project - All Rights Reserved.</p>
       </div>
     </footer>
--->
 
     <script src="notifications.js"></script>
     <script src="script.js"></script>
