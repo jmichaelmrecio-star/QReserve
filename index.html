@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Tito Renz Norzagaray Resort</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <nav>
+        <a href="index.html" class="nav-logo" aria-label="Tito Renz Resort">
+          <img src="images/logo.png" alt="Tito Renz Resort Logo" />
+        </a>
+        <ul>
+          <li><a href="index.html" class="active">Home</a></li>
+          <li><a href="amenities.html">Amenities</a></li>
+          <li><a href="help.html">Help</a></li>
+        </ul>
+        <div class="nav-right" id="navRight"></div>
+      </nav>
+    </header>
+
+    <main>
+      <section id="hero-new">
+        <div class="hero-content-wrapper">
+          <h1>Tito Renz Norzagaray Resort</h1>
+          <p class="tagline">Norzagaray's Best All In 1 Place</p>
+          <a href="services-list.html" class="button-secondary">Book Now</a>
+        </div>
+      </section>
+
+      <section id="featured-amenities" class="hero-parallax">
+        <div class="hero-content-wrapper">
+          <h2>What We Offer at Tito Renz Resort</h2>
+
+          <!-- Main Section Navigation -->
+          <div class="amenities-section-nav">
+            <button class="amenities-section-btn active" data-section="rooms">
+              Rooms
+            </button>
+            <button class="amenities-section-btn" data-section="events">
+              Events Place
+            </button>
+            <button class="amenities-section-btn" data-section="pool">
+              Pool Area
+            </button>
+          </div>
+
+          <!-- Carousel Container -->
+          <div class="amenities-carousel-wrapper">
+            <!-- Rooms Section Carousel -->
+            <div class="amenities-carousel active" data-section="rooms">
+              <button class="carousel-nav-btn prev">‹</button>
+              <div class="carousel-slides">
+                <div class="carousel-slide active">
+                  <div
+                    class="slide-image"
+                    style="
+                      background: url('images/Villa_room.jpg') center/cover
+                        no-repeat;
+                    "
+                  ></div>
+                  <h4>Villa</h4>
+                  <p>
+                    Spacious villa accommodations with premium amenities and
+                    privacy.
+                  </p>
+                </div>
+                <div class="carousel-slide">
+                  <div
+                    class="slide-image"
+                    style="
+                      background: url('images/Charm_room_1.jpg') center/cover
+                        no-repeat;
+                    "
+                  ></div>
+                  <h4>Charm</h4>
+                  <p>
+                    Cozy and intimate rooms with all the comfort and character
+                    you need.
+                  </p>
+                </div>
+                <div class="carousel-slide">
+                  <div
+                    class="slide-image"
+                    style="
+                      background: url('images/home-room.jpg') center/cover
+                        no-repeat;
+                    "
+                  ></div>
+                  <h4>Home</h4>
+                  <p>
+                    Full home experience with kitchen facilities and spacious
+                    living areas.
+                  </p>
+                </div>
+              </div>
+              <h2>
+                <button class="carousel-nav-btn next">›</button>
+              </h2>
+            
+            </div>
+
+            <!-- Events Place Section Carousel -->
+            <div class="amenities-carousel" data-section="events">
+              <h2>
+                <button class="carousel-nav-btn prev">‹</button>
+              </h2>
+              <div class="carousel-slides">
+                <div class="carousel-slide active">
+                  <div
+                    class="slide-image"
+                    style="
+                      background: url('images/Cloverleaf_Hall.jpg') center/cover
+                        no-repeat;
+                    "
+                  ></div>
+                  <h4>Clover Leaf Hall</h4>
+                  <p>
+                    Large multi-purpose venue perfect for conferences, weddings,
+                    and grand celebrations.
+                  </p>
+                </div>
+                <div class="carousel-slide">
+                  <div
+                    class="slide-image"
+                    style="
+                      background: url('images/2nd_Floor_Resto_Hall.jpg')
+                        center/cover no-repeat;
+                    "
+                  ></div>
+                  <h4>Resto Hall</h4>
+                  <p>
+                    Intimate dining space ideal for family gatherings, corporate
+                    lunches, and small events.
+                  </p>
+                </div>
+              </div>
+              <button class="carousel-nav-btn next">›</button>
+            </div>
+
+            <!-- Pool Area Section Carousel -->
+            <div class="amenities-carousel" data-section="pool">
+              <button class="carousel-nav-btn prev">‹</button>
+              <div class="carousel-slides">
+                <div class="carousel-slide active">
+                  <div
+                    class="slide-image"
+                    style="
+                      background: url('images/Pool_Area.jpg') center/cover
+                        no-repeat;
+                    "
+                  ></div>
+                  <h4>Adult Pool</h4>
+                  <p>
+                    Olympic-sized main pool with diving areas and relaxing
+                    shallow zones.
+                  </p>
+                </div>
+                <div class="carousel-slide">
+                  <div
+                    class="slide-image"
+                    style="
+                      background: url('images/Pool_Area_other_View.jpg')
+                        center/cover no-repeat;
+                    "
+                  ></div>
+                  <h4>Kiddie Pool</h4>
+                  <p>
+                    Safe and shallow pool designed specifically for children's
+                    enjoyment and safety.
+                  </p>
+                </div>
+                <div class="carousel-slide">
+                  <div
+                    class="slide-image"
+                    style="
+                      background: url('images/Pool_Area_other_View_2.jpg')
+                        center/cover no-repeat;
+                    "
+                  ></div>
+                  <h4>Pool Cottages</h4>
+                  <p>
+                    Exclusive cottages poolside with direct pool access and
+                    private lounging areas.
+                  </p>
+                </div>
+              </div>
+              <button class="carousel-nav-btn next">›</button>
+            </div>
+          </div>
+
+          <a href="amenities.html" class="button-primary">View All Amenities</a>
+        </div>
+      </section>
+
+      <section
+        id="promotions-blocks"
+        class="container"
+        style="
+          margin-top: 2rem;
+          background-color: white;
+          padding: 20px;
+          border-radius: 8px;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+        "
+      >
+        <h2>Active Promotions</h2>
+        <div id="active-promotions-list">
+          <p>Loading promotions...</p>
+        </div>
+
+        <hr style="margin: 1.5rem 0" />
+
+        <h2>Currently Blocked Dates</h2>
+        <div id="public-blocked-dates">
+          <p>Loading blocked dates...</p>
+        </div>
+      </section>
+
+      <section id="services">
+        <h2>What We Offer at Tito Renz Resort</h2>
+        <div class="service-cards">
+          <div class="card">
+            <h3>Standard Rooms</h3>
+            <p>
+              Comfortable and modern air-conditioned rooms perfect for
+              individuals or couples. Enjoy a restful stay with all essential
+              amenities.
+            </p>
+            <p class="price">Starts at P2,500</p>
+          </div>
+          <div class="card">
+            <h3>Family Cottages</h3>
+            <p>
+              Spacious, private cottages ideal for family gatherings or larger
+              groups. Includes a dedicated dining area and dedicated grill area.
+            </p>
+            <p class="price">Starts at P4,000</p>
+          </div>
+          <div class="card">
+            <h3>Pool Area Rental</h3>
+            <p>
+              Reserve our main pool and pavilion area for birthdays, team
+              building, or other special events. Perfect for large groups.
+            </p>
+            <p class="price">Starts at P8,000</p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="footer-content">
+        <div class="footer-section contact-info">
+          <h3>Tito Renz Resort</h3>
+          <p>Your seamless booking experience starts here.</p>
+          <p>📍 Norzagaray, Bulacan, Philippines</p>
+          <p>📞 0977 246 8920 or 0916 640 3411</p>
+          <p>📧 titorenznorzagaray@gmail.com</p>
+        </div>
+
+        <div class="footer-section quick-links">
+          <h3>Quick Links</h3>
+          <ul>
+            <li><a href="services-list.html">Reserve Now</a></li>
+            <li><a href="checkin-demo.html">Check-in Demo</a></li>
+            <li><a href="admin-dashboard.html">Admin Dashboard</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-section about-contact">
+          <h3>About & Contact</h3>
+          <ul>
+            <li><a href="about.html">Our Story</a></li>
+            <li><a href="contact.html">Send Us a Message</a></li>
+            <li><a href="help.html">Help / Guides</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2025 QReserve Project - All Rights Reserved.</p>
+      </div>
+    </footer>
+
+    <script src="notifications.js"></script>
+    <script src="script.js"></script>
+    <script src="incomplete-reservation-tracker.js"></script>
+  </body>
+</html>

@@ -1,0 +1,45 @@
+[{
+  "_id": {
+    "$oid": "693787dd39e1a2d274bb0d9b"
+  },
+  "full_name": "John Michael M Recio",
+  "email": "jmichaelmrecio@gmail.com",
+  "phone": "09175132042",
+  "accountId": null,
+  "serviceId": "charm_room_2",
+  "serviceType": "Charm #2",
+  "check_in": {
+    "$date": "2025-12-10T02:21:00.000Z"
+  },
+  "check_out": {
+    "$date": "2025-12-10T14:21:00.000Z"
+  },
+  "guests": 4,
+  "address": "North Fairview Quezon City",
+  "selectedDuration": "duration_12h",
+  "selectedTimeSlot": null,
+  "durationLabel": "12 Hours",
+  "inclusions": [
+    "Hot and cold shower",
+    "Fully air-conditioned",
+    "Free access to swimming pool (if available)",
+    "Instagrammable view",
+    "Griller",
+    "Free use of parking space",
+    "Kiddie Pool",
+    "CCTV Cameras",
+    "No corkage fee"
+  ],
+  "basePrice": 3000,
+  "discountCode": null,
+  "discountValue": 0,
+  "finalTotal": 3000,
+  "status": "COMPLETED",
+  "gcashReferenceNumber": "0035447578209",
+  "reservationHash": "40866484c08c68f341c5a05048b37e7a",
+  "paymentStatus": "PAID",
+  "dateCreated": {
+    "$date": "2025-12-09T02:22:21.429Z"
+  },
+  "__v": 0
+}]

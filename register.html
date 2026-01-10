@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QReserve: Register</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <div class="container">
+        <nav>
+          <a href="index.html" class="nav-logo" aria-label="Tito Renz Resort">
+            <img src="images/logo.png" alt="Tito Renz Resort Logo" />
+          </a>
+          <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="amenities.html">Amenities</a></li>
+            <li><a href="help.html">Help</a></li>
+          </ul>
+          <div class="nav-right" id="navRight"></div>
+        </nav>
+      </div>
+    </header>
+
+    <main
+      class="container page-content has-fixed-header-offset"
+      id="register-area"
+    >
+      <div class="form-box">
+        <h2>New User Registration</h2>
+        <p>Register to manage your reservations and profile.</p>
+        <form id="registerForm">
+          <div class="form-row">
+            <div class="form-group">
+              <input
+                placeholder="First Name"
+                type="text"
+                id="registerFirstName"
+                name="firstName"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <input
+                placeholder="Middle Initial"
+                type="text"
+                id="registerMiddleInitial"
+                name="middleInitial"
+                maxlength="4"
+                placeholder="N/A if none"
+              />
+            </div>
+          </div>
+          <div class="form-group">
+            <input
+              placeholder="Last Name"
+              type="text"
+              id="registerLastName"
+              name="lastName"
+              required
+            />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <input
+                placeholder="Email Address"
+                type="email"
+                id="registerEmail"
+                name="email"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <input
+                placeholder="Contact Number"
+                type="tel"
+                id="registerContactNumber"
+                name="contactNumber"
+                pattern="[0-9]{11}"
+                minlength="11"
+                title="Contact number must be 11 digits (e.g., 09123456789)"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <div class="password-input-wrapper">
+              <input
+                placeholder="Password"
+                type="password"
+                id="registerPassword"
+                name="password"
+                minlength="6"
+                required
+              />
+              <button
+                type="button"
+                class="password-toggle"
+                data-target="registerPassword"
+                aria-label="Toggle password visibility"
+              >
+                👁️
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <div class="password-input-wrapper">
+              <input
+                placeholder="Confirm Password"
+                type="password"
+                id="registerConfirmPassword"
+                name="confirmPassword"
+                minlength="6"
+                required
+              />
+              <button
+                type="button"
+                class="password-toggle"
+                data-target="registerConfirmPassword"
+                aria-label="Toggle password visibility"
+              >
+                👁️
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" class="button-primary">Register Account</button>
+          <p class="form-footer" style="text-align: center">
+            Already have an account? <a href="login.html">Login Here</a>.
+          </p>
+        </form>
+      </div>
+    </main>
+    <!--
+    <footer>
+      <div class="footer-content">
+        <div class="footer-section contact-info">
+          <h3>Tito Renz Resort</h3>
+          <p>Your seamless booking experience starts here.</p>
+          <p>📍 Norzagaray, Bulacan, Philippines</p>
+          <p>📞 0977 246 8920 or 0916 640 3411</p>
+          <p>📧 titorenznorzagaray@gmail.com</p>
+        </div>
+
+        <div class="footer-section quick-links">
+          <h3>Quick Links</h3>
+          <ul>
+            <li><a href="services-list.html">Reserve Now</a></li>
+            <li><a href="checkin-demo.html">Check-in Demo</a></li>
+            <li><a href="admin-dashboard.html">Admin Dashboard</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-section about-contact">
+          <h3>About & Contact</h3>
+          <ul>
+            <li><a href="about.html">Our Story</a></li>
+            <li><a href="contact.html">Send Us a Message</a></li>
+            <li><a href="help.html">Help / Guides</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2025 QReserve Project - All Rights Reserved.</p>
+      </div>
+    </footer>
+    -->
+
+    <script src="notifications.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>
