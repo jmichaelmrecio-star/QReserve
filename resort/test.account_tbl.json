@@ -1,0 +1,55 @@
+[{
+  "_id": {
+    "$oid": "6912078f52d8cd75d39bb656"
+  },
+  "role_id": {
+    "$oid": "6911d923e3fb923eed25f44d"
+  },
+  "first_name": "admin",
+  "middle_name": "N/A",
+  "last_name": "user",
+  "email": "admin@resort.com",
+  "phone": "09123456799",
+  "password": "$2b$10$BBIApVB8mc/TEFQJNoSdIOHiuHWAysl4hntdJvtMcAV4GPjlxscyG",
+  "created_at": {
+    "$date": "2025-11-10T15:41:03.639Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "6912083252d8cd75d39bb65b"
+  },
+  "role_id": {
+    "$oid": "6911d910e3fb923eed25f44c"
+  },
+  "first_name": "manager",
+  "middle_name": "N/A",
+  "last_name": "user",
+  "email": "manager@resort.com",
+  "phone": "09123456779",
+  "password": "$2b$10$COOiM/fADvMHk4k67qsU6uuVEJMoSKGRNS92hvx5yVygVvZXS7GTG",
+  "created_at": {
+    "$date": "2025-11-10T15:43:46.190Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "6937856739e1a2d274bb0d7b"
+  },
+  "role_id": {
+    "$oid": "6911d7b841d151b05bf687c7"
+  },
+  "first_name": "John Michael",
+  "middle_name": "M",
+  "last_name": "Recio",
+  "email": "jmichaelmrecio@gmail.com",
+  "phone": "09175132042",
+  "password": "$2b$10$NAVLKygf81TiGS0tD4McYuq0n0akxy8/5s6PSfJNDee3nwFibR.bi",
+  "isActive": true,
+  "created_at": {
+    "$date": "2025-12-09T02:11:51.451Z"
+  },
+  "__v": 0
+}]
