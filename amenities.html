@@ -75,19 +75,52 @@
         </div>
     </main>
 
-    <footer>
-        <div class="footer-content">
-            <div class="footer-section contact-info">
-                <h3>Tito Renz Resort</h3>
-                <p>Your seamless booking experience starts here.</p>
-                <p>📍 Norzagaray, Bulacan, Philippines</p>
-                <p>📞 0977 246 8920 or 0916 640 3411</p>
-                <p>📧 titorenznorzagaray@gmail.com</p>
-            </div>
-
-            <div class="footer-section quick-links">
-                <h3>Quick Links</h3>
-                <ul>
+    <header>
+        <nav style="position:relative;">
+            <a href="index.html" class="nav-logo" aria-label="Tito Renz Resort">
+                <img src="images/logo.png" alt="Tito Renz Resort Logo">
+            </a>
+            <button id="hamburger-btn" style="background:none;border:none;cursor:pointer;position:absolute;top:16px;right:16px;z-index:1001;display:none;">
+                <span style="font-size:2rem;">&#9776;</span>
+            </button>
+            <ul style="display:flex;">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="profile.html">Profile</a></li>
+                <li><a href="amenities.html" class="active">Amenities</a></li>
+                <li><a href="dining.html">Dining</a></li>
+                <li><a href="promotions.html">Promotions</a></li>
+                <li><a href="help.html">Help</a></li>
+            </ul>
+            <div class="nav-right" id="navRight"></div>
+        </nav>
+        <style>
+        @media (max-width: 900px) {
+            nav ul { display: none !important; flex-direction: column; background: #fff; position: absolute; top: 60px; right: 0; left: 0; z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+            #hamburger-btn { display: block !important; }
+        }
+        </style>
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var nav = document.querySelector('nav');
+            var btn = document.getElementById('hamburger-btn');
+            var navUl = nav.querySelector('ul');
+            function updateHamburgerVisibility() {
+                if (window.innerWidth < 900) {
+                    btn.style.display = 'block';
+                    navUl.style.display = 'none';
+                } else {
+                    btn.style.display = 'none';
+                    navUl.style.display = 'flex';
+                }
+            }
+            window.addEventListener('resize', updateHamburgerVisibility);
+            updateHamburgerVisibility();
+            btn.onclick = function() {
+                navUl.style.display = navUl.style.display === 'flex' ? 'none' : 'flex';
+            };
+        });
+        </script>
+    </header>
                     <!-- Dynamically populated by renderFooterQuickLinks() -->
                 </ul>
             </div>

@@ -11,6 +11,9 @@ const { requireAdmin, requireAdminOrManager, requireCustomer } = require('../mid
 // --- 1. NEW ROUTE (Specific name: 'pending') - MUST be first!
 router.get('/pending', reservationController.getPendingReservations);
 
+// --- NEW ROUTE (Specific name: 'pending-payments') - MUST be first!
+router.get('/pending-payments', verifyToken, requireRole('Admin', 'Manager'), reservationController.getPendingPaymentVerifications);
+
 // --- 2. MULTIPLE PARAMETER/DETAIL ROUTES (Must come before generic /:id) ---
 router.post('/create-reservation', reservationController.createReservation);
 router.post('/finalize-reservation', reservationController.finalizeReservation);
@@ -55,5 +58,22 @@ router.put(
 // This route must be last to avoid catching more specific routes like '/details'
 router.get('/:id', reservationController.getReservationById);
 router.put('/:id', reservationController.updateReservationStatus);
+
+// New route to approve a payment
+router.patch(
+    '/:id/approve-payment',
+    verifyToken,
+    requireRole('Admin', 'Manager'),
+    reservationController.approvePayment
+);
+
+// New route to reject a payment
+router.patch(
+    '/:id/reject-payment',
+    verifyToken,
+    requireRole('Admin', 'Manager'),
+    reservationController.rejectPayment
+);
+
 
 module.exports = router;

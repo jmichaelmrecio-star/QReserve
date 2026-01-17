@@ -63,11 +63,18 @@
             <div id="details-card" class="bg-gray-50 p-4 rounded-lg border border-gray-200">
                 <h2 class="text-lg font-bold mb-3 text-gray-800 border-b pb-2">Reservation Details</h2>
                 <div class="space-y-2 text-gray-700">
+                    <p><strong>Reservation ID:</strong> <span id="reservation-id-display">N/A</span></p>
                     <p><strong>Guest Name:</strong> <span id="guest-name">N/A</span></p>
+                    <p><strong>Email:</strong> <span id="guest-email">N/A</span></p>
+                    <p><strong>Contact Number:</strong> <span id="guest-phone">N/A</span></p>
                     <p><strong>Service:</strong> <span id="service-type">N/A</span></p>
                     <p><strong>Check-in:</strong> <span id="check-in-date">N/A</span></p>
+                    <p><strong>Check-out:</strong> <span id="check-out-date">N/A</span></p>
                     <p><strong>Guests:</strong> <span id="num-guests">N/A</span></p>
+                    <p><strong>Payment Status:</strong> <span id="payment-status" class="font-bold">N/A</span></p>
                     <p><strong>Total Paid:</strong> <span id="total-paid" class="font-bold text-green-600">N/A</span></p>
+                    <p id="downpayment-row" class="hidden"><strong>Downpayment:</strong> <span id="downpayment-amount">N/A</span></p>
+                    <p id="remaining-balance-row" class="hidden"><strong>Remaining Balance:</strong> <span id="remaining-balance">N/A</span></p>
                 </div>
             </div>
             
@@ -185,11 +192,41 @@
 
             if (details) {
                 // Populate details card
+                document.getElementById('reservation-id-display').textContent = details.formalReservationId || details._id || 'N/A';
                 document.getElementById('guest-name').textContent = details.guestName || 'N/A';
+                document.getElementById('guest-email').textContent = details.email || 'N/A';
+                document.getElementById('guest-phone').textContent = details.phone || 'N/A';
                 document.getElementById('service-type').textContent = details.service || 'N/A';
                 document.getElementById('check-in-date').textContent = new Date(details.checkIn).toLocaleDateString() || 'N/A';
+                document.getElementById('check-out-date').textContent = new Date(details.checkOut).toLocaleDateString() || 'N/A';
                 document.getElementById('num-guests').textContent = details.guests || 'N/A';
-                document.getElementById('total-paid').textContent = '₱' + (details.totalPaid ? details.totalPaid.toFixed(2) : 'N/A'); 
+                
+                const paymentStatusEl = document.getElementById('payment-status');
+                paymentStatusEl.textContent = details.paymentStatus || 'N/A';
+                paymentStatusEl.className = 'font-bold'; // Reset classes
+                if (details.paymentStatus === 'PAID') {
+                    paymentStatusEl.classList.add('text-green-600');
+                } else if (details.paymentStatus === 'DOWNPAYMENT_PAID') {
+                    paymentStatusEl.classList.add('text-orange-600');
+                } else {
+                    paymentStatusEl.classList.add('text-red-600');
+                }
+
+                document.getElementById('total-paid').textContent = '₱' + (details.totalPaid ? details.totalPaid.toFixed(2) : 'N/A');
+
+                // Show downpayment and remaining balance rows if applicable
+                const downpaymentRow = document.getElementById('downpayment-row');
+                const remainingBalanceRow = document.getElementById('remaining-balance-row');
+                
+                if (details.paymentType === 'downpayment' && details.downpaymentAmount) {
+                    document.getElementById('downpayment-amount').textContent = '₱' + details.downpaymentAmount.toFixed(2);
+                    document.getElementById('remaining-balance').textContent = '₱' + details.remainingBalance.toFixed(2);
+                    downpaymentRow.classList.remove('hidden');
+                    remainingBalanceRow.classList.remove('hidden');
+                } else {
+                    downpaymentRow.classList.add('hidden');
+                    remainingBalanceRow.classList.add('hidden');
+                }
             }
         }
         

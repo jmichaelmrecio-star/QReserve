@@ -60,7 +60,7 @@ async function sendVerificationEmail(email, verificationToken, userName) {
                     </div>
                     <div class="content">
                         <h2>Hi ${userName},</h2>
-                        <p>Thank you for registering with Tito Renz Resort. To complete your registration and activate your account, please verify your email address by clicking the button below:</p>
+                        <p style="color: white;">Thank you for registering with Tito Renz Resort. To complete your registration and activate your account, please verify your email address by clicking the button below:</p>
                         
                         <div style="text-align: center;">
                             <a href="${verificationLink}" class="button">Verify Email Address</a>

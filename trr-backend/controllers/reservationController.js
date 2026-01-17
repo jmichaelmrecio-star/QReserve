@@ -363,8 +363,7 @@ exports.finalizeReservation = async (req, res) => {
         // 5. Update the payment and reservation statuses
         reservation.gcashReferenceNumber = gcashReferenceNumber;
         
-        // Store receipt image information
-        reservation.receiptImage = receiptImage;
+        // Store only receipt file name, not base64 image
         reservation.receiptFileName = receiptFileName || 'receipt.jpg';
         reservation.receiptUploadedAt = new Date();
         
@@ -899,5 +898,109 @@ exports.getReservationsByService = async (req, res) => {
     } catch (error) {
         console.error('Error fetching reservations by service:', error);
         res.status(500).json({ message: error.message });
+    }
+};
+
+/**
+ * Fetches reservations with 'PENDING' payment status for admin verification.
+ */
+exports.getPendingPaymentVerifications = async (req, res) => {
+    try {
+        const pendingPayments = await Reservation.find({
+            paymentStatus: 'PENDING',
+            receiptFileName: { $exists: true, $ne: null } // Ensure a receipt was uploaded
+        }).sort({ receiptUploadedAt: 1 }); // Sort by upload time, oldest first
+
+        res.status(200).json(pendingPayments);
+    } catch (error) {
+        console.error('SERVER ERROR fetching pending payment verifications:', error);
+        res.status(500).json({
+            message: 'Internal server error while retrieving pending payments.',
+            details: error.message
+        });
+    }
+};
+
+/**
+ * Approves a payment for a reservation, updating paymentStatus and status.
+ */
+exports.approvePayment = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { paymentStatus, status } = req.body; // Expecting 'PAID' or 'DOWNPAYMENT_PAID'
+
+        if (!id || !paymentStatus || !status) {
+            return res.status(400).json({ message: 'Reservation ID, paymentStatus, and status are required.' });
+        }
+
+        const reservation = await Reservation.findById(id);
+        if (!reservation) {
+            return res.status(404).json({ message: 'Reservation not found.' });
+        }
+
+        // Only allow approval if current paymentStatus is PENDING
+        if (reservation.paymentStatus !== 'PENDING') {
+            return res.status(400).json({ message: `Payment for reservation ${id} is already ${reservation.paymentStatus}.` });
+        }
+
+        reservation.paymentStatus = paymentStatus;
+        reservation.status = status; // Update main status to PAID
+        reservation.updatedAt = new Date();
+
+        await reservation.save();
+
+        res.status(200).json({
+            success: true,
+            message: `Payment for reservation ${id} approved and status set to ${paymentStatus}.`,
+            reservation
+        });
+    } catch (error) {
+        console.error('SERVER ERROR approving payment:', error);
+        res.status(500).json({
+            message: 'Internal server error while approving payment.',
+            details: error.message
+        });
+    }
+};
+
+/**
+ * Rejects a payment for a reservation, updating paymentStatus.
+ */
+exports.rejectPayment = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { paymentStatus, status } = req.body; // Expecting 'REJECTED'
+
+        if (!id || !paymentStatus || !status) {
+            return res.status(400).json({ message: 'Reservation ID, paymentStatus, and status are required.' });
+        }
+
+        const reservation = await Reservation.findById(id);
+        if (!reservation) {
+            return res.status(404).json({ message: 'Reservation not found.' });
+        }
+
+        // Only allow rejection if current paymentStatus is PENDING
+        if (reservation.paymentStatus !== 'PENDING') {
+            return res.status(400).json({ message: `Payment for reservation ${id} is already ${reservation.paymentStatus}.` });
+        }
+
+        reservation.paymentStatus = paymentStatus;
+        reservation.status = status; // Revert to PENDING or set to a 'payment_rejected' status
+        reservation.updatedAt = new Date();
+
+        await reservation.save();
+
+        res.status(200).json({
+            success: true,
+            message: `Payment for reservation ${id} rejected. Status set to ${paymentStatus}.`,
+            reservation
+        });
+    } catch (error) {
+        console.error('SERVER ERROR rejecting payment:', error);
+        res.status(500).json({
+            message: 'Internal server error while rejecting payment.',
+            details: error.message
+        });
     }
 };

@@ -1,0 +1,38 @@
+<!-- Customer View Section -->
+<section id="customer-view-section" class="container tab-pane" style="display: none;">
+    <div class="row">
+        <div class="col-12 mb-4">
+            <h2>👤 My Reservations</h2>
+            <p>View and manage your resort reservations</p>
+        </div>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-12">
+            <div id="customer-profile-info"></div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-12">
+            <div id="customer-reservations-list"></div>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-12 text-center">
+            <a href="services-list.html" class="btn btn-primary btn-lg">
+                Make New Reservation
+            </a>
+        </div>
+    </div>
+</section>
+
+<script>
+// Initialize customer dashboard when component loads
+(function initCustomerView() {
+    if (typeof initCustomerDashboard === 'function') {
+        initCustomerDashboard();
+    }
+})();
+</script>
