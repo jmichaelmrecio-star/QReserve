@@ -1,0 +1,144 @@
+<!-- Service Management Section -->
+<div class="tab-pane fade" id="service-management" role="tabpanel" aria-labelledby="service-management-tab">
+    <h2 class="mb-4">Service Management</h2>
+
+    <!-- 1. Creation Form -->
+    <div class="card mb-4 p-4">
+        <h4 class="mb-3">Create New Service</h4>
+        <form id="createServiceForm">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label for="serviceIdInput" class="form-label">Service ID (unique, e.g., villa_room_5)</label>
+                    <input type="text" class="form-control" id="serviceIdInput" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="serviceNameInput" class="form-label">Service Name (e.g., Villa #5)</label>
+                    <input type="text" class="form-control" id="serviceNameInput" required>
+                </div>
+                <div class="col-md-4">
+                    <label for="serviceTypeInput" class="form-label">Type</label>
+                    <select class="form-select" id="serviceTypeInput" required>
+                        <option value="">-- Select --</option>
+                        <option value="villa">Villa</option>
+                        <option value="charm">Charm</option>
+                        <option value="venue">Venue</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="serviceCategoryInput" class="form-label">Category</label>
+                    <select class="form-select" id="serviceCategoryInput" required>
+                        <option value="">-- Select --</option>
+                        <option value="accommodation">Accommodation</option>
+                        <option value="event_space">Event Space</option>
+                        <option value="water_facility">Water Facility</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="serviceMaxGuestsInput" class="form-label">Max Guests</label>
+                    <input type="number" class="form-control" id="serviceMaxGuestsInput" min="1" required>
+                </div>
+                <div class="col-12">
+                    <label for="serviceDescriptionInput" class="form-label">Description</label>
+                    <textarea class="form-control" id="serviceDescriptionInput" rows="2" required></textarea>
+                </div>
+                <div class="col-md-6">
+                    <label for="serviceImageInput" class="form-label">Main Image</label>
+                    <input type="file" class="form-control" id="serviceImageInput" accept="image/*" required>
+                    <small class="form-text text-muted">Selected: <span id="serviceImageName">None</span></small>
+                </div>
+                <div class="col-md-6">
+                    <label for="serviceGalleryInput" class="form-label">Gallery Images</label>
+                    <input type="file" class="form-control" id="serviceGalleryInput" accept="image/*" multiple>
+                    <small class="form-text text-muted">Selected: <span id="serviceGalleryCount">0</span> image(s)</small>
+                </div>
+                <div class="col-12">
+                    <label for="serviceInclusionsInput" class="form-label">Inclusions (comma-separated)</label>
+                    <textarea class="form-control" id="serviceInclusionsInput" rows="2" placeholder="Item 1, Item 2, Item 3"></textarea>
+                </div>
+                <div class="col-12">
+                    <label for="serviceNotesInput" class="form-label">Notes (optional)</label>
+                    <textarea class="form-control" id="serviceNotesInput" rows="2"></textarea>
+                </div>
+            </div>
+            <h5 class="mt-4 mb-3">Durations / Time Slots</h5>
+            <div id="durationsContainer" class="border p-3 mb-3 rounded">
+                <!-- Repeating duration rows will be inserted here -->
+            </div>
+            <button type="button" id="addDurationBtn" class="btn btn-outline-secondary mb-3">+ Add Duration</button>
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary">Create Service</button>
+            </div>
+            <div id="createServiceMessage" class="mt-2"></div>
+        </form>
+    </div>
+
+    <!-- 2. Display Table -->
+    <h4 class="mb-3">Existing Services</h4>
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Category</th>
+                    <th>Max Guests</th>
+                    <th>Active Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="serviceTableBody">
+                <!-- Data will be inserted here by JavaScript -->
+                <tr><td colspan="7" class="text-center">Loading services...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+// Initialize service management when component loads
+(function initServiceManagement() {
+    const serviceCreateForm = document.getElementById('createServiceForm');
+    const addDurationBtn = document.getElementById('addDurationBtn');
+    const serviceImageInput = document.getElementById('serviceImageInput');
+    const serviceGalleryInput = document.getElementById('serviceGalleryInput');
+
+    if (serviceCreateForm && typeof handleCreateServiceForm === 'function') {
+        serviceCreateForm.addEventListener('submit', handleCreateServiceForm);
+    }
+
+    if (addDurationBtn && typeof addDurationRow === 'function') {
+        addDurationBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            addDurationRow();
+        });
+    }
+
+    if (serviceImageInput) {
+        serviceImageInput.addEventListener('change', function (e) {
+            const files = e.target.files;
+            const nameDisplay = document.getElementById('serviceImageName');
+            if (files.length > 0) {
+                nameDisplay.textContent = files[0].name;
+            } else {
+                nameDisplay.textContent = 'None';
+            }
+        });
+    }
+
+    if (serviceGalleryInput) {
+        serviceGalleryInput.addEventListener('change', function (e) {
+            const files = e.target.files;
+            const countDisplay = document.getElementById('serviceGalleryCount');
+            countDisplay.textContent = files.length;
+        });
+    }
+
+    if (typeof renderServiceTable === 'function') {
+        const serviceTableBody = document.getElementById('serviceTableBody');
+        if (serviceTableBody) {
+            fetchServices().then(() => renderServiceTable());
+        }
+    }
+})();
+</script>

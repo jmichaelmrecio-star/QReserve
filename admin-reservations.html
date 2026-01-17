@@ -1,0 +1,48 @@
+<!-- Reservations Management Section -->
+<section id="dashboard-area" class="tab-pane">
+    <div class="card p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="mb-0">Admin: Reservation Management</h2>
+            <button id="report-button" class="btn btn-primary">Generate Report</button>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Customer</th>
+                        <th>Email</th>
+                        <th>Service-type</th>
+                        <th>Check-in Date</th>
+                        <th>Total Amount</th>
+                        <th>Status</th>
+                        <th>GCash Ref #</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="admin-reservation-list">
+                    <tr><td colspan="9" class="text-center">Loading reservations...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<script>
+// Initialize reservations when component loads
+(function initReservations() {
+    if (typeof renderAdminReservations === 'function') {
+        renderAdminReservations();
+    }
+    
+    // Report button handler
+    const reportButton = document.getElementById('report-button');
+    if (reportButton) {
+        reportButton.addEventListener('click', function() {
+            // Add report generation logic here
+            alert('Report generation feature coming soon!');
+        });
+    }
+})();
+</script>

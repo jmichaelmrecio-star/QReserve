@@ -570,6 +570,36 @@ function renderNavigation() {
 
 // Call renderNavigation and NEW AUTHENTICATION LISTENERS on every page load
 document.addEventListener('DOMContentLoaded', () => {
+    // Hamburger menu setup
+    const nav = document.querySelector('nav');
+    if (nav) {
+        // Add hamburger button if not present
+        if (!document.getElementById('hamburger-btn')) {
+            const hamburgerBtn = document.createElement('button');
+            hamburgerBtn.id = 'hamburger-btn';
+            hamburgerBtn.innerHTML = '<span style="font-size:2rem;">&#9776;</span>';
+            hamburgerBtn.style.cssText = 'background:none;border:none;cursor:pointer;position:absolute;top:16px;right:16px;z-index:1001;display:none;';
+            nav.prepend(hamburgerBtn);
+        }
+        // Show hamburger on mobile
+        function updateHamburgerVisibility() {
+            const btn = document.getElementById('hamburger-btn');
+            if (window.innerWidth < 900) {
+                btn.style.display = 'block';
+                nav.querySelector('ul').style.display = 'none';
+            } else {
+                btn.style.display = 'none';
+                nav.querySelector('ul').style.display = 'flex';
+            }
+        }
+        window.addEventListener('resize', updateHamburgerVisibility);
+        updateHamburgerVisibility();
+        // Toggle nav on hamburger click
+        document.getElementById('hamburger-btn').onclick = function() {
+            const navUl = nav.querySelector('ul');
+            navUl.style.display = navUl.style.display === 'flex' ? 'none' : 'flex';
+        };
+    }
     renderNavigation();
 
     // --- NEW AUTHENTICATION LISTENERS ---

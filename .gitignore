@@ -1,3 +1,4 @@
 .env 
 # Dependencies
 /trr-backend/node_modules
+/.history

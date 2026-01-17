@@ -1,31 +1,48 @@
 // Load environment variables from .env file
-require('dotenv').config(); 
+require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
-const mongoose = require('mongoose'); // Import Mongoose
-const bcrypt = require('bcrypt'); // <-- NEW: Required for password comparison
+const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
+const multer = require('multer');
+const path = require('path');
+// ...existing code...
+const fs = require('fs');
 const app = express();
-const PORT = process.env.PORT || 3000; // Use port from environment or default to 3000
-//const reservationRoutes = require('./routes/reservationRoutes'); // Import the router
+const PORT = process.env.PORT || 3000;
+
+// --- MULTER SETUP (for file uploads) ---
+const uploadDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir);
+}
+
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, uploadDir);
+    },
+    filename: function (req, file, cb) {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, uniqueSuffix + path.extname(file.originalname));
+    }
+});
+const upload = multer({ storage: storage });
+
+
 // --- MIDDLEWARE ---
+app.use(cors());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Add CORS middleware before your routes or body parsers
-app.use(cors()); // <--- ADD THIS LINE (2)
-
-
-// Allows your Node.js server to parse JSON data from incoming requests (like reservation data)
-app.use(express.json()); 
-
-
-
-// --- DATABASE CONNECTION ---
+// --- DATABASE CONNECTION AND SERVER STARTUP ---
 const connectDB = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URI);
-    console.log('MongoDB is connected successfully!');
-
-    // Start the server ONLY if the DB connection succeeds
+    await mongoose.connect(process.env.MONGODB_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    console.log('MongoDB connected');
     app.listen(PORT, () => {
       console.log(`Server running on http://localhost:${PORT}`);
     });
@@ -49,7 +66,6 @@ const blockedDateRoutes = require('./routes/blockedDateRoutes');
 const authRoutes = require('./routes/authRoutes');
 const serviceRoutes = require('./routes/serviceRoutes');
 const contactRoutes = require('./routes/contactRoutes');
-const path = require('path');
 // Note the '..' path to go up one directory from trr-backend to new website
 app.use(express.static(path.join(__dirname, '..'))); // <--- CORRECTED PATH!
 require('./models/BlockedDate');

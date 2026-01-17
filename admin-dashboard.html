@@ -6,20 +6,15 @@
     <title>QReserve: Admin Dashboard</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
     <link rel="stylesheet" href="style.css">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <style>
-        /* Specific styling for the dashboard */
-        #dashboard-area {
-            background-color: white;
-            padding: 2rem;
-            border-radius: var(--border-radius);
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-        }
-        .dashboard-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
+        /* Tab button active state */
+        .tab-button.active {
+            background-color: var(--primary-color) !important;
+            color: white !important;
+            border-color: var(--primary-color) !important;
         }
         .status-checked-in {
             color: var(--primary-color);
@@ -29,397 +24,90 @@
             color: orange;
             font-weight: bold;
         }
+        /* Ensure modals are hidden on load */
+        .modal:not(.show) {
+            display: none !important;
+        }
+        .modal-backdrop {
+            display: none;
+        }
     </style>
 </head>
 <body>
-    <header>
-        <nav>
-            <a href="index.html" class="nav-logo" aria-label="Tito Renz Resort">
-                <img src="images/logo.png" alt="Tito Renz Resort Logo">
-            </a>
-            <ul>
-                </ul>
-        </nav>
-    </header>
+    <!-- Header navigation removed for admin pages -->
 
     <main class="has-fixed-header-offset">
-
+        <!-- Shared Admin Actions Component (Navigation/Tabs) -->
         <section id="admin-actions" class="container" style="margin-top: 20px;">
-            <!-- Role Badge Display -->
-            <div id="roleBadge" style="
-                display: inline-block;
-                padding: 8px 16px;
-                border-radius: 20px;
-                font-size: 0.85rem;
-                font-weight: 600;
-                margin-bottom: 15px;
-                background: #e7f3ff;
-                color: #007bff;
-                border: 2px solid #007bff;
-            ">
-                <span id="roleText">Loading...</span>
-            </div>
-            
-            <!-- Manager Info Box - Only visible to managers -->
-            <div id="managerInfoBox" style="
-                display: none;
-                background: #f8f9fa;
-                border-left: 4px solid #007bff;
-                padding: 12px 16px;
-                margin-bottom: 15px;
-                border-radius: 4px;
-            ">
-                <p style="margin: 0; font-size: 0.9rem; color: #495057;">
-                    <strong>ℹ️ Manager Access:</strong> You can manage daily operations (Schedule, Reservations, Check-in). 
-                    For user management, service configuration, or promo codes, contact an Administrator.
-                </p>
-            </div>
-            
-            <div class="admin-tabs">
-                <div class="tab-buttons" role="tablist" aria-label="Admin Sections">
-                    <button class="tab-button active" data-target="schedule-management" role="tab" aria-selected="true">Schedule</button>
-                    <button class="tab-button admin-only" data-target="nav-promocodes" role="tab" aria-selected="false" style="display: none;">Promo Codes</button>
-                    <button class="tab-button admin-only" data-target="user-management" role="tab" aria-selected="false" style="display: none;">Users</button>
-                    <button class="tab-button admin-only" data-target="service-management" role="tab" aria-selected="false" style="display: none;">Services</button>
-                    <button class="tab-button" data-target="dashboard-area" role="tab" aria-selected="false">Reservations</button>
-                    <button class="tab-button customer-view-tab" data-target="customer-view-section" role="tab" aria-selected="false" style="display: none;">My Reservations</button>
-                    <a class="tab-button" href="checkin.html">QR Check-in</a>
-                </div>
-            </div>
+            <!-- Component will be loaded here -->
         </section>
 
-        <section id="schedule-management" class="container card-grid">
-            <div class="card" style="padding: 20px;">
-                <h2>🗓️ Manage Resort Schedule</h2>
-                <p>Block dates for maintenance, holidays, or full capacity.</p>
-                <form id="blockDateForm" style="margin-top: 15px;">
-                    <div class="form-group" style="display: flex; gap: 20px; flex-wrap: wrap;">
-                        <div style="flex: 1; min-width: 200px;">
-                            <label for="blockStartDate">Block START Date (YYYY-MM-DD):</label>
-                            <input type="date" id="blockStartDate" required>
-                        </div>
-                        <div style="flex: 1; min-width: 200px;">
-                            <label for="blockEndDate">Block END Date (YYYY-MM-DD):</label>
-                            <input type="date" id="blockEndDate" required> 
-                        </div>
-                    </div>
-
-                    <h4>Select Service(s) to Block (Select None for ALL):</h4>
-                    <div id="serviceCheckboxes" class="checkbox-group">
-                        </div>
-                    
-                    <label for="blockReason">Reason for unavailability:</label>
-                    <input type="text" id="blockReason" name="blockReason" placeholder="e.g., Major Pool Maintenance" required>
-                    
-                    <button type="submit" class="button-primary" style="margin-top: 10px;">Block Date</button>
-                </form>
-                
-                <h3 style="margin-top: 20px;">Currently Blocked Dates:</h3>
-                <ul id="blockedDatesList" style="list-style: none; padding-left: 0;">
-                    </ul>
-            </div>
-        </section>
-        <br>
-
-        <!-- NEW PROMO CODE PANE -->
-        <div class="tab-pane fade" id="nav-promocodes" role="tabpanel" aria-labelledby="nav-promocodes-tab">
-            <h2>Promo Code Management</h2>
- 
-            <!-- 1. Creation Form -->
-            <div class="card mb-4 p-4">
-                <h4>Create New Promo Code</h4>
-                <form id="createPromoCodeForm"> 
-                    <div class="form-group-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;"> 
-                        <div class="form-group"> 
-                            <label for="newPromoCodeInput">Code (e.g., SUMMER10)</label> 
-                            <input type="text" id="newPromoCodeInput" required>
-                        </div> 
-                        <div class="form-group"> 
-                            <label for="discountPercentageInput">Discount (%)</label> 
-                            <input type="number" id="discountPercentageInput" min="1" max="100" required> 
-                        </div> 
-                        <div class="form-group"> 
-                            <label for="expirationDateInput">Expiration Date</label> 
-                            <input type="date" id="expirationDateInput" required> 
-                        </div> 
-                        <div class="form-group"> 
-                            <label for="minPurchaseAmountInput">Min Purchase (₱)</label> 
-                            <input type="number" id="minPurchaseAmountInput" min="0" value="0"> 
-                        </div> 
-                        <div class="form-group"> 
-                            <label for="usageLimitInput">Usage Limit</label> 
-                            <input type="number" id="usageLimitInput" min="1" value="50"> 
-                        </div> 
-                    </div> 
-                    <button type="submit" class="button-primary" style="margin-top: 15px;">Create Code</button> 
-                    <p id="createPromoCodeMessage" class="mt-2"></p> 
-                </form>
-            </div>
- 
-            <!-- 2. Display Table -->
-            <h4 style="margin-bottom: 1.5rem;">Existing Promo Codes</h4>
-            <div class="table-responsive">
-                <table class="table table-striped table-hover">
-                    <thead>
-                        <tr>
-                            <th>Code</th>
-                            <th>Discount</th>
-                            <th>Expires</th>
-                            <th>Min Purchase</th>
-                            <th>Used / Limit</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="promoCodeTableBody">
-                        <!-- Data will be inserted here by JavaScript -->
-                        <tr><td colspan="7" style="text-align: center; padding: 2rem;">Loading promo codes...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        <!-- END NEW PROMO CODE PANE -->
-        <br>
-
-        <!-- NEW SERVICE MANAGEMENT PANE -->
-        <div class="tab-pane fade" id="service-management" role="tabpanel" aria-labelledby="service-management-tab">
-            <h2>Service Management</h2>
- 
-            <!-- 1. Creation Form -->
-            <div class="card mb-4 p-4">
-                <h4>Create New Service</h4>
-                <form id="createServiceForm">
-                    <div class="form-group-grid" style="display: flex; flex-wrap: wrap; gap: 15px;">
-                        <div style="flex: 1 1 45%;">
-                            <label for="serviceIdInput">Service ID (unique, e.g., villa_room_5)</label>
-                            <input type="text" id="serviceIdInput" required>
-                        </div>
-                        <div style="flex: 1 1 45%;">
-                            <label for="serviceNameInput">Service Name (e.g., Villa #5)</label>
-                            <input type="text" id="serviceNameInput" required>
-                        </div>
-                        <div style="flex: 1 1 22%;">
-                            <label for="serviceTypeInput">Type</label>
-                            <select id="serviceTypeInput" required>
-                                <option value="">-- Select --</option>
-                                <option value="villa">Villa</option>
-                                <option value="charm">Charm</option>
-                                <option value="venue">Venue</option>
-                            </select>
-                        </div>
-                        <div style="flex: 1 1 22%;">
-                            <label for="serviceCategoryInput">Category</label>
-                            <select id="serviceCategoryInput" required>
-                                <option value="">-- Select --</option>
-                                <option value="accommodation">Accommodation</option>
-                                <option value="event_space">Event Space</option>
-                                <option value="water_facility">Water Facility</option>
-                            </select>
-                        </div>
-                        <div style="flex: 1 1 22%;">
-                            <label for="serviceMaxGuestsInput">Max Guests</label>
-                            <input type="number" id="serviceMaxGuestsInput" min="1" required>
-                        </div>
-                        <div style="flex: 1 1 100%;">
-                            <label for="serviceDescriptionInput">Description</label>
-                            <textarea id="serviceDescriptionInput" rows="2" required></textarea>
-                        </div>
-                        <div style="flex: 1 1 45%;">
-                            <label for="serviceImageInput">Main Image</label>
-                            <input type="file" id="serviceImageInput" accept="image/*" required>
-                            <small style="color: #666; display: block; margin-top: 5px;">Selected: <span id="serviceImageName">None</span></small>
-                        </div>
-                        <div style="flex: 1 1 45%;">
-                            <label for="serviceGalleryInput">Gallery Images</label>
-                            <input type="file" id="serviceGalleryInput" accept="image/*" multiple>
-                            <small style="color: #666; display: block; margin-top: 5px;">Selected: <span id="serviceGalleryCount">0</span> image(s)</small>
-                        </div>
-                        <div style="flex: 1 1 100%;">
-                            <label for="serviceInclusionsInput">Inclusions (comma-separated)</label>
-                            <textarea id="serviceInclusionsInput" rows="2" placeholder="Item 1, Item 2, Item 3"></textarea>
-                        </div>
-                        <div style="flex: 1 1 100%;">
-                            <label for="serviceNotesInput">Notes (optional)</label>
-                            <textarea id="serviceNotesInput" rows="2"></textarea>
-                        </div>
-                    </div>
-                    <h5 style="margin-top: 20px;">Durations / Time Slots</h5>
-                    <div id="durationsContainer" style="margin-bottom: 15px; border: 1px solid #dee2e6; padding: 15px; border-radius: 6px;">
-                        <!-- Repeating duration rows will be inserted here -->
-                    </div>
-                    <button type="button" id="addDurationBtn" class="button-secondary" style="margin-bottom: 15px;">+ Add Duration</button>
-                    <button type="submit" class="button-primary" style="margin-top: 15px;">Create Service</button>
-                    <p id="createServiceMessage" class="mt-2"></p>
-                </form>
-            </div>
- 
-            <!-- 2. Display Table -->
-            <h4>Existing Services</h4>
-            <div class="table-scroll-wrapper">
-                <table class="table table-striped table-hover">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Name</th>
-                            <th>Type</th>
-                            <th>Category</th>
-                            <th>Max Guests</th>
-                            <th>Active Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="serviceTableBody">
-                        <!-- Data will be inserted here by JavaScript -->
-                        <tr><td colspan="7" class="text-center">Loading services...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        <!-- END NEW SERVICE MANAGEMENT PANE -->
-        <br>
-
-        <section id="user-management" class="admin-section" style="margin-bottom: 30px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <div>
-                    <h2>Admin: User Accounts Management</h2>
-                    <p>List of all accounts registered in the database. Use this section to manage roles and accounts.</p>
-                    
-                    <!-- Role Capabilities Reference -->
-                    <details style="margin-top: 10px; background: #f8f9fa; padding: 12px; border-radius: 4px; border: 1px solid #dee2e6;">
-                        <summary style="cursor: pointer; font-weight: 600; color: #495057;">
-                            📋 Role Capabilities Reference
-                        </summary>
-                        <div style="margin-top: 10px; font-size: 0.9rem;">
-                            <p style="margin: 8px 0;"><strong>👑 Administrator:</strong></p>
-                            <ul style="margin: 0 0 12px 20px; padding: 0;">
-                                <li>Full system access</li>
-                                <li>Manage users, services, and promo codes</li>
-                                <li>Configure blocked dates and schedules</li>
-                                <li>View and manage all reservations</li>
-                                <li>QR check-in capabilities</li>
-                            </ul>
-                            
-                            <p style="margin: 8px 0;"><strong>👔 Manager:</strong></p>
-                            <ul style="margin: 0 0 12px 20px; padding: 0;">
-                                <li>Daily operations management</li>
-                                <li>Manage blocked dates and schedules</li>
-                                <li>View and manage all reservations</li>
-                                <li>QR check-in capabilities</li>
-                                <li><em>Cannot: Manage users, services, or promo codes</em></li>
-                            </ul>
-                            
-                            <p style="margin: 8px 0;"><strong>👤 Customer:</strong></p>
-                            <ul style="margin: 0 0 0 20px; padding: 0;">
-                                <li>Make reservations</li>
-                                <li>View personal booking history</li>
-                                <li>Update profile information</li>
-                                <li><em>No admin dashboard access</em></li>
-                            </ul>
-                        </div>
-                    </details>
-                </div>
-                <button class="button-primary" onclick="openCreateAccountModal()" style="height: fit-content;">
-                    ➕ Add Account
-                </button>
-            </div>
-            
-            <div class="table-container">
-                <table class="reservation-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>Contact</th>
-                            <th>Role (ID)</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="users-table-body">
-                        <tr><td colspan="7" style="text-align: center;">Loading User Accounts...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </section>
-        
-        <section id="dashboard-area">
-            <div class="dashboard-header">
-                <h2>Admin: Reservation Management </h2>
-                <div>
-                    <button id="report-button" class="button-primary">Generate Report </button>
-                </div>
-            </div>
-
-            <div class="table-scroll-wrapper">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Customer</th>
-                            <th>Email</th>
-                            <th>Service-type</th>
-                            <th>Check-in Date</th>
-                            <th>Total Amount</th>
-                            <th>Status</th>
-                            <th>GCash Ref #</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="admin-reservation-list">
-                        </tbody>
-                </table>
-            </div>
-        </section>
+        <!-- Dynamic Admin Sections - Loaded via Component Loader -->
+        <div id="schedule-management-container"></div>
+        <div id="user-management-container"></div>
+        <div id="dashboard-area-container"></div>
+        <div id="nav-promocodes-container"></div>
+        <div id="service-management-container"></div>
+        <div id="customer-view-section-container"></div>
+        <div id="payment-verifications-section-container"></div>
     </main>
 
     <!-- CREATE/EDIT ACCOUNT MODAL -->
-    <div id="accountModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.4); overflow-y: auto;">
-        <div style="background-color: white; margin: 5% auto 5% auto; padding: 30px; border-radius: 8px; width: 90%; max-width: 500px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-height: 85vh; overflow-y: auto;">
-            <span style="color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer; float: right;" onclick="closeAccountModal()">&times;</span>
-            <h2 id="accountModalTitle">Create New Account</h2>
-            <form id="accountForm" style="display: flex; flex-direction: column; gap: 15px; margin-top: 20px;">
-                <div class="form-group">
-                    <label for="accountFirstName">First Name:</label>
-                    <input type="text" id="accountFirstName" name="firstName" required>
+    <div class="modal fade" id="accountModal" tabindex="-1" aria-labelledby="accountModalLabel" aria-hidden="true" style="display: none;">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="accountModalTitle">Create New Account</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="closeAccountModal()"></button>
                 </div>
-                <div class="form-group">
-                    <label for="accountMiddleName">Middle Name (Optional):</label>
-                    <input type="text" id="accountMiddleName" name="middleName" placeholder="N/A if none">
-                </div>
-                <div class="form-group">
-                    <label for="accountLastName">Last Name:</label>
-                    <input type="text" id="accountLastName" name="lastName" required>
-                </div>
-                <div class="form-group">
-                    <label for="accountEmail">Email Address:</label>
-                    <input type="email" id="accountEmail" name="email" required>
-                </div>
-                <div class="form-group">
-                    <label for="accountPhone">Contact Number:</label>
-                    <input type="tel" id="accountPhone" name="phone" pattern="[0-9]{11}" title="Contact number must be 11 digits (e.g., 09123456789)" required>
-                </div>
-                <div class="form-group">
-                    <label for="accountPassword">Password <span id="passwordLabel">(Min 6 characters):</span></label>
-                    <input type="password" id="accountPassword" name="password" minlength="6" required>
-                </div>
-                <div class="form-group">
-                    <label for="accountRole">Role:</label>
-                    <select id="accountRole" name="role" required>
-                        <option value="">-- Select Role --</option>
-                        <option value="customer">Customer</option>
-                        <option value="manager">Manager</option>
-                        <option value="admin">Admin</option>
-                    </select>
-                </div>
-                <div style="display: flex; gap: 10px;">
-                    <button type="submit" class="button-primary" style="flex: 1;">Save Account</button>
-                    <button type="button" class="button-secondary" onclick="closeAccountModal()" style="flex: 1;">Cancel</button>
-                </div>
-                <p id="accountFormMessage" style="color: red; text-align: center; margin-top: 10px;"></p>
-            </form>
+                <form id="accountForm">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="accountFirstName" class="form-label">First Name</label>
+                            <input type="text" class="form-control" id="accountFirstName" name="firstName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="accountMiddleName" class="form-label">Middle Name (Optional)</label>
+                            <input type="text" class="form-control" id="accountMiddleName" name="middleName" placeholder="N/A if none">
+                        </div>
+                        <div class="mb-3">
+                            <label for="accountLastName" class="form-label">Last Name</label>
+                            <input type="text" class="form-control" id="accountLastName" name="lastName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="accountEmail" class="form-label">Email Address</label>
+                            <input type="email" class="form-control" id="accountEmail" name="email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="accountPhone" class="form-label">Contact Number</label>
+                            <input type="tel" class="form-control" id="accountPhone" name="phone" pattern="[0-9]{11}" title="Contact number must be 11 digits (e.g., 09123456789)" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="accountPassword" class="form-label">Password <span id="passwordLabel" class="text-muted">(Min 6 characters)</span></label>
+                            <input type="password" class="form-control" id="accountPassword" name="password" minlength="6" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="accountRole" class="form-label">Role</label>
+                            <select class="form-select" id="accountRole" name="role" required>
+                                <option value="">-- Select Role --</option>
+                                <option value="customer">Customer</option>
+                                <option value="manager">Manager</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                        </div>
+                        <div id="accountFormMessage" class="alert alert-danger d-none" role="alert"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closeAccountModal()">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Account</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
+    
+    <!-- Admin Profile Modal (loaded as component) -->
+    <div id="admin-profile-modal-container"></div>
 
     <footer>
         <div class="footer-content">
@@ -448,68 +136,178 @@
             </div>
         </div>
         
-        <!-- Customer View Section -->
-        <section id="customer-view-section" class="container tab-pane" style="display: none;">
-            <div class="row">
-                <div class="col-12 mb-4">
-                    <h2>👤 My Reservations</h2>
-                    <p>View and manage your resort reservations</p>
-                </div>
-            </div>
-            
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div id="customer-profile-info"></div>
-                </div>
-            </div>
-            
-            <div class="row">
-                <div class="col-12">
-                    <div id="customer-reservations-list"></div>
-                </div>
-            </div>
-            
-            <div class="row mt-4">
-                <div class="col-12 text-center">
-                    <a href="services-list.html" class="btn btn-primary btn-lg">
-                        Make New Reservation
-                    </a>
-                </div>
-            </div>
-        </section>
-        
         <div class="footer-bottom">
             <p>&copy; 2025 QReserve Project - All Rights Reserved.</p>
         </div>
     </footer>
 
+    <script src="admin-component-loader.js"></script>
     <script src="notifications.js"></script>
     <script src="script.js"></script>
     <script src="customer-dashboard.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
     <script>
     // Tab switching for admin dashboard
-    (function(){
-        function showTab(targetId) {
-            // Deactivate all tab buttons
-            document.querySelectorAll('.tab-button').forEach(btn => {
-                btn.classList.toggle('active', btn.getAttribute('data-target') === targetId);
-                if (btn.getAttribute('data-target')) {
-                    btn.setAttribute('aria-selected', btn.getAttribute('data-target') === targetId ? 'true' : 'false');
-                }
+    function showTab(targetId) {
+        // Deactivate all tab buttons
+        document.querySelectorAll('.tab-button').forEach(btn => {
+            btn.classList.toggle('active', btn.getAttribute('data-target') === targetId);
+            if (btn.getAttribute('data-target')) {
+                btn.setAttribute('aria-selected', btn.getAttribute('data-target') === targetId ? 'true' : 'false');
+            }
+        });
+
+        // Hide all panes and mark the targeted one active
+        document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+        const pane = document.getElementById(targetId);
+        if (pane) pane.classList.add('active');
+
+        // Also scroll to top of admin area for visibility
+        const adminTop = document.getElementById('admin-actions');
+        if (adminTop) adminTop.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Initialize role-based UI visibility
+    function initializeRoleBasedUI() {
+        const userRole = localStorage.getItem('qreserve_user_role');
+        const adminOnlyElements = document.querySelectorAll('.admin-only');
+        const managerOnlyElements = document.querySelectorAll('.admin-manager-only'); // NEW
+        const customerViewTab = document.querySelector('.customer-view-tab');
+        const roleBadge = document.getElementById('roleBadge');
+        const roleText = document.getElementById('roleText');
+        const managerInfoBox = document.getElementById('managerInfoBox');
+        
+        console.log('Initializing role-based UI. User role:', userRole);
+        
+        // Show admin-only tabs if user is admin (not manager)
+        if (userRole === 'admin') {
+            adminOnlyElements.forEach(el => {
+                el.style.display = '';
             });
-
-            // Hide all panes and mark the targeted one active
-            document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-            const pane = document.getElementById(targetId);
-            if (pane) pane.classList.add('active');
-
-            // Also scroll to top of admin area for visibility
-            const adminTop = document.getElementById('admin-actions');
-            if (adminTop) adminTop.scrollIntoView({ behavior: 'smooth' });
+            managerOnlyElements.forEach(el => { // NEW
+                el.style.display = ''; // Visible for admin
+            });
+            
+            // Hide customer view for admins
+            if (customerViewTab) {
+                customerViewTab.style.display = 'none';
+            }
+            
+            // Update role badge
+            if (roleBadge && roleText) {
+                roleText.textContent = '👑 Administrator - Full Access';
+                roleBadge.className = 'badge rounded-pill mb-2 bg-warning text-dark';
+            }
+            
+            // Hide manager info box
+            if (managerInfoBox) {
+                managerInfoBox.style.display = 'none';
+            }
+            
+            console.log('✅ Admin tabs visible (Users, Services, Promo Codes, Payment Verifications)');
+        } else if (userRole === 'manager') {
+            adminOnlyElements.forEach(el => {
+                el.style.display = 'none';
+            });
+            managerOnlyElements.forEach(el => { // NEW
+                el.style.display = ''; // Visible for manager
+            });
+            
+            // Hide customer view for managers
+            if (customerViewTab) {
+                customerViewTab.style.display = 'none';
+            }
+            
+            // Update role badge
+            if (roleBadge && roleText) {
+                roleText.textContent = '👔 Manager - Limited Access';
+                roleBadge.className = 'badge rounded-pill mb-2 bg-primary';
+            }
+            
+            // Show manager info box
+            if (managerInfoBox) {
+                managerInfoBox.style.display = 'block';
+            }
+            
+            console.log('ℹ️ Manager view: Limited tabs (Schedule, Reservations, Check-in, Payment Verifications)');
+        } else {
+            // Customer view - hide admin-only and manager-only tabs, show customer view
+            adminOnlyElements.forEach(el => {
+                el.style.display = 'none';
+            });
+            managerOnlyElements.forEach(el => { // NEW
+                el.style.display = 'none';
+            });
+            
+            // Show customer view tab for customers
+            if (customerViewTab) {
+                customerViewTab.style.display = '';
+            }
+            
+            // Update role badge for customers
+            if (roleBadge && roleText) {
+                roleText.textContent = '👤 Customer View';
+                roleBadge.className = 'badge rounded-pill mb-2 bg-success';
+            }
+            
+            if (managerInfoBox) {
+                managerInfoBox.style.display = 'none';
+            }
+            
+            console.log('👤 Customer view enabled');
         }
+    }
 
-        document.addEventListener('DOMContentLoaded', () => {
+    // Make functions globally available
+    window.showTab = showTab;
+    window.initializeRoleBasedUI = initializeRoleBasedUI;
+
+    // Main initialization
+    document.addEventListener('DOMContentLoaded', async () => {
+        console.log('🚀 Initializing Admin Dashboard with Component Loader...');
+        
+        // Ensure account modal is hidden on load
+        const accountModal = document.getElementById('accountModal');
+        if (accountModal) {
+            accountModal.style.display = 'none';
+            accountModal.setAttribute('aria-hidden', 'true');
+            accountModal.classList.remove('show');
+        }
+        
+        // Load shared admin actions component first
+        await adminComponentLoader.loadComponent('admin-actions.html', 'admin-actions');
+        
+        // Load admin profile modal
+        await adminComponentLoader.loadComponent('admin-profile-modal.html', 'admin-profile-modal-container');
+        
+        // Ensure profile modal is also hidden on load and function is available
+        setTimeout(() => {
+            const profileModal = document.getElementById('adminProfileModal');
+            if (profileModal) {
+                profileModal.style.display = 'none';
+                profileModal.setAttribute('aria-hidden', 'true');
+                profileModal.classList.remove('show');
+            }
+            // Ensure openAdminProfileModal is available globally
+            if (typeof openAdminProfileModal === 'function') {
+                window.openAdminProfileModal = openAdminProfileModal;
+            }
+        }, 100);
+        
+        // Load all admin section components
+        await adminComponentLoader.loadComponents([
+            { path: 'admin-schedule.html', target: 'schedule-management-container' },
+            { path: 'admin-users.html', target: 'user-management-container' },
+            { path: 'admin-reservations.html', target: 'dashboard-area-container' },
+            { path: 'admin-promo-codes.html', target: 'nav-promocodes-container' },
+            { path: 'admin-services.html', target: 'service-management-container' },
+            { path: 'admin-customer-view.html', target: 'customer-view-section-container' }
+        ]);
+
+        // Wait a bit for components to render
+        setTimeout(() => {
             // Ensure sections have .tab-pane class
             ['schedule-management','nav-promocodes','service-management','user-management','dashboard-area','customer-view-section'].forEach(id => {
                 const el = document.getElementById(id);
@@ -534,95 +332,10 @@
             if (typeof initCustomerDashboard === 'function') {
                 initCustomerDashboard();
             }
-        });
-    })();
-    
-    // Initialize role-based UI visibility
-    function initializeRoleBasedUI() {
-        const userRole = localStorage.getItem('qreserve_user_role');
-        const adminOnlyElements = document.querySelectorAll('.admin-only');
-        const customerViewTab = document.querySelector('.customer-view-tab');
-        const roleBadge = document.getElementById('roleBadge');
-        const roleText = document.getElementById('roleText');
-        const managerInfoBox = document.getElementById('managerInfoBox');
-        
-        console.log('Initializing role-based UI. User role:', userRole);
-        
-        // Show admin-only tabs if user is admin (not manager)
-        if (userRole === 'admin') {
-            adminOnlyElements.forEach(el => {
-                el.style.display = '';
-            });
             
-            // Hide customer view for admins
-            if (customerViewTab) {
-                customerViewTab.style.display = 'none';
-            }
-            
-            // Update role badge
-            if (roleBadge && roleText) {
-                roleText.textContent = '👑 Administrator - Full Access';
-                roleBadge.style.background = '#fff3cd';
-                roleBadge.style.color = '#856404';
-                roleBadge.style.borderColor = '#ffc107';
-            }
-            
-            // Hide manager info box
-            if (managerInfoBox) {
-                managerInfoBox.style.display = 'none';
-            }
-            
-            console.log('✅ Admin tabs visible (Users, Services, Promo Codes)');
-        } else if (userRole === 'manager') {
-            adminOnlyElements.forEach(el => {
-                el.style.display = 'none';
-            });
-            
-            // Hide customer view for managers
-            if (customerViewTab) {
-                customerViewTab.style.display = 'none';
-            }
-            
-            // Update role badge
-            if (roleBadge && roleText) {
-                roleText.textContent = '👔 Manager - Limited Access';
-                roleBadge.style.background = '#e7f3ff';
-                roleBadge.style.color = '#007bff';
-                roleBadge.style.borderColor = '#007bff';
-            }
-            
-            // Show manager info box
-            if (managerInfoBox) {
-                managerInfoBox.style.display = 'block';
-            }
-            
-            console.log('ℹ️ Manager view: Limited tabs (Schedule, Reservations, Check-in)');
-        } else {
-            // Customer view - hide admin-only tabs, show customer view
-            adminOnlyElements.forEach(el => {
-                el.style.display = 'none';
-            });
-            
-            // Show customer view tab for customers
-            if (customerViewTab) {
-                customerViewTab.style.display = '';
-            }
-            
-            // Update role badge for customers
-            if (roleBadge && roleText) {
-                roleText.textContent = '👤 Customer View';
-                roleBadge.style.background = '#d4edda';
-                roleBadge.style.color = '#155724';
-                roleBadge.style.borderColor = '#28a745';
-            }
-            
-            if (managerInfoBox) {
-                managerInfoBox.style.display = 'none';
-            }
-            
-            console.log('👤 Customer view enabled');
-        }
-    }
+            console.log('✅ Admin Dashboard initialized successfully');
+        }, 100);
+    });
     </script>
 </body>
 </html>

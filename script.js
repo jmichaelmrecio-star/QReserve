@@ -1471,33 +1471,26 @@ function populateAdminReservationTable(listElement, data = []) {
     let actionButtonsHTML = '';
     if (statusValue === 'checked-in') {
       // Show Checkout Override button for checked-in reservations
-      actionButtonsHTML = `
-                <span class="status-badge" style="background-color: #28a745; color: white; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.85rem; margin-right: 0.5rem;">Checked-in</span>
-                <button 
-                    class="bg-purple-600 hover:bg-purple-800 text-white py-1 px-3 rounded text-sm"
-                    onclick="checkoutReservation('${res._id || res.id}')"
-                    title="Mark as completed and checkout"
-                >✓ Checkout</button>
-            `;
+      actionButtonsHTML = '<span class="badge bg-success">Checked-in</span>';
     } else if (statusValue === 'completed') {
       // Show completed badge only
-      actionButtonsHTML = '<span class="status-badge" style="background-color: #6c757d; color: white; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.85rem;">Completed</span>';
+      actionButtonsHTML = '<span class="badge bg-secondary">Completed</span>';
     } else {
       // Show action buttons for non-checked-in reservations
       actionButtonsHTML = `
-                <button 
-                    class="bg-blue-500 hover:bg-blue-700 text-white py-1 px-3 rounded text-sm"
-                    onclick="markReservationAsPaid('${res._id || res.id}')"
-                >Mark Paid</button>
-                <button 
-                    class="bg-green-500 hover:bg-green-700 text-white py-1 px-3 rounded text-sm ml-1"
-                    onclick="confirmReservation('${res._id || res.id}')"
-                >Confirm</button>
-                <button 
-                    class="bg-red-500 hover:bg-red-700 text-white py-1 px-3 rounded text-sm ml-1"
-                    onclick="cancelReservation('${res._id || res.id}')"
-                >Cancel</button>
-            `;
+        <button 
+          class="btn btn-primary btn-sm me-1"
+          onclick="markReservationAsPaid('${res._id || res.id}')"
+        >Mark Paid</button>
+        <button 
+          class="btn btn-success btn-sm me-1"
+          onclick="confirmReservation('${res._id || res.id}')"
+        >Confirm</button>
+        <button 
+          class="btn btn-danger btn-sm"
+          onclick="cancelReservation('${res._id || res.id}')"
+        >Cancel</button>
+      `;
     }
     
     // Format payment amount display based on payment type
@@ -1530,6 +1523,21 @@ function populateAdminReservationTable(listElement, data = []) {
 
     listElement.appendChild(row);
   });
+  
+  // Initialize DataTables for reservations table if available
+  if (typeof $ !== 'undefined' && $.fn.DataTable && listElement.closest('table')) {
+    const table = listElement.closest('table');
+    // Destroy existing DataTable instance if it exists
+    if ($.fn.DataTable.isDataTable(table)) {
+      $(table).DataTable().destroy();
+    }
+    // Initialize new DataTable
+    $(table).DataTable({
+      pageLength: 25,
+      order: [[4, 'desc']], // Sort by check-in date
+      responsive: true
+    });
+  }
 }
 
 function renderLocalAdminReservations(listElement) {
@@ -1577,19 +1585,9 @@ function setRole(role) {
 
 // Function to handle logout
 function logout() {
-  // --- CRITICAL FIXES: Remove OLD keys and add the NEW key ---
-
-  // 1. Remove the NEW master authentication object
-  localStorage.removeItem("loggedInUser");
-
-  // 2. Remove the OLD, now deprecated keys (just in case they were used elsewhere)
-  localStorage.removeItem("qreserve_user_role");
-  localStorage.removeItem("qreserve_logged_user_email");
-
-  // --- Clear session storage for reservations (Keep this) ---
-  sessionStorage.removeItem("selectedServiceId");
-  sessionStorage.removeItem("selectedServiceName");
-  sessionStorage.removeItem("selectedServicePrice");
+  // Clear all localStorage and sessionStorage for full logout
+  localStorage.clear();
+  sessionStorage.clear();
 
   showToast("Logged out successfully!", "success");
   setTimeout(() => {
@@ -1870,7 +1868,12 @@ async function loginUser(event) {
     // 3. Store user email for incomplete reservation tracking
     localStorage.setItem("qreserve_logged_user_email", data.user.email);
 
-    // 4. Redirect based on the URL sent from the server
+    // 4. Store lowercase role for dashboard logic
+    if (data.user.role && typeof data.user.role === "string") {
+      localStorage.setItem("qreserve_user_role", data.user.role.toLowerCase().trim());
+    }
+
+    // 5. Redirect based on the URL sent from the server
     showToast(
       `Login successful! Redirecting to the ${
         data.user.role === "Customer" ? "home page" : "Admin Dashboard"
@@ -2285,13 +2288,25 @@ let allRoles = []; // Cache for role mappings
 function openCreateAccountModal() {
   accountModalMode = "create";
   editingAccountId = null;
-  document.getElementById("accountModalTitle").textContent =
-    "Create New Account";
-  document.getElementById("accountForm").reset();
-  document.getElementById("accountPassword").required = true;
-  document.getElementById("passwordLabel").textContent = "(Min 6 characters):";
-  document.getElementById("accountFormMessage").textContent = "";
-  document.getElementById("accountModal").style.display = "block";
+  const titleEl = document.getElementById("accountModalTitle");
+  if (titleEl) titleEl.textContent = "Create New Account";
+  const form = document.getElementById("accountForm");
+  if (form) form.reset();
+  const passwordEl = document.getElementById("accountPassword");
+  if (passwordEl) passwordEl.required = true;
+  const passwordLabel = document.getElementById("passwordLabel");
+  if (passwordLabel) passwordLabel.textContent = "(Min 6 characters)";
+  const messageEl = document.getElementById("accountFormMessage");
+  if (messageEl) {
+    messageEl.textContent = "";
+    messageEl.classList.add("d-none");
+  }
+  // Use Bootstrap modal
+  const modalEl = document.getElementById("accountModal");
+  if (modalEl) {
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
+  }
 }
 
 // --- Open Edit Account Modal (by ID) ---
@@ -2334,14 +2349,28 @@ function openEditAccountModal(userId, user) {
     document.getElementById("accountRole").value = roleValue;
   }
 
-  document.getElementById("accountFormMessage").textContent = "";
-  document.getElementById("accountModal").style.display = "block";
+  const messageEl = document.getElementById("accountFormMessage");
+  if (messageEl) {
+    messageEl.textContent = "";
+    messageEl.classList.add("d-none");
+  }
+  // Use Bootstrap modal
+  const modalEl = document.getElementById("accountModal");
+  if (modalEl) {
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
+  }
 }
 
 // --- Close Account Modal ---
 function closeAccountModal() {
-  document.getElementById("accountModal").style.display = "none";
-  document.getElementById("accountForm").reset();
+  const modalEl = document.getElementById("accountModal");
+  if (modalEl) {
+    const modal = bootstrap.Modal.getInstance(modalEl);
+    if (modal) modal.hide();
+  }
+  const form = document.getElementById("accountForm");
+  if (form) form.reset();
   accountModalMode = "create";
   editingAccountId = null;
 }
@@ -2361,20 +2390,26 @@ async function handleAccountFormSubmit(event) {
 
   // Validation
   if (!firstName || !lastName || !email || !phone || !roleValue) {
-    messageEl.textContent = "Please fill in all required fields.";
-    messageEl.style.color = "red";
+    if (messageEl) {
+      messageEl.textContent = "Please fill in all required fields.";
+      messageEl.classList.remove("d-none");
+    }
     return;
   }
 
   if (accountModalMode === "create" && !password) {
-    messageEl.textContent = "Password is required for new accounts.";
-    messageEl.style.color = "red";
+    if (messageEl) {
+      messageEl.textContent = "Password is required for new accounts.";
+      messageEl.classList.remove("d-none");
+    }
     return;
   }
 
   if (password && password.length < 6) {
-    messageEl.textContent = "Password must be at least 6 characters.";
-    messageEl.style.color = "red";
+    if (messageEl) {
+      messageEl.textContent = "Password must be at least 6 characters.";
+      messageEl.classList.remove("d-none");
+    }
     return;
   }
 
@@ -2424,13 +2459,18 @@ async function handleAccountFormSubmit(event) {
     const data = await response.json();
 
     if (!response.ok) {
-      messageEl.textContent = data.message || "Operation failed.";
-      messageEl.style.color = "red";
+      if (messageEl) {
+        messageEl.textContent = data.message || "Operation failed.";
+        messageEl.classList.remove("d-none");
+      }
       return;
     }
 
-    messageEl.textContent = data.message || "Account saved successfully!";
-    messageEl.style.color = "green";
+    if (messageEl) {
+      messageEl.textContent = data.message || "Account saved successfully!";
+      messageEl.classList.remove("d-none", "alert-danger");
+      messageEl.classList.add("alert-success");
+    }
 
     // Refresh the user list
     setTimeout(() => {
@@ -2439,7 +2479,12 @@ async function handleAccountFormSubmit(event) {
     }, 1000);
   } catch (error) {
     console.error("Error:", error);
-    messageEl.textContent = "Network error. Please try again.";
+    if (messageEl) {
+      messageEl.textContent = "Network error. Please try again.";
+      messageEl.classList.remove("d-none");
+      messageEl.classList.remove("alert-success");
+      messageEl.classList.add("alert-danger");
+    }
     messageEl.style.color = "red";
   }
 }
@@ -2604,16 +2649,30 @@ async function renderUsersList() {
       // Actions cell
       const actionsCell = row.insertCell();
       actionsCell.innerHTML = `
-                <button class="button-small button-secondary" onclick="openEditAccountModalById('${
+                <button class="btn btn-sm btn-outline-primary me-1" onclick="openEditAccountModalById('${
                   user._id
                 }')">✏️ Edit</button>
                 ${
                   user.isActive
-                    ? `<button class="button-small button-danger" onclick="deactivateAccount('${user._id}')">🔒 Deactivate</button>`
-                    : `<button class="button-small button-success" onclick="activateAccount('${user._id}')">✓ Activate</button>`
+                    ? `<button class="btn btn-sm btn-danger" onclick="deactivateAccount('${user._id}')">🔒 Deactivate</button>`
+                    : `<button class="btn btn-sm btn-success" onclick="activateAccount('${user._id}')">✓ Activate</button>`
                 }
             `;
     });
+    
+    // Initialize DataTables if available
+    if (typeof $ !== 'undefined' && $.fn.DataTable) {
+      // Destroy existing DataTable instance if it exists
+      if ($.fn.DataTable.isDataTable(userTableBody.closest('table'))) {
+        $(userTableBody.closest('table')).DataTable().destroy();
+      }
+      // Initialize new DataTable
+      $(userTableBody.closest('table')).DataTable({
+        pageLength: 10,
+        order: [[0, 'desc']],
+        responsive: true
+      });
+    }
   } catch (error) {
     console.error("Error loading user list:", error);
     userTableBody.innerHTML = `<tr><td colspan="7" style="color: red; text-align: center;">Error loading users: ${error.message}</td></tr>`;
@@ -2920,6 +2979,10 @@ async function cancelReservation(reservationId) {
   );
 }
 
+/**
+ * Fetches reservations with 'PENDING' payment status and renders them for admin verification.
+ */
+
 // Manual Checkout Override - Admin/Staff Only
 async function checkoutReservation(reservationId) {
   // Check if user is admin/manager
@@ -3059,6 +3122,10 @@ window.deleteUser = deleteUser;
 
 // Load available services for the checkboxes
 async function loadServicesForBlocking() {
+  if (!serviceCheckboxes) {
+    console.warn('loadServicesForBlocking: serviceCheckboxes element not found');
+    return;
+  }
   try {
     const response = await fetch("/api/services"); // Update with your actual API endpoint
 
@@ -3115,6 +3182,10 @@ async function loadServicesForBlocking() {
 
 // Set up the block date form submission
 function setupBlockDateForm() {
+  if (!blockDateForm || !blockStartDate || !blockEndDate || !blockReason) {
+    console.warn('setupBlockDateForm: Required elements not found');
+    return;
+  }
   blockDateForm.addEventListener("submit", async (e) => {
     e.preventDefault();
 
@@ -3319,7 +3390,7 @@ function renderBlockedDates(blockedDates) {
                             )}</td>
                             <td style="padding: 12px; border: 1px solid #dee2e6;">${appliesTo}</td>
                             <td style="padding: 12px; border: 1px solid #dee2e6;">
-                                <button class="button-danger" style="padding: 8px 16px; cursor: pointer;" onclick="unblockDate('${id}')">
+                                <button class="btn btn-sm btn-danger" onclick="unblockDate('${id}')">
                                     Unblock
                                 </button>
                             </td>
@@ -3332,6 +3403,23 @@ function renderBlockedDates(blockedDates) {
     `;
 
   blockedDatesList.innerHTML = html;
+  
+  // Initialize DataTables for blocked dates table if available
+  if (typeof $ !== 'undefined' && $.fn.DataTable) {
+    const table = blockedDatesList.querySelector('table');
+    if (table) {
+      // Destroy existing DataTable instance if it exists
+      if ($.fn.DataTable.isDataTable(table)) {
+        $(table).DataTable().destroy();
+      }
+      // Initialize new DataTable
+      $(table).DataTable({
+        pageLength: 10,
+        order: [[0, 'desc']],
+        responsive: true
+      });
+    }
+  }
 }
 
 // Unblock a date range
@@ -4992,7 +5080,7 @@ async function renderPromoCodeTable() {
                 <td>${code.timesUsed} / ${code.usageLimit}</td>
                 <td><span class="${statusClass}">${statusText}</span></td>
                 <td>
-                    <button class="button-small button-danger" onclick="deletePromoCode('${
+                    <button class="btn btn-sm btn-danger" onclick="deletePromoCode('${
                       code._id
                     }')">
                         Delete
@@ -5000,6 +5088,23 @@ async function renderPromoCodeTable() {
                 </td>
             `;
     });
+    
+    // Initialize DataTables if available
+    if (typeof $ !== 'undefined' && $.fn.DataTable) {
+      const table = tableBody.closest('table');
+      if (table) {
+        // Destroy existing DataTable instance if it exists
+        if ($.fn.DataTable.isDataTable(table)) {
+          $(table).DataTable().destroy();
+        }
+        // Initialize new DataTable
+        $(table).DataTable({
+          pageLength: 10,
+          order: [[2, 'desc']], // Sort by expiration date
+          responsive: true
+        });
+      }
+    }
   } catch (error) {
     console.error("Network Error during fetching codes:", error);
     tableBody.innerHTML =
@@ -5446,8 +5551,8 @@ async function renderServiceTable() {
 
       const actionBtn =
         service.isActive !== false
-          ? `<button class="button-secondary" onclick="editService('${service._id}')" style="margin-right: 5px;">✏️ Edit</button><button class="button-danger" onclick="deactivateServiceAndRefresh('${service._id}')">🗑️ Deactivate</button>`
-          : `<button class="button-primary" onclick="activateServiceAndRefresh('${service._id}')" style="margin-right: 5px;">✅ Activate</button><button class="button-secondary" onclick="editService('${service._id}')">✏️ Edit</button>`;
+          ? `<button class="btn btn-sm btn-outline-primary me-1" onclick="editService('${service._id}')">✏️ Edit</button><button class="btn btn-sm btn-danger" onclick="deactivateServiceAndRefresh('${service._id}')">🗑️ Deactivate</button>`
+          : `<button class="btn btn-sm btn-success me-1" onclick="activateServiceAndRefresh('${service._id}')">✅ Activate</button><button class="btn btn-sm btn-outline-primary" onclick="editService('${service._id}')">✏️ Edit</button>`;
 
       const row = tableBody.insertRow();
       row.innerHTML = `
@@ -5460,6 +5565,23 @@ async function renderServiceTable() {
                 <td>${actionBtn}</td>
             `;
     });
+    
+    // Initialize DataTables if available
+    if (typeof $ !== 'undefined' && $.fn.DataTable) {
+      const table = tableBody.closest('table');
+      if (table) {
+        // Destroy existing DataTable instance if it exists
+        if ($.fn.DataTable.isDataTable(table)) {
+          $(table).DataTable().destroy();
+        }
+        // Initialize new DataTable
+        $(table).DataTable({
+          pageLength: 10,
+          order: [[1, 'asc']], // Sort by name
+          responsive: true
+        });
+      }
+    }
   } catch (error) {
     console.error("Error rendering service table:", error);
     tableBody.innerHTML =
@@ -7135,3 +7257,5 @@ document.addEventListener("DOMContentLoaded", () => {
     slides[currentIndex].classList.add("active");
   }
 });
+
+

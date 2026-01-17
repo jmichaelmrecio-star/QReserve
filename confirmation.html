@@ -108,6 +108,7 @@
         <p style="margin-top: 30px; font-size: 0.8rem; color: #999;">
             Please present this page (printed or digital) upon arrival.
         </p>
+        <a href="profile.html" class="btn btn-secondary" style="display:inline-block;margin-top:18px;padding:10px 24px;background:#007bff;color:#fff;border:none;border-radius:6px;text-decoration:none;font-weight:600;">Go Back to Profile</a>
     </div>
 
 <script>
@@ -170,9 +171,6 @@
 
     document.addEventListener('DOMContentLoaded', async () => {
         const qrCodeHash = getUrlParameter('hash');
-        
-        const hashDisplay = document.getElementById('qrCodeHashDisplay');
-        const idDisplay = document.getElementById('reservationIdDisplay');
         const formalIdDisplay = document.getElementById('formalReservationIdDisplay');
         const serviceDisplay = document.getElementById('serviceDisplay');
         const card = document.getElementById('confirmationCard');
@@ -180,38 +178,36 @@
         if (qrCodeHash) {
             // 1. Generate QR Code
             generateQRCode(qrCodeHash);
-            hashDisplay.textContent = qrCodeHash;
 
             // 2. Fetch Details
             const reservation = await fetchConfirmationDetails(qrCodeHash);
 
             if (reservation) {
-                // 3. Display the real data
-                idDisplay.textContent = reservation.reservationId || reservation._id;
-                
-                // Display formal reservation ID prominently
+                // Display formal reservation ID
                 if (formalIdDisplay) {
-                    formalIdDisplay.textContent = reservation.reservationId || 'N/A';
+                    formalIdDisplay.textContent = reservation.reservationId || reservation._id || 'N/A';
                 }
-                
-                serviceDisplay.textContent = `${reservation.serviceType} Booking`; 
-
+                // Display service type
+                if (serviceDisplay) {
+                    serviceDisplay.textContent = `${reservation.serviceType} Booking`;
+                }
             } else {
-                // Handle fetch failure
-                idDisplay.textContent = 'N/A';
                 if (formalIdDisplay) {
                     formalIdDisplay.textContent = 'N/A';
                 }
-                serviceDisplay.textContent = 'N/A';
+                if (serviceDisplay) {
+                    serviceDisplay.textContent = 'N/A';
+                }
                 card.querySelector('h1').textContent = "Details Unavailable";
                 card.querySelector('p').textContent = "We confirmed your payment, but failed to retrieve full details. Please contact the resort.";
             }
-            
         } else {
-            // Handle case where hash is missing
-            hashDisplay.textContent = 'Error: Missing Hash';
-            idDisplay.textContent = 'N/A';
-            serviceDisplay.textContent = 'N/A';
+            if (formalIdDisplay) {
+                formalIdDisplay.textContent = 'Error: Missing Hash';
+            }
+            if (serviceDisplay) {
+                serviceDisplay.textContent = 'N/A';
+            }
             card.querySelector('h1').textContent = "Invalid Link";
             card.querySelector('p').textContent = "The confirmation link is incomplete. Please use the link provided in your email.";
         }
