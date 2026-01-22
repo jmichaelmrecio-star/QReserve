@@ -290,10 +290,37 @@
 	<script src="ui-core.js"></script>
 	<script src="auth-profile.js"></script>
 	<script src="cart-system.js"></script>
-	<script src="reservation.js"></script>
+		<script src="reservation.js"></script>
 		<script src="incomplete-reservation-tracker.js"></script>
-    
+
 		<script>
+		// --- Ensure hidden fields are set before form submission ---
+		document.addEventListener('DOMContentLoaded', function() {
+			const form = document.getElementById('reservationForm');
+			if (form) {
+				form.addEventListener('submit', function(e) {
+					// Get values from sessionStorage or visible fields
+					const serviceId = sessionStorage.getItem('selectedServiceId') || document.getElementById('serviceIdInput')?.value;
+					const serviceType = sessionStorage.getItem('selectedServiceType') || document.getElementById('serviceTypeInput')?.value;
+					const basePrice = sessionStorage.getItem('selectedServicePrice') || document.getElementById('basePriceDisplay')?.textContent?.replace(/[^\d.]/g, '');
+					const finalTotal = document.getElementById('finalTotalDisplay')?.textContent?.replace(/[^\d.]/g, '') || '';
+					const selectedDuration = sessionStorage.getItem('selectedDuration') || document.getElementById('duration-selector')?.value;
+					const selectedTimeSlot = sessionStorage.getItem('selectedTimeSlot') || '';
+					const discountCode = sessionStorage.getItem('appliedPromoCode') || document.getElementById('promoCodeInput')?.value || '';
+					const discountValue = document.getElementById('discountValueInput')?.value || sessionStorage.getItem('discountValue') || '0';
+
+					// Set hidden fields
+					if (document.getElementById('serviceIdInput')) document.getElementById('serviceIdInput').value = serviceId || '';
+					if (document.getElementById('serviceTypeInput')) document.getElementById('serviceTypeInput').value = serviceType || '';
+					if (document.getElementById('basePriceInput')) document.getElementById('basePriceInput').value = basePrice || '';
+					if (document.getElementById('finalTotalInput')) document.getElementById('finalTotalInput').value = finalTotal || '';
+					if (document.getElementById('selectedDurationInput')) document.getElementById('selectedDurationInput').value = selectedDuration || '';
+					if (document.getElementById('selectedTimeSlotInput')) document.getElementById('selectedTimeSlotInput').value = selectedTimeSlot || '';
+					if (document.getElementById('discountCodeInput')) document.getElementById('discountCodeInput').value = discountCode || '';
+					if (document.getElementById('discountValueInput')) document.getElementById('discountValueInput').value = discountValue || '0';
+				});
+			}
+		});
 		// --- Prefill reservation from GET params ---
 		function getQueryParams() {
 			const params = {};
@@ -353,12 +380,18 @@
 		document.addEventListener('DOMContentLoaded', function() {
 			const params = getQueryParams();
 			if (params.serviceId) {
+				// Set hidden input fields
 				document.getElementById('serviceIdInput').value = params.serviceId;
 				document.getElementById('selectedServiceDisplay').textContent = params.serviceName || '(No Service Selected)';
 				if (params.price) {
 					document.getElementById('basePriceDisplay').textContent = Number(params.price).toLocaleString('en-PH', {minimumFractionDigits:2});
 					document.getElementById('finalTotalDisplay').textContent = Number(params.price).toLocaleString('en-PH', {minimumFractionDigits:2});
 				}
+				// Patch: Set sessionStorage values from query params
+				sessionStorage.setItem('selectedServiceId', params.serviceId);
+				if (params.serviceName) sessionStorage.setItem('selectedServiceName', params.serviceName);
+				if (params.price) sessionStorage.setItem('selectedServicePrice', params.price);
+
 				// Wait for services to load before loading durations
 				fetchServices().then(() => {
 					// Set serviceType in sessionStorage and hidden input
@@ -371,7 +404,29 @@
 					}
 					loadDurationsFromServiceId(params.serviceId);
 					trySetDurationFromParams(params);
+
+					// Patch: If duration is present in query params, set sessionStorage and hidden input
+					if (params.duration) {
+						sessionStorage.setItem('selectedDuration', params.duration);
+						const selectedDurationInput = document.getElementById('selectedDurationInput');
+						if (selectedDurationInput) selectedDurationInput.value = params.duration;
+					}
 				});
+			}
+
+			// Patch: Sync selected duration to sessionStorage and hidden input
+			const durationSelect = document.getElementById('duration-selector');
+			const selectedDurationInput = document.getElementById('selectedDurationInput');
+			if (durationSelect && selectedDurationInput) {
+				durationSelect.addEventListener('change', function() {
+					sessionStorage.setItem('selectedDuration', durationSelect.value);
+					selectedDurationInput.value = durationSelect.value;
+				});
+				// Set initial value if already selected
+				if (durationSelect.value) {
+					sessionStorage.setItem('selectedDuration', durationSelect.value);
+					selectedDurationInput.value = durationSelect.value;
+				}
 			}
 		});
 		// Cancel Reservation button logic
@@ -521,23 +576,38 @@
 
 	// Handler for Add to Cart button
 	function handleAddToCart() {
-	    const serviceId = sessionStorage.getItem('selectedServiceId');
-	    const serviceName = sessionStorage.getItem('selectedServiceName');
-	    const serviceType = sessionStorage.getItem('selectedServiceType');
-	    const durationId = sessionStorage.getItem('selectedDuration');
-	    const durationLabel = sessionStorage.getItem('selectedDurationLabel');
-	    const price = parseFloat(document.getElementById('finalTotalInput')?.value) || 0;
-	    const checkIn = document.getElementById('checkin')?.value;
-	    const checkOut = document.getElementById('checkout')?.value;
-	    const guests = document.getElementById('guests')?.value;
 
-	    // Validation
-	    if (!serviceId || !serviceName || !checkIn || !checkOut || !guests || price <= 0) {
-	        showModal('Incomplete Details', 
-	            '<p>Please complete all required fields before adding to cart:</p><ul><li>Service selection</li><li>Check-in and Check-out dates</li><li>Number of guests</li></ul>', 
-	            'warning');
-	        return;
-	    }
+		// Try to get from sessionStorage, fallback to form fields if missing
+		let serviceId = sessionStorage.getItem('selectedServiceId') || document.getElementById('serviceIdInput')?.value;
+		let serviceName = sessionStorage.getItem('selectedServiceName') || document.getElementById('selectedServiceDisplay')?.textContent;
+		let serviceType = sessionStorage.getItem('selectedServiceType') || document.getElementById('serviceTypeInput')?.value;
+		let durationId = sessionStorage.getItem('selectedDuration') || document.getElementById('duration-selector')?.value;
+		let durationLabel = sessionStorage.getItem('selectedDurationLabel');
+		let price = parseFloat(document.getElementById('finalTotalInput')?.value);
+		if (!price || price <= 0) {
+			// Try to get from visible total
+			const priceText = document.getElementById('finalTotalDisplay')?.textContent?.replace(/[^\d.]/g, '');
+			price = parseFloat(priceText) || 0;
+		}
+		const checkIn = document.getElementById('checkin')?.value;
+		const checkOut = document.getElementById('checkout')?.value;
+		const guests = document.getElementById('guests')?.value;
+
+		// Dynamic validation for missing fields
+		const missingFields = [];
+		if (!serviceId || !serviceName || serviceName === '(No Service Selected)') missingFields.push('Service selection');
+		if (!checkIn) missingFields.push('Check-in date');
+		if (!checkOut) missingFields.push('Check-out date');
+		if (!guests) missingFields.push('Number of guests');
+		if (!price || price <= 0) missingFields.push('Valid price/total');
+
+		if (missingFields.length > 0) {
+			const list = missingFields.map(f => `<li>${f}</li>`).join('');
+			showModal('Incomplete Details', 
+				`<p>Please complete the following required field(s) before adding to cart:</p><ul>${list}</ul>`, 
+				'warning');
+			return;
+		}
 
 	    // Add to cart
 	    const cartItem = addToCart({

@@ -70,41 +70,7 @@ function isPasswordValid(password) {
 
 // --- Auth Handlers ---
 
-async function registerUser(event) {
-  event.preventDefault();
-  const form = event.target;
-  const formData = new FormData(form);
-  const data = Object.fromEntries(formData.entries());
-
-  if (!isPasswordValid(data.password)) {
-    showAlert("Password is too weak. Please meet more requirements.", "warning");
-    return;
-  }
-
-  if (data.password !== (data.confirmPassword || data.confirm_password)) {
-    showAlert("Passwords do not match.", "error");
-    return;
-  }
-
-  try {
-    const response = await fetch("http://localhost:3000/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data)
-    });
-
-    const result = await response.json();
-    if (response.ok) {
-      showAlert("Registration successful! You can now log in.", "success");
-      setTimeout(() => { window.location.href = "login.html"; }, 1500);
-    } else {
-      showAlert(result.message || "Registration failed.", "error");
-    }
-  } catch (error) {
-    console.error("Registration error:", error);
-    showAlert("Network error during registration.", "error");
-  }
-}
+// Removed registerUser function to prevent double registration requests
 
 async function loginUser(event) {
   event.preventDefault();
@@ -326,8 +292,7 @@ async function handleProfileEditSubmit(event) {
 
 // Initialization
 document.addEventListener("DOMContentLoaded", () => {
-    const registerForm = document.getElementById("registerForm");
-    if (registerForm) registerForm.addEventListener("submit", registerUser);
+    // Removed duplicate registration handler for registerForm
 
     const loginForm = document.getElementById("loginForm");
     if (loginForm) loginForm.addEventListener("submit", loginUser);
@@ -353,4 +318,4 @@ document.addEventListener("DOMContentLoaded", () => {
 window.openProfileEditModal = openProfileEditModal;
 window.closeProfileEditModal = closeProfileEditModal;
 window.loginUser = loginUser;
-window.registerUser = registerUser;
+// Removed window.registerUser assignment

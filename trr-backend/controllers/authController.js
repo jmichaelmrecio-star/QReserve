@@ -23,39 +23,63 @@ function splitFullName(fullName = '') {
 // --- Registration Logic (Server-Side) ---
 exports.registerUser = async (req, res) => {
     try {
-        const { first_name, middle_name, last_name, email, phone, password, role_id, birthday } = req.body;
-        
+        // Accept both camelCase and snake_case from frontend
+        const body = req.body;
+        const first_name = body.first_name || body.firstName || '';
+        const middle_name = body.middle_name || body.middleInitial || body.middleName || '';
+        const last_name = body.last_name || body.lastName || '';
+        const email = body.email || '';
+        const phone = body.phone || body.contactNumber || '';
+        const password = body.password || '';
+        // Default to Customer ObjectId if not provided
+        let role_id = body.role_id || body.roleId || '';
+        if (!role_id) {
+            role_id = '6911d7b841d151b05bf687c7';
+        }
+        const birthday = body.birthday || '';
+
         // Validate password strength
         const passwordValidation = validatePasswordStrength(password);
         if (!passwordValidation.isValid) {
             return res.status(400).json({ 
+                success: false,
                 message: 'Password does not meet security requirements',
                 errors: passwordValidation.errors,
                 warnings: passwordValidation.warnings
             });
         }
-        
+
+        // Check for duplicate email robustly
         let user = await Account.findOne({ email });
         if (user) {
-            return res.status(400).json({ message: 'User already exists with this email address.' });
+            return res.status(400).json({ success: false, message: 'User already exists with this email address.' });
         }
 
         // Generate email verification token
         const verificationToken = crypto.randomBytes(32).toString('hex');
         const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
-        user = await Account.create({
-            email,
-            password: password, 
-            first_name,
-            middle_name: middle_name || null, 
-            last_name,
-            phone,
-            role_id,
-            birthday, // Saved as Date or null
-            emailVerificationToken: verificationToken,
-            emailVerificationExpires: verificationExpires
-        });
+        try {
+            user = await Account.create({
+                email,
+                password: password, 
+                first_name,
+                middle_name: middle_name || null, 
+                last_name,
+                phone,
+                role_id,
+                birthday, // Saved as Date or null
+                emailVerificationToken: verificationToken,
+                emailVerificationExpires: verificationExpires
+            });
+        } catch (dbError) {
+            // Handle duplicate key error from MongoDB
+            if (dbError.code === 11000 && dbError.keyPattern && dbError.keyPattern.email) {
+                return res.status(400).json({ success: false, message: 'User already exists with this email address.' });
+            }
+            console.error('SERVER ERROR during registration (db):', dbError);
+            return res.status(500).json({ success: false, message: 'Server error during registration.', details: dbError.message });
+        }
 
         // Send verification email
         try {
@@ -67,6 +91,7 @@ exports.registerUser = async (req, res) => {
         }
 
         return res.status(201).json({ 
+            success: true,
             message: 'Registration successful. Please check your email to verify your account.', 
             redirect: 'login.html',
             emailSent: true
@@ -74,7 +99,7 @@ exports.registerUser = async (req, res) => {
 
     } catch (error) {
         console.error('SERVER ERROR during registration:', error);
-        res.status(500).json({ message: 'Server error during registration.', details: error.message });
+        res.status(500).json({ success: false, message: 'Server error during registration.', details: error.message });
     }
 };
 

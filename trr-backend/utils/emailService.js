@@ -1,3 +1,20 @@
+/**
+ * Send a generic email to a recipient
+ * @param {string} email - Recipient email address
+ * @param {string} subject - Email subject
+ * @param {string} htmlBody - Email HTML body
+ */
+async function sendGenericEmail(email, subject, htmlBody) {
+    const mailOptions = {
+        from: 'Tito Renz Resort <support@rsfuelstation.site>',
+        to: email,
+        subject,
+        html: htmlBody
+    };
+    return transporter.sendMail(mailOptions);
+}
+
+module.exports.sendGenericEmail = sendGenericEmail;
 const nodemailer = require('nodemailer');
 
 // Email configuration using the provided SMTP credentials

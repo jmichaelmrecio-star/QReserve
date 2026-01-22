@@ -603,10 +603,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderNavigation();
 
     // --- NEW AUTHENTICATION LISTENERS ---
-    const registerForm = document.getElementById('registerForm');
-    if (registerForm) {
-        registerForm.addEventListener('submit', registerUser);
-    }
+    // Removed registerForm handler to prevent double registration
     
     const loginForm = document.getElementById('loginForm');
     if (loginForm) {

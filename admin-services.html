@@ -75,7 +75,7 @@
     <!-- 2. Display Table -->
     <h4 class="mb-3">Existing Services</h4>
     <div class="table-responsive">
-            <table id="admin-service-list-table" class="table table-striped table-bordered">
+            <table id="admin-service-list-table" class="table table-striped table-bordered" style="min-width:1800px;">
                 <thead class="table-dark">
                     <tr>
                         <th>ID</th>
@@ -143,7 +143,12 @@
     if (typeof renderServiceTable === 'function') {
         const serviceTableBody = document.getElementById('serviceTableBody');
         if (serviceTableBody) {
-            fetchServices().then(() => renderServiceTable());
+            fetchServices().then(() => {
+                renderServiceTable();
+                if (typeof renderServicesListDataTable === 'function') {
+                    renderServicesListDataTable();
+                }
+            });
         }
     }
 })();

@@ -64,38 +64,44 @@ function calculateCartTotalFromItems(cartItems) {
 // --- Cart UI Rendering ---
 
 function renderCartItems() {
-  const listElement = document.getElementById("cart-items-list");
+  // Use the correct container for cart.html
+  const listElement = document.getElementById("cart-items-container") || document.getElementById("cart-items-list");
+  const emptyMsg = document.getElementById("cart-empty-message");
+  const summary = document.getElementById("cart-summary");
   if (!listElement) return;
 
   const cart = getCart();
   if (cart.length === 0) {
-    listElement.innerHTML = '<div class="empty-cart"><p>Your cart is empty.</p><a href="services-list.html" class="btn btn-primary">Browse Services</a></div>';
-    const checkoutBtn = document.getElementById("cart-checkout-btn");
-    if (checkoutBtn) checkoutBtn.disabled = true;
+    listElement.innerHTML = '';
+    if (emptyMsg) emptyMsg.style.display = '';
+    if (summary) summary.style.display = 'none';
     return;
   }
 
-  listElement.innerHTML = cart.map((item) => `
-    <div class="cart-item">
+  if (emptyMsg) emptyMsg.style.display = 'none';
+  if (summary) summary.style.display = '';
+
+  listElement.innerHTML = cart.map((item, idx) => `
+    <div class="cart-item" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding: 1rem 0;">
       <div class="cart-item-details">
-        <h4>${escapeHtml(item.serviceName)}</h4>
-        <p>Date: ${formatDate(item.checkIn)}</p>
-        <p>Guests: ${item.guests}</p>
+        <h4 style="margin: 0 0 0.5rem 0;">${escapeHtml(item.serviceName)}</h4>
+        <p style="margin: 0;">Check-in: ${item.checkIn ? escapeHtml(item.checkIn) : ''}</p>
+        <p style="margin: 0;">Check-out: ${item.checkOut ? escapeHtml(item.checkOut) : ''}</p>
+        <p style="margin: 0;">Guests: ${item.guests}</p>
       </div>
-      <div class="cart-item-price">
-        <span>₱${parseFloat(item.price).toLocaleString()}</span>
-        <button onclick="removeFromCart(${item.cartItemId})" class="btn-remove">Remove</button>
+      <div class="cart-item-price" style="text-align: right;">
+        <span style="font-weight: bold; font-size: 1.1rem;">₱${parseFloat(item.price).toLocaleString()}</span><br>
+        <button onclick="removeFromCart(${item.cartItemId}); renderCartItems();" class="btn btn-danger btn-sm" style="margin-top: 0.5rem;">Remove</button>
       </div>
     </div>
   `).join("");
 
-  const totalDisplay = document.getElementById("cart-total-display");
-  if (totalDisplay) {
-    totalDisplay.textContent = `₱${calculateCartTotal().toLocaleString()}`;
-  }
-  
-  const checkoutBtn = document.getElementById("cart-checkout-btn");
-  if (checkoutBtn) checkoutBtn.disabled = false;
+  // Update summary totals
+  const totalAmount = document.getElementById("cart-total-amount");
+  const downpaymentAmount = document.getElementById("cart-downpayment-amount");
+  const total = calculateCartTotal();
+  if (totalAmount) totalAmount.textContent = `₱${total.toLocaleString(undefined, {minimumFractionDigits:2})}`;
+  if (downpaymentAmount) downpaymentAmount.textContent = `₱${(total * 0.5).toLocaleString(undefined, {minimumFractionDigits:2})}`;
 }
 
 // --- Checkout Logic ---

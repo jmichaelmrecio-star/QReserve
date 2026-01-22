@@ -22,17 +22,7 @@
             width: 100%;
             max-width: 400px;
         }
-        .scan-box {
-            position: absolute;
-            border: 3px solid #4f46e5;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 250px;
-            height: 250px;
-            border-radius: 8px;
-            pointer-events: none;
-        }
+        /* .scan-box removed */
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
@@ -45,7 +35,7 @@
             <div id="qr-reader-overlay" class="relative">
                 <video id="qr-reader-video" playsinline></video>
                 <canvas id="qr-reader-canvas" style="display: none;"></canvas>
-                <div class="scan-box"></div>
+                <!-- scan-box removed -->
             </div>
         </div>
         
@@ -242,7 +232,6 @@
                 videoStream.getTracks().forEach(track => track.stop());
             }
             
-            document.getElementById('reservation-hash-display').textContent = `Hash: ${reservationHash}`;
 
             if (!reservationHash) {
                 return updateUI('ERROR', 'Invalid or missing reservation QR code hash.');
@@ -265,24 +254,18 @@
             
             try {
                 const response = await fetch(apiUrl, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${STAFF_JWT_TOKEN}`
-                    },
+                    method: 'GET'
                 });
 
                 console.log('📥 API Response Status:', response.status, response.statusText);
 
                 const data = await response.json();
-                
                 console.log('📦 API Response Data:', data);
 
-                if (response.ok) {
-                    updateLocalReservationStatusLocal(reservationHash, 'CHECKED_IN');
-                    updateUI(data.status, data.message, data.reservationDetails);
+                // Always display details if available, even if payment status is not PAID
+                if (data.reservationDetails) {
+                    updateUI(data.status || 'ERROR', data.message || '', data.reservationDetails);
                 } else {
-                    console.error('❌ Check-in failed:', data);
                     updateUI(data.status || 'ERROR', data.message || `API Error: ${response.statusText}`);
                 }
             } catch (error) {

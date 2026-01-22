@@ -205,6 +205,7 @@
             if (customerViewSection) {
                 customerViewSection.style.display = 'none';
             }
+          
             // Update role badge
             if (roleBadge && roleText) {
                 if (userRole === 'admin') {
@@ -219,7 +220,7 @@
             if (managerInfoBox) {
                 managerInfoBox.style.display = userRole === 'manager' ? 'block' : 'none';
             }
-            console.log(userRole === 'admin' ? '✅ Admin tabs visible (Users, Services, Promo Codes, Payment Verifications)' : 'ℹ️ Manager view: Limited tabs (Schedule, Reservations, Check-in, Payment Verifications)');
+            console.log(userRole === 'admin' ? '✅ Admin tabs visible (Users, Services, Promo Codes, Payment Verifications, but My Reservations hidden)' : 'ℹ️ Manager view: Limited tabs (Schedule, Reservations, Check-in, Payment Verifications)');
         } else {
             // Customer view - hide admin-only and manager-only tabs, show customer view
             adminOnlyElements.forEach(el => {
