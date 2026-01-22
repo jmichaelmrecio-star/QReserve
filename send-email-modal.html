@@ -1,0 +1,26 @@
+<!-- Send Email Modal -->
+<div class="modal fade" id="sendEmailModal" tabindex="-1" aria-labelledby="sendEmailModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="sendEmailModalLabel">Send Custom Email</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="sendEmailForm">
+          <div class="mb-3">
+            <label for="emailSubject" class="form-label">Subject</label>
+            <input type="text" class="form-control" id="emailSubject" required>
+          </div>
+          <div class="mb-3">
+            <label for="emailBody" class="form-label">Message</label>
+            <textarea class="form-control" id="emailBody" rows="6" required></textarea>
+          </div>
+          <input type="hidden" id="emailReservationId">
+          <div id="sendEmailStatus" class="mb-2"></div>
+          <button type="submit" class="btn btn-primary">Send Email</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

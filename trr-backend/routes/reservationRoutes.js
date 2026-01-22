@@ -9,6 +9,9 @@ const reservationController = require('../controllers/reservationController');
 const { verifyToken, requireRole } = require('../middleware/authMiddleware');
 const { requireAdmin, requireAdminOrManager, requireCustomer } = require('../middleware/roleMiddleware');// --- CRITICAL FIX: Place SPECIFIC routes FIRST ---
 
+// Send custom email to customer for a reservation
+router.post('/send-email', verifyToken, requireRole('Admin', 'Manager'), reservationController.sendCustomEmail);
+
 // Get all reservations (public)
 router.get('/allreservation', reservationController.getAllReservations);
 
@@ -40,10 +43,8 @@ router.get(
     reservationController.generateReports
 );// Adding the PUT routes for completeness and order:
 router.put('/update-status/:id', reservationController.updateReservationStatus);
-router.patch(
+router.get(
     '/check-in/:reservationHash', 
-    verifyToken, // <-- STEP 1: Authenticate via JWT
-    requireRole('Staff', 'Admin', 'Manager'), // <-- STEP 2: Authorize role
     reservationController.staffCheckIn
 );
 

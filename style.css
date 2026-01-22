@@ -351,14 +351,11 @@ nav .nav-right {
 
 /* --- Main Content Layout --- */
 main {
-  max-width: 1000px;
   margin: 0 auto;
   padding: 0 var(--spacing);
 }
 
-.has-fixed-header-offset {
-  padding-top: var(--header-offset);
-}
+
 
 /* Reservation page full-bleed parallax background */
 main.reserve-parallax {
@@ -1110,7 +1107,6 @@ footer {
   }
 
   .cart-item {
-    padding: 1rem;
     flex-direction: column;
   }
 
@@ -3294,7 +3290,6 @@ textarea:disabled {
 /* Individual cart item */
 .cart-item {
   background: white;
-  padding: 1.5rem;
   border-radius: var(--border-radius);
   box-shadow: var(--shadow-sm);
   display: flex;

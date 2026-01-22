@@ -195,7 +195,6 @@
     // Main initialization
     document.addEventListener('DOMContentLoaded', async () => {
         console.log('🚀 Initializing Manager Dashboard...');
-        
         // Ensure account modal is hidden on load
         const accountModal = document.getElementById('accountModal');
         if (accountModal) {
@@ -203,13 +202,10 @@
             accountModal.setAttribute('aria-hidden', 'true');
             accountModal.classList.remove('show');
         }
-        
         // Load shared admin actions component first
         await adminComponentLoader.loadComponent('admin-actions.html', 'admin-actions');
-        
         // Load admin profile modal
         await adminComponentLoader.loadComponent('admin-profile-modal.html', 'admin-profile-modal-container');
-        
         // Ensure profile modal is also hidden on load and function is available
         setTimeout(() => {
             const profileModal = document.getElementById('adminProfileModal');
@@ -224,14 +220,12 @@
             // Set identity after loading actions component
             setManagerIdentity();
         }, 100);
-        
         // Load ONLY Manager-relevant sections
         await adminComponentLoader.loadComponents([
             { path: 'manager-schedule.html', target: 'manager-schedule-management-container' },
             { path: 'manager-reservations.html', target: 'dashboard-area-container' },
             { path: 'manager-promo-codes.html', target: 'manager-promocodes-container' }
         ]);
-
         // Wait a bit for components to render
         setTimeout(() => {
             // Ensure sections have .tab-pane class
@@ -239,10 +233,17 @@
                 const el = document.getElementById(id);
                 if (el) el.classList.add('tab-pane');
             });
-
+            // Hide My Reservations tab and section for manager
+            const myReservationsTab = document.querySelector('.tab-button[data-target="dashboard-area"]');
+            if (myReservationsTab) {
+                myReservationsTab.style.display = 'none';
+            }
+            const myReservationsSection = document.getElementById('dashboard-area');
+            if (myReservationsSection) {
+                myReservationsSection.style.display = 'none';
+            }
             // Default show manager-schedule-management on load
             showTab('manager-schedule-management');
-
             // Wire up tab button clicks
             document.querySelectorAll('.tab-button[data-target]').forEach(btn => {
                 btn.addEventListener('click', () => {
@@ -250,10 +251,8 @@
                     showTab(target);
                 });
             });
-            
             // Re-enforce identity just in case
             setManagerIdentity();
-            
             console.log('✅ Manager Dashboard initialized successfully');
         }, 100);
     });

@@ -1,3 +1,22 @@
+const emailService = require('../utils/emailService');
+// Send custom email to customer for a reservation
+exports.sendCustomEmail = async (req, res) => {
+    try {
+        const { reservationId, subject, body } = req.body;
+        if (!reservationId || !subject || !body) {
+            return res.status(400).json({ success: false, message: 'Missing reservationId, subject, or body.' });
+        }
+        const reservation = await Reservation.findById(reservationId);
+        if (!reservation || !reservation.email) {
+            return res.status(404).json({ success: false, message: 'Reservation or customer email not found.' });
+        }
+        await emailService.sendGenericEmail(reservation.email, subject, body);
+        res.status(200).json({ success: true, message: 'Email sent successfully.' });
+    } catch (error) {
+        console.error('Error sending custom email:', error);
+        res.status(500).json({ success: false, message: 'Failed to send email.' });
+    }
+};
 
 const Reservation = require('../models/Reservation'); // Your Mongoose model
 const BlockedDate = require('../models/BlockedDate');
@@ -614,14 +633,14 @@ exports.staffCheckIn = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Reservation Hash is missing from the URL.' });
         }
 
-        // --- 2. Find Reservation and Basic Checks ---
-        // Use the schema key name (reservationHash) with the new variable (hashFromUrl)
-        const reservation = await Reservation.findOne({ reservationHash: hashFromUrl }); // <-- CHANGE IS HERE
-        
+        // --- 2. Find Reservation by hash OR reservationId ---
+        let reservation = await Reservation.findOne({ reservationHash: hashFromUrl });
+        // If not found by hash, try by reservationId
         if (!reservation) {
-            // If this fires, the hash is bad, or the database is down. Since you verified the data, 
-            // the query should now be correct.
-            return res.status(404).json({ success: false, message: 'No matching reservation found for this hash.' });
+            reservation = await Reservation.findOne({ reservationId: hashFromUrl });
+        }
+        if (!reservation) {
+            return res.status(404).json({ success: false, message: 'No matching reservation found for this hash or ID.' });
         }
         
         // --- 3. Payment Status Check (CRITICAL) ---
@@ -629,17 +648,47 @@ exports.staffCheckIn = async (req, res) => {
             return res.status(403).json({ 
                 success: false, 
                 message: `Check-in Failed: Payment status is ${reservation.paymentStatus}. Payment must be PAID.`,
-                status: 'PAYMENT_PENDING' // Added a status code for the frontend to handle
+                status: 'PAYMENT_PENDING',
+                reservationDetails: {
+                    formalReservationId: reservation.reservationId || reservation._id,
+                    guestName: reservation.full_name || 'Registered User',
+                    email: reservation.email,
+                    phone: reservation.phone,
+                    service: reservation.serviceType,
+                    checkIn: reservation.check_in,
+                    checkOut: reservation.check_out,
+                    guests: reservation.guests,
+                    paymentStatus: reservation.paymentStatus,
+                    totalPaid: reservation.finalTotal,
+                    paymentType: reservation.paymentType,
+                    downpaymentAmount: reservation.downpaymentAmount,
+                    remainingBalance: reservation.remainingBalance
+                }
             });
         }
         
         // --- 4. Already Checked In Check ---
         if (reservation.status === 'CHECKED_IN') {
-             // Return success status but a clear message, so the staff knows it's already done.
+            // Return success status and reservation details
             return res.status(200).json({ 
                 success: true, 
                 message: 'Reservation is already marked as checked-in.',
-                status: 'ALREADY_CHECKED_IN'
+                status: 'ALREADY_CHECKED_IN',
+                reservationDetails: {
+                    formalReservationId: reservation.reservationId || reservation._id,
+                    guestName: reservation.full_name || 'Registered User',
+                    email: reservation.email,
+                    phone: reservation.phone,
+                    service: reservation.serviceType,
+                    checkIn: reservation.check_in,
+                    checkOut: reservation.check_out,
+                    guests: reservation.guests,
+                    paymentStatus: reservation.paymentStatus,
+                    totalPaid: reservation.finalTotal,
+                    paymentType: reservation.paymentType,
+                    downpaymentAmount: reservation.downpaymentAmount,
+                    remainingBalance: reservation.remainingBalance
+                }
             });
         }
 
@@ -654,12 +703,19 @@ exports.staffCheckIn = async (req, res) => {
             message: `Check-in successful for ${reservation.full_name || 'Guest User'}.`,
             status: 'CHECKED_IN',
             reservationDetails: {
-                // Ensure these fields exist on your Reservation model:
-                guestName: reservation.full_name || 'Registered User', 
+                formalReservationId: reservation.reservationId || reservation._id,
+                guestName: reservation.full_name || 'Registered User',
+                email: reservation.email,
+                phone: reservation.phone,
                 service: reservation.serviceType,
                 checkIn: reservation.check_in,
+                checkOut: reservation.check_out,
                 guests: reservation.guests,
-                totalPaid: reservation.finalTotal
+                paymentStatus: reservation.paymentStatus,
+                totalPaid: reservation.finalTotal,
+                paymentType: reservation.paymentType,
+                downpaymentAmount: reservation.downpaymentAmount,
+                remainingBalance: reservation.remainingBalance
             }
         });
 

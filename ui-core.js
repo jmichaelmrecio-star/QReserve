@@ -1,3 +1,33 @@
+// Show QR code modal for admin reservation
+window.showReservationQRModal = function(reservationId) {
+  // Show modal (Bootstrap 5)
+  const modal = document.getElementById('qrCodeModal');
+  if (!modal) return;
+  // Set reservation ID in modal
+  const idSpan = document.getElementById('qrCodeModalReservationId');
+  if (idSpan) idSpan.textContent = `Reservation ID: ${reservationId}`;
+  // Clear previous QR
+  const qrContainer = document.getElementById('admin-qr-code-container');
+  if (qrContainer) qrContainer.innerHTML = '';
+  // Generate QR code
+  if (qrContainer && window.QRCode) {
+    new QRCode(qrContainer, {
+      text: reservationId,
+      width: 200,
+      height: 200,
+      colorDark: '#000000',
+      colorLight: '#ffffff',
+    });
+  }
+  // Show modal using Bootstrap
+  if (window.bootstrap && window.bootstrap.Modal) {
+    const bsModal = window.bootstrap.Modal.getOrCreateInstance(modal);
+    bsModal.show();
+  } else {
+    // Fallback: show modal by setting display
+    modal.style.display = 'block';
+  }
+};
 // --- Universal Promo Code CRUD (Admin & Manager) ---
 async function renderPromoCodeTable() {
   const tbody = document.getElementById('promoCodeTableBody');
@@ -539,6 +569,53 @@ function navigateCarousel(carousel, direction) {
 }
 
 // Expose globals
+// Open Send Email Modal
+window.openSendEmailModal = function(reservationId, email) {
+  const modal = document.getElementById('sendEmailModal');
+  if (!modal) return;
+  document.getElementById('emailReservationId').value = reservationId;
+  document.getElementById('emailSubject').value = '';
+  document.getElementById('emailBody').value = '';
+  document.getElementById('sendEmailStatus').textContent = '';
+  if (window.bootstrap && window.bootstrap.Modal) {
+    const bsModal = window.bootstrap.Modal.getOrCreateInstance(modal);
+    bsModal.show();
+  } else {
+    modal.style.display = 'block';
+  }
+};
+
+// Send Email Handler
+document.addEventListener('DOMContentLoaded', function() {
+  const sendEmailForm = document.getElementById('sendEmailForm');
+  if (sendEmailForm) {
+    sendEmailForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const reservationId = document.getElementById('emailReservationId').value;
+      const subject = document.getElementById('emailSubject').value;
+      const body = document.getElementById('emailBody').value;
+      const statusDiv = document.getElementById('sendEmailStatus');
+      statusDiv.textContent = 'Sending...';
+      try {
+        const res = await fetch('http://localhost:3000/api/reservations/send-email', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getAuthToken()}`
+          },
+          body: JSON.stringify({ reservationId, subject, body })
+        });
+        if (res.ok) {
+          statusDiv.textContent = 'Email sent successfully!';
+        } else {
+          statusDiv.textContent = 'Failed to send email.';
+        }
+      } catch (err) {
+        statusDiv.textContent = 'Error sending email.';
+      }
+    });
+  }
+});
 window.logout = logout;
 window.setRole = setRole;
 window.getCurrentRole = getCurrentRole;
@@ -555,41 +632,52 @@ window.resortServices = resortServices;
 async function renderAdminReservations() {
     const tbody = document.getElementById("admin-reservation-list");
     if (!tbody) return;
-    tbody.innerHTML = '<tr><td colspan="10" class="text-center">Loading reservations...</td></tr>';
-    try {
-        // Fetch all reservations for admin
-        const response = await fetch("http://localhost:3000/api/reservations/allreservation");
-        const data = await response.json();
-        const reservations = Array.isArray(data.reservations) ? data.reservations : [];
-        if (reservations.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="10" class="text-center">No reservations found.</td></tr>';
-            return;
-        }
-        tbody.innerHTML = reservations.map(r => {
-            // Map backend fields to table columns
-            const receiptCell = r.receiptFileName
-                ? `<a href="trr-backend/uploads/${r.receiptFileName}" target="_blank"><img src="trr-backend/uploads/${r.receiptFileName}" alt="Receipt" style="max-width:60px;max-height:60px;border-radius:4px;"></a>`
-                : '<span class="text-muted">No receipt</span>';
-            let actions = '';
-            // Only show Accept if status is PAID and not already confirmed/completed/cancelled
-            if (r.status === 'PAID') {
-                actions += `<button class="btn btn-success btn-sm me-1" onclick="confirmReservation('${r._id}')">Accept</button>`;
-            }
-            if (r.status !== 'CANCELLED' && r.status !== 'COMPLETED') {
-                actions += `<button class="btn btn-danger btn-sm" onclick="cancelReservation('${r._id}')">Cancel</button>`;
-            }
-            return `<tr>
-                <td>${r.reservationId || r._id}</td>
-                <td>${escapeHtml(r.full_name || r.customer_name || '')}</td>
-                <td>${escapeHtml(r.email || '')}</td>
-                <td>${escapeHtml(r.serviceType || '')}</td>
-                <td>${r.check_in ? new Date(r.check_in).toLocaleString() : ''}</td>
-                <td>${r.check_out ? new Date(r.check_out).toLocaleString() : ''}</td>
-                <td>₱${parseFloat(r.finalTotal || 0).toLocaleString()}</td>
-                <td>${r.status}</td>
-                <td>${r.gcashReferenceNumber || ''}<br>${receiptCell}</td>
-                <td>${actions}</td>
-            </tr>`;
+    tbody.innerHTML = '<tr><td colspan="12" class="text-center">Loading reservations...</td></tr>';
+       try {
+         // Fetch all reservations for admin
+         const response = await fetch("http://localhost:3000/api/reservations/allreservation");
+         const data = await response.json();
+         const reservations = Array.isArray(data.reservations) ? data.reservations : [];
+         if (reservations.length === 0) {
+           tbody.innerHTML = '<tr><td colspan="12" class="text-center">No reservations found.</td></tr>';
+           return;
+         }
+         tbody.innerHTML = reservations.map(r => {
+           // Map backend fields to table columns
+           const receiptCell = r.receiptFileName
+             ? `<a href="trr-backend/uploads/${r.receiptFileName}" target="_blank"><img src="trr-backend/uploads/${r.receiptFileName}" alt="Receipt" style="max-width:60px;max-height:60px;border-radius:4px;"></a>`
+             : '<span class="text-muted">No receipt</span>';
+           let actions = '';
+           // Only show Accept if status is PAID and not already confirmed/completed/cancelled
+           if (r.status === 'PAID') {
+             actions += `<button class="btn btn-success btn-sm me-1" onclick="confirmReservation('${r._id}', '${escapeHtml(r.email || '')}', '${escapeHtml(r.full_name || r.customer_name || '')}')">Accept</button>`;
+           }
+           if (r.status === 'CONFIRMED') {
+             actions += `<button class="btn btn-warning btn-sm me-1" onclick="checkInReservation('${r._id}', '${escapeHtml(r.email || '')}', '${escapeHtml(r.full_name || r.customer_name || '')}')">Check-in</button>`;
+           }
+           if (r.status === 'CHECKED_IN') {
+             actions += `<button class="btn btn-secondary btn-sm me-1" onclick="checkoutReservation('${r._id}', '${escapeHtml(r.email || '')}', '${escapeHtml(r.full_name || r.customer_name || '')}')">Checkout</button>`;
+           }
+           if (r.status !== 'CANCELLED' && r.status !== 'COMPLETED') {
+             actions += `<button class="btn btn-danger btn-sm me-1" onclick="cancelReservation('${r._id}')">Cancel</button>`;
+           }
+          // Send Email button
+          actions += `<button class="btn btn-info btn-sm me-1" onclick="openSendEmailModal('${r._id}', '${escapeHtml(r.email || '')}')">Send Email</button>`;
+          // QR code button
+          const qrBtn = `<button class="btn btn-outline-primary btn-sm" onclick="showReservationQRModal('${r.reservationId || r._id}')">QR Code</button>`;
+          return `<tr>
+            <td>${r.reservationId || r._id}</td>
+            <td>${escapeHtml(r.full_name || r.customer_name || '')}</td>
+            <td>${escapeHtml(r.email || '')}</td>
+            <td>${escapeHtml(r.serviceType || '')}</td>
+            <td>${r.check_in ? new Date(r.check_in).toLocaleString() : ''}</td>
+            <td>${r.check_out ? new Date(r.check_out).toLocaleString() : ''}</td>
+            <td>₱${parseFloat(r.finalTotal || 0).toLocaleString()}</td>
+            <td>${r.status}</td>
+            <td>${r.gcashReferenceNumber || ''}<br>${receiptCell}</td>
+            <td>${qrBtn}</td>
+            <td>${actions}</td>
+          </tr>`;
         }).join("");
       // Initialize DataTable after rendering
       if (window.$ && window.$.fn && window.$.fn.DataTable) {
@@ -636,7 +724,10 @@ function renderServicesListDataTable() {
         table.DataTable({
           order: [],
           pageLength: 10,
-          destroy: true
+          destroy: true,
+          scrollX: true,
+          scrollY: '500px',
+          scrollCollapse: true
         });
       }
     }, 100);
@@ -697,6 +788,9 @@ async function renderUsersList() {
           </tr>
         `;
       }).join("");
+      if (typeof renderUsersListDataTable === 'function') {
+        setTimeout(() => renderUsersListDataTable(), 100);
+      }
     } else {
       tbody.innerHTML = '<tr><td colspan="7" class="text-danger">Failed to load users.</td></tr>';
     }
@@ -758,6 +852,7 @@ async function renderServiceTable() {
       } else if (Array.isArray(service.timeSlots) && service.timeSlots.length > 0) {
         durations = service.timeSlots.map(ts => `${escapeHtml(ts.label)} ₱${ts.price ? parseFloat(ts.price).toLocaleString() : ''}`).join('<br>');
       }
+      // Ensure 13 columns for DataTables
       return `
         <tr>
           <td>${escapeHtml(service.id || service._id)}</td>
