@@ -422,9 +422,11 @@ main.services-parallax {
   border-radius: var(--border-radius);
   border: none;
   cursor: pointer;
-  transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+  transition: background-color var(--transition-base) var(--transition-easing),
+    transform var(--transition-base) var(--transition-easing),
+    box-shadow var(--transition-base) var(--transition-easing);
   font-size: 1rem;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-md);
   -webkit-tap-highlight-color: transparent;
   -webkit-touch-callout: none;
   user-select: none;
@@ -433,8 +435,8 @@ main.services-parallax {
 
 .button-primary:hover {
   background-color: var(--primary-hover);
-  transform: translateY(-3px) scale(1.02);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  transform: scale(var(--hover-scale));
+  box-shadow: var(--shadow-lg);
 }
 
 .button-primary:active,
@@ -1148,6 +1150,7 @@ footer {
     font-size: 0.8rem;
   }
 }
+}
 
 /* Featured Amenities Section - Parallax Style */
 #featured-amenities {
@@ -1458,7 +1461,6 @@ footer {
   height: 240px;
   background-size: cover;
   background-position: center;
-  background-repeat: no-repeat;
 }
 
 .amenity-showcase-card h3 {
@@ -1568,7 +1570,6 @@ footer {
   height: 400px;
   background-size: cover;
   background-position: center;
-  background-repeat: no-repeat;
   margin-bottom: 0;
   border-radius: 12px 12px 0 0;
 }
@@ -1896,16 +1897,19 @@ footer {
   border-radius: var(--border-radius);
   font-weight: bold;
   display: inline-block;
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  transition: background-color var(--transition-base) var(--transition-easing),
+    color var(--transition-base) var(--transition-easing),
+    border-color var(--transition-base) var(--transition-easing),
+    box-shadow var(--transition-base) var(--transition-easing);
   border: 2px solid white; /* Ensures button is visible */
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-sm);
 }
 
 .button-secondary:hover {
   background-color: var(--primary-color);
   color: white;
   border-color: var(--primary-color);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-md);
 }
 
 .button-secondary:active {
@@ -1960,7 +1964,7 @@ footer {
   text-align: center;
   margin-top: 2rem;
   padding-top: 1rem;
-  border-top: 1px solid #e9ecef;
+  border-top: 1px solid #dee2e6;
   font-size: 0.9rem;
 }
 
@@ -2288,7 +2292,7 @@ footer {
   appearance: none; /* Remove default OS styling for a cleaner look */
   -webkit-appearance: none;
   -moz-appearance: none;
-  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='20' height='20' fill='%23000'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E"); /* Custom arrow icon */
+  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23000%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200%20-13.2%20-6.2H18.6a17.6%2017.6%200%200%200%20-13.2%206.2A17.6%2017.6%200%200%200%200%2082.5c0%204.6%201.7%209.3%205.2%2012.8l128%20127.9c3.9%203.9%209.1%206%2014.1%206s10.2%20-2.1%2014.1%20-6l128%20-127.9c3.5%20-3.5%205.2%20-8.2%205.2%20-12.8%200%20-4.6%20-1.7%20-9.3%20-5.2%20-12.8z%22%2F%3E%3C%2Fsvg%3E"); /* Custom arrow icon */
   background-repeat: no-repeat;
   background-position: right 8px center;
   background-size: 10px;
@@ -2356,7 +2360,7 @@ footer {
   cursor: pointer;
   font-weight: 600;
   color: var(--text-color);
-  transition: all 0.3s ease;
+  transition: all var(--transition-base) var(--transition-easing);
 }
 
 .tab-button:hover {
@@ -2397,9 +2401,9 @@ footer {
   }
 }
 
-/* ======================================================
+/* ========================================
    INCOMPLETE RESERVATION TRACKING STYLES
-   ====================================================== */
+   ======================================== */
 
 /* Resume Reservation Modal Styles */
 .modal {
@@ -2523,9 +2527,9 @@ footer {
   gap: 5px;
 }
 
-/* ======================================================
+/* ========================================
    TABLE SCROLLABLE CONTAINER STYLES
-   ====================================================== */
+   ======================================== */
 
 /* Scrollable table wrapper with sticky headers */
 .table-scroll-wrapper {
@@ -2654,9 +2658,9 @@ footer {
   font-size: 0.95rem;
 }
 
-/* ======================================================
+/* ========================================
    PAYMENT PAGE STYLES
-   ====================================================== */
+   ======================================== */
 
 /* Unified payment form card */
 #gcashPaymentForm {
@@ -3773,7 +3777,6 @@ textarea:disabled {
 .btn-secondary:hover {
   background-color: rgba(255, 255, 255, 0.1);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.3);
 }
 
 /* Responsive Design */
@@ -4562,3 +4565,7 @@ textarea:disabled {
     background: #3a3a3a;
   }
 }
+
+/* ========== END ENHANCED MOBILE RESPONSIVENESS ========== */
+
+

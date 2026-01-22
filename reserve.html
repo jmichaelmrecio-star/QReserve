@@ -152,7 +152,7 @@
 			
 				    <div style="display: flex; align-items: center; gap: 8px; margin-top: 15px;">
 				        <input type="checkbox" id="termsCheck" name="terms_agreed" required style="width: auto;">
-				        <label for="termsCheck" style="font-weight: bold; margin: 0;">I have read and agree to the <a href="#" onclick="showModal('Terms and Conditions', '<p>A comprehensive copy of our Terms and Conditions is available upon request by contacting our support team.</p><p><strong>Key Points:</strong></p><ul><li>Check-in/out times as specified</li><li>Cancellation policies apply</li><li>House rules must be followed</li><li>Full liability terms apply</li></ul><p>Please contact us for the complete document.</p>', 'info'); return false;">Terms and Conditions</a>.</label>
+				        <label for="termsCheck" style="font-weight: bold; margin: 0;">I have read and agree to the <a href="#" onclick="showTermsModal(); return false;">Terms and Conditions</a>.</label>
 				    </div>
 				</fieldset>
 				<br>
@@ -251,6 +251,7 @@
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-secondary" onclick="document.getElementById('reservationSummaryModal').style.display = 'none';">Close</button>
+				<button type="button" class="btn btn-danger" id="cancelReservationBtn">Cancel Reservation</button>
 			</div>
 		</div>
 	</div>
@@ -286,10 +287,124 @@
         </div>
     </footer>
 	<script src="notifications.js"></script>
-	<script src="script.js"></script>
-	<script src="incomplete-reservation-tracker.js"></script>
-	
-	<script>
+	<script src="ui-core.js"></script>
+	<script src="auth-profile.js"></script>
+	<script src="cart-system.js"></script>
+	<script src="reservation.js"></script>
+		<script src="incomplete-reservation-tracker.js"></script>
+    
+		<script>
+		// --- Prefill reservation from GET params ---
+		function getQueryParams() {
+			const params = {};
+			window.location.search.replace(/^\?/, '').split('&').forEach(function(pair) {
+				if (!pair) return;
+				const [k, v] = pair.split('=');
+				params[decodeURIComponent(k)] = decodeURIComponent(v || '');
+			});
+			return params;
+		}
+
+		function trySetDurationFromParams(params) {
+			const durationSelect = document.getElementById('duration-selector');
+			if (!durationSelect) return;
+			if (params.duration) {
+				const setValue = () => {
+					if (durationSelect.options.length > 1) {
+						durationSelect.value = params.duration;
+						durationSelect.dispatchEvent(new Event('change'));
+					} else {
+						setTimeout(setValue, 100);
+					}
+				};
+				setValue();
+			}
+		}
+
+		// Patch: Ensure durations load from serviceId param
+		function loadDurationsFromServiceId(serviceId) {
+			if (!serviceId || !window.resortServices) {
+				document.getElementById('duration-selector').innerHTML = '<option value="">No durations found (service not loaded)</option>';
+				return;
+			}
+			
+			const service = window.resortServices.find(s => (s._id || s.id) === serviceId);
+			console.log('Services loaded:', window.resortServices);
+			const durationSelect = document.getElementById('duration-selector');
+			if (!durationSelect) return;
+			if (!service) {
+				durationSelect.innerHTML = '<option value="">No durations found for this service</option>';
+				return;
+			}
+			const options = [...(service.timeSlots || []), ...(service.durations || [])];
+			if (options.length === 0) {
+				durationSelect.innerHTML = '<option value="">No durations available for this service</option>';
+				return;
+			}
+			durationSelect.innerHTML = '<option value="">-- Select --</option>';
+			options.forEach(opt => {
+				const option = document.createElement('option');
+				option.value = opt.id;
+				option.textContent = `${opt.label} - ₱${opt.price.toLocaleString()}`;
+				durationSelect.appendChild(option);
+			});
+		}
+
+		document.addEventListener('DOMContentLoaded', function() {
+			const params = getQueryParams();
+			if (params.serviceId) {
+				document.getElementById('serviceIdInput').value = params.serviceId;
+				document.getElementById('selectedServiceDisplay').textContent = params.serviceName || '(No Service Selected)';
+				if (params.price) {
+					document.getElementById('basePriceDisplay').textContent = Number(params.price).toLocaleString('en-PH', {minimumFractionDigits:2});
+					document.getElementById('finalTotalDisplay').textContent = Number(params.price).toLocaleString('en-PH', {minimumFractionDigits:2});
+				}
+				// Wait for services to load before loading durations
+				fetchServices().then(() => {
+					// Set serviceType in sessionStorage and hidden input
+					if (window.resortServices) {
+						const svc = window.resortServices.find(s => (s._id || s.id) === params.serviceId);
+						if (svc && svc.type) {
+							sessionStorage.setItem('selectedServiceType', svc.type);
+							document.getElementById('serviceTypeInput').value = svc.type;
+						}
+					}
+					loadDurationsFromServiceId(params.serviceId);
+					trySetDurationFromParams(params);
+				});
+			}
+		});
+		// Cancel Reservation button logic
+		document.addEventListener('DOMContentLoaded', function() {
+			const cancelBtn = document.getElementById('cancelReservationBtn');
+			if (cancelBtn) {
+				cancelBtn.addEventListener('click', function() {
+					// Remove reservation progress from localStorage/sessionStorage
+					if (typeof saveReservationProgress === 'function') {
+						saveReservationProgress('reserve', {}); // Clear tracked progress
+					}
+					// Remove all relevant session/local storage keys
+					const keys = [
+						'selectedServiceId', 'selectedServiceName', 'selectedServicePrice', 'selectedServiceMaxGuests',
+						'selectedServiceType', 'selectedDuration', 'selectedDurationLabel', 'serviceInclusions',
+						'guests', 'checkinDate', 'checkoutDate', 'customerName', 'customerContact', 'customerEmail',
+						'customerAddress', 'customerNotes', 'promoCode', 'finalTotal', 'discountValue', 'appliedPromoCode',
+						'termsAccepted', 'finalTotal', 'finalTotalInput', 'basePriceInput', 'discountValueInput',
+						'maxGuestsAllowed', 'selectedDurationInput', 'selectedTimeSlotInput', 'discountCodeInput',
+						'discountValueInput'
+					];
+					keys.forEach(k => {
+						sessionStorage.removeItem(k);
+						localStorage.removeItem(k);
+					});
+					// Optionally, clear the form fields
+					const form = document.getElementById('reservationForm');
+					if (form) form.reset();
+					document.getElementById('reservationSummaryModal').style.display = 'none';
+					showToast('Reservation canceled and data cleared.', 'info');
+				});
+			}
+		});
 	// Fetch services from database on page load to get MongoDB IDs
 	document.addEventListener('DOMContentLoaded', function() {
 	    // CRITICAL FIX: Recover service data from localStorage if sessionStorage is empty
@@ -549,6 +664,39 @@
 	function capitalizeString(str) {
 	    return str.replace(/\b\w/g, char => char.toUpperCase());
 	}
+
+	// Patch: Show terms.png image in Terms and Conditions modal
+	function showTermsModal() {
+	  showModal(
+	    'Terms and Conditions',
+	    '<img src="images/terms.png" alt="Terms and Conditions" style="width:100%;max-width:400px;margin-bottom:15px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);">' +
+	    '<p>A comprehensive copy of our Terms and Conditions is available upon request by contacting our support team.</p>' +
+	    '<p><strong>Key Points:</strong></p>' +
+	    '<ul><li>Check-in/out times as specified</li><li>Cancellation policies apply</li><li>House rules must be followed</li><li>Full liability terms apply</li></ul>' +
+	    '<p>Please contact us for the complete document.</p>',
+	    'info'
+	  );
+	}
+
+	// Patch: Redirect to login page if not logged in
+	function prefillUserDataOrRedirectLogin() {
+	  const user = (typeof getLoggedInUser === 'function') ? getLoggedInUser() : null;
+	  if (user) {
+	    if (user.name) document.getElementById('name').value = user.name;
+	    if (user.contact) document.getElementById('contact').value = user.contact;
+	    if (user.email) document.getElementById('email').value = user.email;
+	    if (user.address) document.getElementById('address').value = user.address;
+	  } else {
+	    showModal('Login Required', '<p>Redirecting to login...</p>', 'warning');
+	    setTimeout(function() {
+	      window.location.href = 'login.html';
+	    }, 1200);
+	  }
+	}
+
+	document.addEventListener('DOMContentLoaded', function() {
+	  prefillUserDataOrRedirectLogin();
+	});
 	</script>
 </body>
 </html>

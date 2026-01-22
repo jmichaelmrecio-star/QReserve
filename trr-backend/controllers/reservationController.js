@@ -1,3 +1,4 @@
+
 const Reservation = require('../models/Reservation'); // Your Mongoose model
 const BlockedDate = require('../models/BlockedDate');
 const PromoCode = require('../models/PromoCode'); // Your Mongoose model
@@ -5,6 +6,17 @@ const Service = require('../models/Service'); // Service model for database quer
 const crypto = require('crypto'); // Built-in Node.js module for unique IDs
 const servicesData = require('../config/servicesData'); // Load service definitions (fallback)
 const mongoose = require('mongoose');
+
+// Get all reservations (admin)
+exports.getAllReservations = async (req, res) => {
+    try {
+        const reservations = await Reservation.find().sort({ dateCreated: -1 });
+        res.status(200).json({ success: true, reservations });
+    } catch (error) {
+        console.error('Error fetching all reservations:', error);
+        res.status(500).json({ success: false, message: 'Server error fetching all reservations.', error: error.message });
+    }
+};
 
 // Helper function to generate a unique QR code string (UUID)
 // NOTE: This function is not used since we use crypto.randomBytes(16).toString('hex') for reservationHash
@@ -442,13 +454,20 @@ exports.getPendingReservations = async (req, res) => {
 exports.getReservationDetails = async (req, res) => {
     try {
         const { reservationId, hash } = req.params;
+        const mongoose = require('mongoose');
 
-        // 1. Find the reservation using both ID and hash (for security)
-        const reservation = await Reservation.findOne({ 
-            _id: reservationId, 
-            // FIX: Query the database using the correct field name
-            reservationHash: hash 
-        });
+        // B. Robust Search Logic
+        const query = { reservationHash: hash };
+        
+        if (mongoose.isValidObjectId(reservationId)) {
+            // Priority: MongoDB Internal ID
+            query._id = reservationId;
+        } else {
+            // Fallback: Formal string ID (e.g. TRR-20260121-001)
+            query.reservationId = reservationId;
+        }
+
+        const reservation = await Reservation.findOne(query);
 
         if (!reservation) {
             return res.status(404).json({ message: 'Reservation not found or invalid access.' });
@@ -525,17 +544,20 @@ exports.getUserReservations = async (req, res) => {
     try {
         const { email } = req.params;
         if (!email) {
-            return res.status(400).json({ message: 'Email parameter is required.' });
+            return res.status(400).json({ success: false, message: 'Email parameter is required.' });
         }
         
         // Find reservations matching the email or the accountId (if linked)
         const reservations = await Reservation.find({ email: decodeURIComponent(email) }).sort({ dateCreated: -1 });
         
-        res.status(200).json(reservations);
+        res.status(200).json({
+            success: true,
+            reservations: reservations
+        });
         
     } catch (error) {
         console.error('SERVER ERROR fetching user reservations:', error);
-        res.status(500).json({ message: 'Error fetching user reservations.', details: error.message });
+        res.status(500).json({ success: false, message: 'Error fetching user reservations.', details: error.message });
     }
 };
 
@@ -792,8 +814,14 @@ exports.getReservationByHash = async (req, res) => {
             return res.status(400).json({ success: false, message: "Reservation hash is required." });
         }
 
-        // 1. Search for the reservation using the short 'reservationHash' field.
-        const reservation = await Reservation.findOne({ reservationHash: hash });
+        // Handle both single hash and comma-separated hashes (e.g. from Cart checkout)
+        const hashes = hash.split(',').map(h => h.trim()).filter(h => h !== '');
+        
+        if (hashes.length === 0) {
+            return res.status(400).json({ success: false, message: "No valid reservation hashes provided." });
+        }
+
+        const reservation = await Reservation.findOne({ reservationHash: { $in: hashes } });
 
         if (!reservation) {
             // Use a 404 Not Found error if the hash doesn't match any reservation
@@ -1002,5 +1030,89 @@ exports.rejectPayment = async (req, res) => {
             message: 'Internal server error while rejecting payment.',
             details: error.message
         });
+    }
+};
+
+/**
+ * Handles GCash receipt upload and confirms payment for one or multiple reservations.
+ */
+exports.uploadReceipt = async (req, res) => {
+    try {
+        const { 
+            reservationHash, 
+            gcashReferenceNumber,
+            totalAmount,
+            downpaymentAmount,
+            remainingBalance,
+            paymentType 
+        } = req.body;
+
+        const receiptFile = req.file;
+
+        if (!reservationHash || !gcashReferenceNumber || !receiptFile) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Missing reservation hash, GCash reference, or receipt image." 
+            });
+        }
+
+        // Handle both single hash and comma-separated hashes
+        const hashes = reservationHash.split(',').map(h => h.trim()).filter(h => h !== '');
+
+        if (hashes.length === 0) {
+            return res.status(400).json({ success: false, message: "No valid reservation hashes provided." });
+        }
+
+        const reservations = await Reservation.find({ reservationHash: { $in: hashes } });
+
+        if (reservations.length === 0) {
+            return res.status(404).json({ success: false, message: "No reservations found for the provided hash(es)." });
+        }
+
+        // Update each reservation
+        const updatePromises = reservations.map(async (reservation) => {
+            reservation.gcashReferenceNumber = gcashReferenceNumber;
+            reservation.receiptFileName = receiptFile.filename;
+            reservation.receiptUploadedAt = new Date();
+            reservation.paymentType = paymentType || 'downpayment';
+            
+            // If it's a single reservation, we can set specific amounts if provided
+            if (hashes.length === 1) {
+                if (downpaymentAmount) {
+                    // Strip non-numeric chars for storage
+                    const cleanDownpayment = parseFloat(downpaymentAmount.toString().replace(/,/g, ''));
+                    if (!isNaN(cleanDownpayment)) reservation.downpaymentAmount = cleanDownpayment;
+                }
+                if (remainingBalance) {
+                    const cleanBalance = parseFloat(remainingBalance.toString().replace(/,/g, ''));
+                    if (!isNaN(cleanBalance)) reservation.remainingBalance = cleanBalance;
+                }
+                if (totalAmount) {
+                    const cleanTotal = parseFloat(totalAmount.toString().replace(/,/g, ''));
+                    if (!isNaN(cleanTotal)) reservation.finalTotal = cleanTotal;
+                }
+            }
+
+            reservation.paymentStatus = (paymentType === 'full' ? 'PAID' : 'DOWNPAYMENT_PAID');
+            reservation.status = 'PAID'; // Mark as PAID to allow check-in/admin approval flow
+            
+            return reservation.save();
+        });
+
+        await Promise.all(updatePromises);
+
+        console.log(`✅ Payment receipt processed for ${hashes.length} reservation(s):`, hashes);
+
+        res.status(200).json({
+            success: true,
+            message: hashes.length > 1 
+                ? "Multiple reservations updated with payment proof." 
+                : "Payment confirmed and reservation finalized.",
+            hashesUpdated: hashes
+        });
+
+    } catch (error) {
+        console.error("Error in uploadReceipt:", error);
+        res.status(500).json({ success: false, message: "Internal server error during receipt upload." });
     }
 };

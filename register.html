@@ -16,7 +16,7 @@
           </a>
           <ul>
             <li><a href="index.html">Home</a></li>
-            <li><a href="amenities.html">Amenities</a></li>
+            
             <li><a href="help.html">Help</a></li>
           </ul>
           <div class="nav-right" id="navRight"></div>
@@ -67,16 +67,6 @@
           <div class="form-row">
             <div class="form-group">
               <input
-                placeholder="Email Address"
-                type="email"
-                id="registerEmail"
-                name="email"
-                required
-              />
-            </div>
-
-            <div class="form-group">
-              <input
                 placeholder="Contact Number"
                 type="tel"
                 id="registerContactNumber"
@@ -87,6 +77,15 @@
                 required
               />
             </div>
+          </div>
+
+          <div class="form-group">
+            <label for="registerBirthday" style="font-size: 0.9rem; color: #666; margin-bottom: 0.5rem; display: block;">Birthday (Optional)</label>
+            <input
+              type="date"
+              id="registerBirthday"
+              name="birthday"
+            />
           </div>
 
           <div class="form-group">
@@ -162,6 +161,9 @@
           <p class="form-footer" style="text-align: center">
             Already have an account? <a href="login.html">Login Here</a>.
           </p>
+          <p style="text-align:center; margin-top:10px;">
+            <a href="#" id="termsLinkRegister" style="color:var(--primary-color);text-decoration:underline;">View Terms and Conditions</a>
+          </p>
         </form>
         </div>
       </div>
@@ -199,7 +201,8 @@
     </footer>
 
     <script src="notifications.js"></script>
-    <script src="script.js"></script>
+    <script src="ui-core.js"></script>
+    <script src="auth-profile.js"></script>
     <script>
       // Initialize password strength validation on register.html
       document.addEventListener('DOMContentLoaded', function() {
@@ -222,6 +225,15 @@
         // Handle form submission
         if (registerForm) {
           registerForm.addEventListener('submit', registerUser);
+        }
+
+        // Terms and Conditions modal trigger
+        const termsLink = document.getElementById('termsLinkRegister');
+        if (termsLink) {
+          termsLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            showModal('Terms and Conditions', '<img src="images/terms.png" alt="Terms and Conditions" style="max-width:100%;height:auto;display:block;margin:0 auto;">', 'info');
+          });
         }
       });
     </script>

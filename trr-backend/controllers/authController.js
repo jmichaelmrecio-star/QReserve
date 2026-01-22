@@ -1,4 +1,5 @@
 const Account = require('../models/Account'); 
+const Role = require('../models/Role'); // NEW: For role-based redirection 
 const jwt = require('jsonwebtoken'); 
 const bcrypt = require('bcrypt');
 const mongoose = require('mongoose'); // Included for potential ObjectId checks
@@ -22,7 +23,7 @@ function splitFullName(fullName = '') {
 // --- Registration Logic (Server-Side) ---
 exports.registerUser = async (req, res) => {
     try {
-        const { first_name, middle_name, last_name, email, phone, password, role_id } = req.body;
+        const { first_name, middle_name, last_name, email, phone, password, role_id, birthday } = req.body;
         
         // Validate password strength
         const passwordValidation = validatePasswordStrength(password);
@@ -51,6 +52,7 @@ exports.registerUser = async (req, res) => {
             last_name,
             phone,
             role_id,
+            birthday, // Saved as Date or null
             emailVerificationToken: verificationToken,
             emailVerificationExpires: verificationExpires
         });
@@ -106,25 +108,18 @@ exports.loginUser = async (req, res) => {
             .replace(/\s+/g, ' ');
 
         // ----------------------------------------------------------------------
-        // *** IMPORTANT: REPLACE THIS PLACEHOLDER WITH THE ACTUAL ***
-        // *** MONGODB ObjectId STRING for your Admin role and Manager role in 'role_tbl'.   ***
+        // Fetch the actual role name from the database (Robust Method)
         // ----------------------------------------------------------------------
-        const ADMIN_ROLE_ID = '6911d923e3fb923eed25f44d'; 
-        const MANAGER_ROLE_ID = '6911d910e3fb923eed25f44c'; // <-- NEW ID REQUIRED
-        // ----------------------------------------------------------------------
-
-        let userRole = 'Customer';
-        let redirectPath = 'index.html';
-
-        const userRoleIdString = user.role_id ? user.role_id.toString() : '';
-
-        if (userRoleIdString === ADMIN_ROLE_ID) { 
-            userRole = 'Admin';
-            redirectPath = 'admin-dashboard.html'; 
-        } else if (userRoleIdString === MANAGER_ROLE_ID) {
-            userRole = 'Manager';
-            redirectPath = 'admin-dashboard.html'; 
+        const role = await Role.findById(user.role_id);
+        const userRole = role ? role.role_name : 'Customer';
+        
+        let redirectPath = 'customer-dashboard.html';
+        if (userRole === 'Admin') {
+            redirectPath = 'admin-dashboard.html';
+        } else if (userRole === 'Manager') {
+            redirectPath = 'manager-dashboard.html';
         }
+        // ----------------------------------------------------------------------
         
         // 3. Generate token (NEW WAY: Use the calculated userRole string)
         const token = jwt.sign(
@@ -189,7 +184,7 @@ exports.getStaffToken = async (req, res) => {
 // --- Create Account (Admin) ---
 exports.createAccountAsAdmin = async (req, res) => {
     try {
-        const { first_name, middle_name, last_name, email, phone, password, role_id } = req.body;
+        const { first_name, middle_name, last_name, email, phone, password, role_id, birthday } = req.body;
         
         // Check if user already exists
         let user = await Account.findOne({ email });
@@ -211,6 +206,7 @@ exports.createAccountAsAdmin = async (req, res) => {
             last_name,
             phone,
             role_id,
+            birthday,
             isActive: true
         });
 

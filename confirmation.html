@@ -176,20 +176,38 @@
         const card = document.getElementById('confirmationCard');
 
         if (qrCodeHash) {
-            // 1. Generate QR Code
+            // Support multiple hashes from cart checkout
+            const hashes = qrCodeHash.split(',').filter(h => h.trim());
+            const primaryHash = hashes[0];
+
+            // 1. Generate QR Code (using full hash string for batch check-in support)
             generateQRCode(qrCodeHash);
 
-            // 2. Fetch Details
-            const reservation = await fetchConfirmationDetails(qrCodeHash);
+            // 2. Fetch Details for the primary/first reservation
+            const reservation = await fetchConfirmationDetails(primaryHash);
 
             if (reservation) {
                 // Display formal reservation ID
                 if (formalIdDisplay) {
-                    formalIdDisplay.textContent = reservation.reservationId || reservation._id || 'N/A';
+                    const idText = hashes.length > 1 
+                        ? `${reservation.reservationId} (+${hashes.length - 1} more)`
+                        : (reservation.reservationId || reservation._id || 'N/A');
+                    formalIdDisplay.textContent = idText;
                 }
                 // Display service type
                 if (serviceDisplay) {
-                    serviceDisplay.textContent = `${reservation.serviceType} Booking`;
+                    const serviceText = hashes.length > 1 
+                        ? 'Multiple Services' 
+                        : `${reservation.serviceType} Booking`;
+                    serviceDisplay.textContent = serviceText;
+                }
+                
+                // If multiple, update subtitle
+                if (hashes.length > 1) {
+                    const subtitle = card.querySelector('p');
+                    if (subtitle) {
+                        subtitle.textContent = `Thank you! Your ${hashes.length} reservations are confirmed. Scan below for check-in.`;
+                    }
                 }
             } else {
                 if (formalIdDisplay) {

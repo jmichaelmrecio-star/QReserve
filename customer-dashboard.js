@@ -14,22 +14,24 @@ function initCustomerDashboard() {
 
 // Load customer's reservations
 async function loadCustomerReservations() {
+    // ADMIN: Show all reservations if admin, else show only user reservations
     const user = JSON.parse(localStorage.getItem('user') || '{}');
-    if (!user.email) {
-        console.error('No user email found');
-        return;
-    }
-
+    const userRole = localStorage.getItem('qreserve_user_role');
+    let reservations = [];
     try {
-        const response = await fetch(`http://localhost:3000/api/reservations/user/${user.email}`, {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
+        let response;
+        if (userRole === 'admin' || userRole === 'manager') {
+            response = await fetch('http://localhost:3000/api/reservations/allreservation');
+            const data = await response.json();
+            reservations = data.reservations || [];
+        } else {
+            if (!user.email) {
+                console.error('No user email found');
+                return;
             }
-        });
-
-        if (!response.ok) throw new Error('Failed to load reservations');
-
-        const reservations = await response.json();
+            response = await fetch(`http://localhost:3000/api/reservations/user/${user.email}`);
+            reservations = await response.json();
+        }
         displayCustomerReservations(reservations);
     } catch (error) {
         console.error('Error loading customer reservations:', error);
@@ -53,33 +55,48 @@ function displayCustomerReservations(reservations) {
         return;
     }
 
-    // Group reservations by status
-    const upcoming = reservations.filter(r => new Date(r.checkIn) > new Date() && r.status === 'Confirmed');
-    const past = reservations.filter(r => new Date(r.checkOut) < new Date() || r.status === 'Completed');
-    const pending = reservations.filter(r => r.status === 'Pending');
-
-    container.innerHTML = `
-        ${pending.length > 0 ? `
-            <div class="mb-4">
-                <h4 class="mb-3">⏳ Pending Reservations</h4>
-                ${pending.map(r => createCustomerReservationCard(r)).join('')}
-            </div>
-        ` : ''}
-        
-        ${upcoming.length > 0 ? `
-            <div class="mb-4">
-                <h4 class="mb-3">📅 Upcoming Reservations</h4>
-                ${upcoming.map(r => createCustomerReservationCard(r)).join('')}
-            </div>
-        ` : ''}
-        
-        ${past.length > 0 ? `
-            <div class="mb-4">
-                <h4 class="mb-3">📋 Past Reservations</h4>
-                ${past.map(r => createCustomerReservationCard(r)).join('')}
-            </div>
-        ` : ''}
-    `;
+    // For admin, show all in a table with all fields
+    const userRole = localStorage.getItem('qreserve_user_role');
+    if (userRole === 'admin' || userRole === 'manager') {
+        container.innerHTML = `
+            <table class="data-table">
+                <thead>
+                    return `
+                        <div class="reservation-card mb-3 p-3 border rounded shadow-sm">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <strong>Reservation ID:</strong> ${reservation.reservationId || reservation._id}<br>
+                                    <strong>Name:</strong> ${reservation.full_name || ''}<br>
+                                    <strong>Email:</strong> ${reservation.email || ''}<br>
+                                    <strong>Service:</strong> ${reservation.serviceType || ''}<br>
+                                    <strong>Check-in:</strong> ${reservation.check_in ? new Date(reservation.check_in).toLocaleString() : ''}<br>
+                                    <strong>Check-out:</strong> ${reservation.check_out ? new Date(reservation.check_out).toLocaleString() : ''}<br>
+                                    <strong>Total:</strong> ₱${reservation.finalTotal ? parseFloat(reservation.finalTotal).toLocaleString() : ''}<br>
+                                    <strong>Status:</strong> ${reservation.status || ''}<br>
+                                    <strong>GCash Ref #:</strong> ${reservation.gcashReferenceNumber || ''}<br>
+                                </div>
+                                <div>
+                                    ${reservation.receiptFileName ? `<a href="/uploads/${reservation.receiptFileName}" target="_blank"><img src="/uploads/${reservation.receiptFileName}" alt="Payment Receipt" style="max-width:100px;max-height:100px;object-fit:contain;" /></a>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                            <td>${r.email || ''}</td>
+                            <td>${r.serviceType || ''}</td>
+                            <td>${r.check_in ? new Date(r.check_in).toLocaleString() : ''}</td>
+                            <td>${r.check_out ? new Date(r.check_out).toLocaleString() : ''}</td>
+                            <td>₱${r.finalTotal ? parseFloat(r.finalTotal).toLocaleString() : ''}</td>
+                            <td>${r.status || ''}</td>
+                            <td>${r.gcashReferenceNumber || ''}</td>
+                            <td>${r.receiptFileName ? `<a href="/uploads/${r.receiptFileName}" target="_blank">View Image</a>` : ''}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+        return;
+    }
+    // ...existing code for customer view...
 }
 
 // Create a customer-friendly reservation card
@@ -108,7 +125,7 @@ function createCustomerReservationCard(reservation) {
                         <p class="card-text">
                             <strong>Reservation ID:</strong> ${reservation.reservationId}<br>
                             <strong>Check-in:</strong> ${checkIn}<br>
-                            <strong>Check-out:</strong> ${checkOut}<br>
+                            <strong>Check-out Time:</strong> ${checkOut}<br>
                             <strong>Guests:</strong> ${reservation.guests}<br>
                             <strong>Total Amount:</strong> ₱${parseFloat(reservation.totalCost).toLocaleString()}
                         </p>
@@ -154,9 +171,9 @@ async function loadCustomerProfile() {
                         <p><strong>Email:</strong> ${user.email}</p>
                         <p><strong>Phone:</strong> ${user.phone || 'Not provided'}</p>
                     </div>
-                    <div class="col-md-6 text-end">
-                        <a href="profile.html" class="btn btn-outline-primary">Edit Profile</a>
-                    </div>
+                  <div class="col-md-6 text-end">
+                      <a href="customer-dashboard.html" class="btn btn-outline-primary">Edit Profile</a>
+                  </div>
                 </div>
             </div>
         </div>

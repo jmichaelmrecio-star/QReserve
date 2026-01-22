@@ -28,7 +28,6 @@
     '/register.html',
     '/reserve.html',
     '/payment.html',
-    '/amenities.html',
     '/feedback.html',
     '/contact.html',
     '/admin-dashboard.html'

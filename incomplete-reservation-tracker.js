@@ -353,12 +353,12 @@ function addResumeReservationNav() {
         </a>
     `;
     
-    // Insert AFTER Reserve Now button (2nd in action zone, right after Reserve Now)
+    // Insert AFTER Amenities button (2nd in action zone, right after Amenities)
     const reserveBtn = document.getElementById('nav-reserve-now-li');
     const profileDropdown = navUl.querySelector('.profile-dropdown');
     
     if (reserveBtn && reserveBtn.nextElementSibling) {
-        // Insert after Reserve Now, before whatever comes next
+        // Insert after Amenities, before whatever comes next
         navUl.insertBefore(resumeLi, reserveBtn.nextElementSibling);
     } else if (profileDropdown) {
         // Fallback: insert before profile dropdown

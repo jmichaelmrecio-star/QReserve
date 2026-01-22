@@ -7,9 +7,9 @@ Hide action buttons when checked-in: Not Implemented
 
 Evidence: populateAdminReservationTable() always renders Mark Paid / Confirm / Cancel in script.js.
 Suggested change: In populateAdminReservationTable(), if getReservationStatus(res) === 'checked-in', render a single disabled “Checked-in” badge or only “Complete” (if you want a completion flow).
-Remove “Reserve Now” on admin pages: Not Implemented
+Remove “Amenities” on admin pages: Not Implemented
 
-Evidence: Footer Quick Links include “Reserve Now” in admin-dashboard.html.
+Evidence: Footer Quick Links include “Amenities” in admin-dashboard.html.
 Suggested change: Role-aware footer render (hide for Admin/Manager) or a footer variant on admin pages.
 No “dashboard under nav bar” duplication: Implemented
 
@@ -81,8 +81,8 @@ Quick Wins (low risk, high impact) ✅ ALL IMPLEMENTED
 Hide admin actions when checked-in: ✅ Implemented
 Evidence: populateAdminReservationTable() in script.js (line 1472) checks getReservationStatus(res) and conditionally renders actions: if checked-in, shows only "Checked-in" badge + "Checkout" button; for completed, shows only badge; otherwise shows Mark Paid/Confirm/Cancel.
 
-Remove "Reserve Now" in admin pages: ✅ Implemented
-Evidence: footerQuickLinks object in script.js (lines 3457-3461) has admin/manager roles WITHOUT "Reserve Now" link—only "Check-in Demo" and "Admin Dashboard".
+Remove "Amenities" in admin pages: ✅ Implemented
+Evidence: footerQuickLinks object in script.js (lines 3457-3461) has admin/manager roles WITHOUT "Amenities" link—only "Check-in Demo" and "Admin Dashboard".
 
 Hide hash/ID on confirmation: ✅ Implemented
 Evidence: Removed staffDetailsSection HTML block and all related JavaScript (copyStaffDetails, toggle logic) from confirmation.html. Now only displays friendly reservationId (TRR-YYYYMMDD-###) and QR code to users.

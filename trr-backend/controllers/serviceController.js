@@ -6,8 +6,17 @@ const Service = require('../models/Service');
  */
 exports.getAllServices = async (req, res) => {
     try {
-        const services = await Service.find({ isActive: true }).sort({ type: 1, name: 1 });
-        res.status(200).json(services);
+        let services = await Service.find({ isActive: true }).sort({ type: 1, name: 1 });
+        // Ensure _id is a string for each service
+        services = services.map(s => {
+            const obj = s.toObject();
+            obj._id = s._id.toString();
+            return obj;
+        });
+        res.status(200).json({
+            success: true,
+            services: services
+        });
     } catch (error) {
         console.error('Error fetching services:', error);
         res.status(500).json({ 
@@ -23,7 +32,13 @@ exports.getAllServices = async (req, res) => {
  */
 exports.getAllServicesAdmin = async (req, res) => {
     try {
-        const services = await Service.find({}).sort({ type: 1, name: 1 });
+        let services = await Service.find({}).sort({ type: 1, name: 1 });
+        // Ensure _id is a string for each service
+        services = services.map(s => {
+            const obj = s.toObject();
+            obj._id = s._id.toString();
+            return obj;
+        });
         res.status(200).json(services);
     } catch (error) {
         console.error('Error fetching all services:', error);
