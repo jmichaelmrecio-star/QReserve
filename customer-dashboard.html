@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Our Amenities - Tito Renz Resort</title>
+    <title>Tito Renz Resort: Customer Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link rel="stylesheet" href="style.css">
         <style>
         /* CSS for Service Cards */
@@ -260,7 +261,85 @@
             }
         }
     </style>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .profile-card {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background-color: white;
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            min-height: auto;
+            overflow: visible;
+        }
+        .profile-info p {
+            margin-bottom: 0.75rem;
+            font-size: 1.1rem;
+        }
+        .profile-info strong {
+            display: inline-block;
+            width: 150px;
+            color: var(--primary-color);
+        }
+        .profile-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.55);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 3000;
+            padding: 1rem;
+        }
+        .profile-modal.show {
+            display: flex;
+        }
+        .profile-modal .modal-card {
+            background: #fff;
+            border-radius: 12px;
+            max-width: 520px;
+            width: 100%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            padding: 1.5rem;
+        }
+        .profile-modal .modal-card h4 {
+            margin: 0 0 1rem 0;
+        }
+        .profile-modal .form-row {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .profile-modal label {
+            font-weight: 600;
+        }
+        .profile-modal input {
+            padding: 0.65rem 0.75rem;
+            border: 1px solid #d6d6d6;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+        .profile-modal .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            margin-top: 0.5rem;
+        }
+        .button-ghost {
+            background: transparent;
+            border: 1px solid #ccc;
+            color: #333;
+            border-radius: 6px;
+            padding: 0.65rem 1rem;
+            cursor: pointer;
+        }
+        .table-container {
+            width: 100%;
+            margin-top: 1.5rem;
+            overflow-x: auto;
+        }
+    </style>
 </head>
 <body>
     <header>
@@ -269,79 +348,83 @@
                 <img src="images/logo.png" alt="Tito Renz Resort Logo">
             </a>
             <ul>
-                <!-- Dynamically populated by ui-core.js -->
+                <!-- Nav items can be dynamically added here or kept simple -->
             </ul>
         </nav>
     </header>
 
-    <main class="has-fixed-header-offset">
-        <section class="amenities-hero">
-            <div class="hero-content">
-                <h1>Our Amenities</h1>
-                <p>Experience luxury and comfort with our world-class facilities</p>
-            </div>
-        </section>
+    <main class="container page-content has-fixed-header-offset">
+        <h2>Customer Dashboard</h2>
 
-        <section class="amenities-filters-section">
-            <div class="filter-card">
-                <div class="filter-controls">
-                    <div class="filter-group">
-                        <label for="amenity-type-filter">Filter by Type:</label>
-                        <select id="amenity-type-filter" class="filter-select">
-                            <option value="all">All Types</option>
-                            <option value="villa">Villa Rooms</option>
-                            <option value="charm">Charm Rooms</option>
-                            <option value="venue">Venues & Halls</option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <label for="amenity-capacity-filter">Filter by Capacity:</label>
-                        <select id="amenity-capacity-filter" class="filter-select">
-                            <option value="0">Any Capacity</option>
-                            <option value="2">2+ guests</option>
-                            <option value="4">4+ guests</option>
-                            <option value="8">8+ guests</option>
-                            <option value="20">20+ guests</option>
-                        </select>
-                    </div>
+        <div class="profile-layout">
+            
+            <section class="profile-card">
+                <h3>Account Details</h3>
+                <div id="user-info-display">
+                    <p><strong>Name:</strong> <span id="profile-name">Loading...</span></p>
+                    <p><strong>Email:</strong> <span id="profile-email">Loading...</span></p>
+                    <p><strong>Contact:</strong> <span id="profile-contact">Loading...</span></p>
+                    <p><strong>Account Type:</strong> <span id="profile-role">Loading...</span></p>
+                </div>
+                <button class="button-secondary" onclick="openProfileEditModal()">Edit Details</button>
+            </section>
+
+            <div id="profile-edit-modal" class="profile-modal" aria-hidden="true">
+                <div class="modal-card">
+                    <h4>Edit Profile</h4>
+                    <form id="profile-edit-form">
+                        <div class="form-row">
+                            <label for="edit-first-name">First Name</label>
+                            <input type="text" id="edit-first-name" name="first_name" placeholder="John" required>
+                        </div>
+                        <div class="form-row">
+                            <label for="edit-middle-name">Middle Name (Optional)</label>
+                            <input type="text" id="edit-middle-name" name="middle_name" placeholder="N/A if none" maxlength="50">
+                        </div>
+                        <div class="form-row">
+                            <label for="edit-last-name">Last Name</label>
+                            <input type="text" id="edit-last-name" name="last_name" placeholder="Doe" required>
+                        </div>
+                        <div class="form-row">
+                            <label for="edit-email">Email</label>
+                            <input type="email" id="edit-email" name="email" required>
+                        </div>
+                        <div class="form-row">
+                            <label for="edit-phone">Contact Number</label>
+                            <input type="tel" id="edit-phone" name="phone" placeholder="09xxxxxxxxx" pattern="[0-9]{11}" required>
+                        </div>
+                        <div class="modal-actions">
+                            <button type="button" class="button-ghost" onclick="closeProfileEditModal()">Cancel</button>
+                            <button type="submit" class="button-primary">Save Changes</button>
+                        </div>
+                    </form>
                 </div>
             </div>
-        </section>
-
-        <section class="amenities-grid-section">
-            <div id="amenities-grid" class="amenities-grid">
-                <p style="color: white; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);">Loading amenities...</p>
-            </div>
-        </section>
-
-        <!-- Service Modal (Consistent with services-list.html) -->
-        <div id="serviceModal" class="modal">
-            <div class="modal-content">
-                <span class="close-button">&times;</span>
-                <h2 id="modal-name">Service Name</h2>
-                <p>Max Guests: <span id="modal-max-guests"></span></p>
-                <p id="modal-description" style="margin-top: 15px;"></p>
-                
-                <!-- Duration/Time Slot Selection -->
-                <div id="modal-duration-section" style="margin-top: 20px;">
-                    <label for="modal-duration-select" style="font-weight: bold;">Select Duration/Time Slot:</label>
-                    <select id="modal-duration-select" style="width: 100%; padding: 8px; margin-top: 8px; border: 1px solid #ccc; border-radius: 4px;">
-                        <option value="">-- Select --</option>
-                    </select>
+            
+            <section class="profile-card">
+                <h3>My Recent Reservations</h3>
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Service Type</th>
+                                <th>Check-in Date</th>
+                                <th>Total Paid</th>
+                                <th>Status</th>
+                                <th>QR Code</th>
+                                <th>Payment Image</th>
+                            </tr>
+                        </thead>
+                        <tbody id="user-reservations-list">
+                            <tr><td colspan="6" style="text-align: center;">Loading Reservations...</td></tr>
+                        </tbody>
+                    </table>
                 </div>
-                
-                <p style="margin-top: 15px;">Price: <span id="modal-price" style="font-weight: bold; font-size: 1.3rem; color: var(--primary-color);">Select duration</span></p>
-                
-                <!-- Inclusions Display -->
-                <div id="modal-inclusions" style="margin-top: 20px; display: none;">
-                    <h4>Inclusions:</h4>
-                    <ul id="modal-inclusions-list" style="list-style: disc; padding-left: 25px;"></ul>
-                </div>
-                
-                <a href="#" id="modal-proceed-button" class="button-primary" style="margin-top: 20px; pointer-events: none; opacity: 0.5;">Proceed to Reservation Form</a>
-            </div>
+            </section>
         </div>
     </main>
+    
 
     <footer>
         <div class="footer-content">
@@ -377,51 +460,6 @@
     <script src="notifications.js"></script>
     <script src="ui-core.js"></script>
     <script src="auth-profile.js"></script>
-    <script src="cart-system.js"></script>
-    <script src="reservation.js"></script>
-        <script>
-        // Patch: Enable amenity selection to pass to reserve.html
-        document.addEventListener('DOMContentLoaded', function() {
-            // Modal proceed button logic (uses reservation.js logic)
-            const proceedBtn = document.getElementById('modal-proceed-button');
-            const select = document.getElementById('modal-duration-select');
-            if (proceedBtn && select) {
-                select.addEventListener('change', function() {
-                    if (select.value) {
-                        proceedBtn.style.opacity = '1';
-                        proceedBtn.style.pointerEvents = 'auto';
-                        proceedBtn.onclick = function(e) {
-                            e.preventDefault();
-                            // Find serviceId from modal
-                            const serviceName = document.getElementById('modal-name').textContent;
-                            // Find serviceId from loaded services (from reservation.js)
-                            let serviceId = null;
-                            if (window.resortServices) {
-                                const svc = window.resortServices.find(s => s.name === serviceName);
-                                if (svc) serviceId = svc._id || svc.id;
-                            }
-                            if (!serviceId) return;
-                            // Pass selection via GET parameters
-                            let price = '';
-                            if (window.calculatePriceByDuration) {
-                                price = window.calculatePriceByDuration(serviceId, select.value);
-                            }
-                            const params = new URLSearchParams({
-                                serviceId: serviceId,
-                                serviceName: serviceName,
-                                duration: select.value,
-                                price: price
-                            });
-                            window.location.href = 'reserve.html?' + params.toString();
-                        };
-                    } else {
-                        proceedBtn.style.opacity = '0.5';
-                        proceedBtn.style.pointerEvents = 'none';
-                        proceedBtn.onclick = null;
-                    }
-                });
-            }
-        });
-        </script>
+    <script src="incomplete-reservation-tracker.js"></script>
 </body>
 </html>

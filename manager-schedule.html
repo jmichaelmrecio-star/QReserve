@@ -1,8 +1,8 @@
-<!-- Schedule Management Section (Admin Only) -->
-<section id="schedule-management" class="container tab-pane">
+<!-- Schedule Management Section for Manager -->
+<section id="manager-schedule-management" class="container tab-pane">
     <div class="card p-4">
-        <h2 class="mb-3">🗓️ Manage Resort Schedule</h2>
-        <p class="text-muted mb-4">Block dates for maintenance, holidays, or full capacity.</p>
+        <h2 class="mb-3">🗓️ Manage Resort Schedule (Manager)</h2>
+        <p class="text-muted mb-4">Block dates for maintenance, holidays, or full capacity. (Manager Access)</p>
         <form id="blockDateForm">
             <div class="row g-3 mb-3">
                 <div class="col-md-6">
@@ -14,59 +14,37 @@
                     <input type="date" class="form-control" id="blockEndDate" required> 
                 </div>
             </div>
-
             <div class="mb-3">
                 <label class="form-label fw-semibold">Select Service(s) to Block (Select None for ALL):</label>
-                <div id="serviceCheckboxes" class="form-check-group">
-                </div>
+                <div id="serviceCheckboxes" class="form-check-group"></div>
             </div>
-            
             <div class="mb-3">
                 <label for="blockReason" class="form-label">Reason for unavailability</label>
                 <input type="text" class="form-control" id="blockReason" name="blockReason" placeholder="e.g., Major Pool Maintenance" required>
             </div>
-            
             <button type="submit" class="btn btn-primary">Block Date</button>
         </form>
-        
         <hr class="my-4">
-        
         <h3 class="mb-3">Currently Blocked Dates:</h3>
-        <div id="blockedDatesList">
-        </div>
+        <div id="blocked-dates-list"></div>
     </div>
 </section>
-
 <script>
-// Initialize schedule management when component loads
-(function initScheduleManagement() {
-    // Set up global variables that admin-system.js expects
+// Manager Schedule Management Initialization
+(function initManagerScheduleManagement() {
     window.blockDateForm = document.getElementById('blockDateForm');
     window.blockStartDate = document.getElementById('blockStartDate');
     window.blockEndDate = document.getElementById('blockEndDate');
     window.blockReason = document.getElementById('blockReason');
     window.serviceCheckboxes = document.getElementById('serviceCheckboxes');
-    window.blockedDatesList = document.getElementById('blockedDatesList');
-    
-    // Wait a bit for DOM to be ready and ensure elements exist
+    window.blockedDatesList = document.getElementById('blocked-dates-list');
     setTimeout(() => {
-        // Re-check elements in case they weren't ready
-        if (!window.blockDateForm) window.blockDateForm = document.getElementById('blockDateForm');
-        if (!window.blockStartDate) window.blockStartDate = document.getElementById('blockStartDate');
-        if (!window.blockEndDate) window.blockEndDate = document.getElementById('blockEndDate');
-        if (!window.blockReason) window.blockReason = document.getElementById('blockReason');
-        if (!window.serviceCheckboxes) window.serviceCheckboxes = document.getElementById('serviceCheckboxes');
-        if (!window.blockedDatesList) window.blockedDatesList = document.getElementById('blockedDatesList');
-        
-        // Initialize functions
         if (window.serviceCheckboxes && typeof loadServicesForBlocking === 'function') {
             loadServicesForBlocking();
         }
-        
         if (window.blockDateForm && typeof setupBlockDateForm === 'function') {
             setupBlockDateForm();
         }
-        
         if (window.blockedDatesList && typeof loadBlockedDates === 'function') {
             loadBlockedDates();
         }

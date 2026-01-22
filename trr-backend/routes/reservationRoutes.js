@@ -1,3 +1,4 @@
+
 // --- routes/reservationRoutes.js (Example) ---
 const express = require('express');
 const router = express.Router();
@@ -7,6 +8,9 @@ const reservationController = require('../controllers/reservationController');
 // --- ADD THIS LINE ---
 const { verifyToken, requireRole } = require('../middleware/authMiddleware');
 const { requireAdmin, requireAdminOrManager, requireCustomer } = require('../middleware/roleMiddleware');// --- CRITICAL FIX: Place SPECIFIC routes FIRST ---
+
+// Get all reservations (public)
+router.get('/allreservation', reservationController.getAllReservations);
 
 // --- 1. NEW ROUTE (Specific name: 'pending') - MUST be first!
 router.get('/pending', reservationController.getPendingReservations);
@@ -32,9 +36,7 @@ router.get('/service/:serviceId', reservationController.getReservationsByService
 
 // Admin/Staff specific routes
 router.get(
-    '/admin/reports/generate', 
-    verifyToken, // <-- JWT Authentication
-    requireRole('Admin', 'Manager'), // <-- Role Check
+    '/admin/reports/generate',
     reservationController.generateReports
 );// Adding the PUT routes for completeness and order:
 router.put('/update-status/:id', reservationController.updateReservationStatus);

@@ -75,23 +75,29 @@
     <!-- 2. Display Table -->
     <h4 class="mb-3">Existing Services</h4>
     <div class="table-responsive">
-        <table class="table table-striped table-hover">
-            <thead class="table-dark">
-                <tr>
-                    <th>ID</th>
-                    <th>Name</th>
-                    <th>Type</th>
-                    <th>Category</th>
-                    <th>Max Guests</th>
-                    <th>Active Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody id="serviceTableBody">
-                <!-- Data will be inserted here by JavaScript -->
-                <tr><td colspan="7" class="text-center">Loading services...</td></tr>
-            </tbody>
-        </table>
+            <table id="admin-service-list-table" class="table table-striped table-bordered">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th>Category</th>
+                        <th>Max Guests</th>
+                        <th>Description</th>
+                        <th>Main Image</th>
+                        <th>Gallery</th>
+                        <th>Inclusions</th>
+                        <th>Notes</th>
+                        <th>Durations / Time Slots</th>
+                        <th>Active Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="serviceTableBody">
+                    <!-- Data will be inserted here by JavaScript -->
+                    <tr><td colspan="13" class="text-center">Loading services...</td></tr>
+                </tbody>
+            </table>
     </div>
 </div>
 

@@ -16,7 +16,7 @@
           </a>
           <ul>
             <li><a href="index.html">Home</a></li>
-            <li><a href="amenities.html">Amenities</a></li>
+            
             <li><a href="help.html">Help</a></li>
           </ul>
           <div class="nav-right" id="navRight"></div>
@@ -79,6 +79,9 @@
           <p class="form-footer" style="text-align: center">
             Don't have an account? <a href="register.html">Register Here</a>.
           </p>
+          <p style="text-align:center; margin-top:10px;">
+            <a href="#" id="termsLinkLogin" style="color:var(--primary-color);text-decoration:underline;">View Terms and Conditions</a>
+          </p>
         </form>
         </div>
       </div>
@@ -116,6 +119,18 @@
     </footer>
 
     <script src="notifications.js"></script>
-    <script src="script.js"></script>
+    <script src="ui-core.js"></script>
+    <script src="auth-profile.js"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const termsLink = document.getElementById('termsLinkLogin');
+        if (termsLink) {
+          termsLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            showModal('Terms and Conditions', '<img src="images/terms.png" alt="Terms and Conditions" style="max-width:100%;height:auto;display:block;margin:0 auto;">', 'info');
+          });
+        }
+      });
+    </script>
   </body>
 </html>

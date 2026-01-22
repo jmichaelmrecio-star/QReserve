@@ -453,7 +453,7 @@ const navLinks = {
         { text: 'Check-in Demo', href: 'checkin-demo.html' },
     ],
     admin: [
-        { text: 'Reserve Now', href: 'services-list.html'},
+        { text: 'Amenities', href: 'services-list.html'},
         { text: 'Admin Dashboard', href: 'admin-dashboard.html' },
         { text: 'Promotions', href: 'promotions.html' }
     ]

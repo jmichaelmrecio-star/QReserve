@@ -268,10 +268,7 @@
             <a href="index.html" class="nav-logo" aria-label="Tito Renz Resort">
                 <img src="images/logo.png" alt="Tito Renz Resort Logo">
             </a>
-            <ul>
-                <li><a href="dining.html">Dining</a></li>
-                <li><a href="promotions.html">Promotions</a></li>
-            </ul>
+
             <ul>
                 </ul>
         </nav>
@@ -282,6 +279,9 @@
             <div id="promo-banner" style="display: none; text-align: center; padding: 10px; background-color: var(--color-accent); color: white; margin-bottom: 20px;">
             </div>
             <section id="service-list-area" class="container">
+                <br>
+                <br>
+                <br>
                 <h2 style="color: white;">Select Your Room or Venue</h2>
 
                 <!-- Filters (reuse amenities filter styles) -->
@@ -405,8 +405,52 @@
         </div>
     </footer>
 
-    <script src="notifications.js"></script>
-    <script src="script.js"></script>
-    <script src="incomplete-reservation-tracker.js"></script>
+        <script src="notifications.js"></script>
+        <script src="ui-core.js"></script>
+        <script src="auth-profile.js"></script>
+        <script src="cart-system.js"></script>
+        <script src="reservation.js"></script>
+        <script src="incomplete-reservation-tracker.js"></script>
+        <script>
+        // Patch: Enable service selection to pass to reserve.html via GET
+        document.addEventListener('DOMContentLoaded', function() {
+            const proceedBtn = document.getElementById('modal-proceed-button');
+            const select = document.getElementById('modal-duration-select');
+            if (proceedBtn && select) {
+                select.addEventListener('change', function() {
+                    if (select.value) {
+                        proceedBtn.style.opacity = '1';
+                        proceedBtn.style.pointerEvents = 'auto';
+                        proceedBtn.onclick = function(e) {
+                            e.preventDefault();
+                            // Find serviceId from modal
+                            const serviceName = document.getElementById('modal-name').textContent;
+                            let serviceId = null;
+                            if (window.resortServices) {
+                                const svc = window.resortServices.find(s => s.name === serviceName);
+                                if (svc) serviceId = svc._id || svc.id;
+                            }
+                            if (!serviceId) return;
+                            let price = '';
+                            if (window.calculatePriceByDuration) {
+                                price = window.calculatePriceByDuration(serviceId, select.value);
+                            }
+                            const params = new URLSearchParams({
+                                serviceId: serviceId,
+                                serviceName: serviceName,
+                                duration: select.value,
+                                price: price
+                            });
+                            window.location.href = 'reserve.html?' + params.toString();
+                        };
+                    } else {
+                        proceedBtn.style.opacity = '0.5';
+                        proceedBtn.style.pointerEvents = 'none';
+                        proceedBtn.onclick = null;
+                    }
+                });
+            }
+        });
+        </script>
 </body>
 </html>

@@ -37,7 +37,7 @@ This document maps each completed requirement to the specific pages/files that w
 
 ---
 
-### 3. Remove "Reserve Now" Button from Admin Side
+### 3. Remove "Amenities" Button from Admin Side
 **Status:** ✅ COMPLETED
 **Pages Edited:**
 - `admin-dashboard.html` - Role-based button hiding
@@ -45,7 +45,7 @@ This document maps each completed requirement to the specific pages/files that w
 **What to Demo:**
 - Login as Admin
 - Navigate to Admin Dashboard
-- Verify "Reserve Now" button is hidden from navigation
+- Verify "Amenities" button is hidden from navigation
 - Login as Customer to show button is available on customer side
 
 ---

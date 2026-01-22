@@ -88,107 +88,6 @@ app.get('/', (req, res) => {
   res.send('Tito Renz Resort API is running!');
 });
 
-// POST /api/auth/login: Handles user login and role verification
-app.post('/api/auth/login', async (req, res) => {
-    // We expect 'email' and 'password' from the frontend login form
-    const { email, password } = req.body;
-
-    try {
-        // 1. Find the user account by email, ensuring the stored password field is selected
-        const account = await Account.findOne({ email }).select('+password');
-
-        if (!account) {
-            return res.status(401).json({ message: 'Authentication failed. Invalid credentials.' });
-        }
-
-        // 2. Compare the submitted password with the stored HASH
-        const isMatch = await bcrypt.compare(password, account.password);
-
-        if (!isMatch) {
-            return res.status(401).json({ message: 'Authentication failed. Invalid credentials.' });
-        }
-
-        // 3. Look up the role name using the role_id (Foreign Key)
-        const role = await Role.findById(account.role_id);
-        const roleName = role ? role.role_name : 'Customer';
-
-        // 4. Successful login: Return user info including their role
-        // NOTE: In a production app, you would generate a JWT token here.
-        res.json({ 
-            message: 'Login successful', 
-            user: {
-                id: account._id,
-                email: account.email,
-                role: roleName,
-                // 👇 Add the missing fields:
-                first_name: account.first_name,
-                last_name: account.last_name,
-                phone: account.phone 
-            }
-        });
-
-    } catch (error) {
-        console.error('Login error:', error);
-        res.status(500).json({ message: 'Server error during login.' });
-    }
-});
-
-// POST /api/auth/register: Handles new user registration (Customer Role)
-app.post('/api/auth/register', async (req, res) => {
-    // Collect all fields from the registration form
-    const { first_name, middle_name, last_name, email, phone, password } = req.body;
-
-    try {
-        // 1. Check if the user already exists
-        const existingAccount = await Account.findOne({ email });
-        if (existingAccount) {
-            return res.status(409).json({ message: 'Registration failed. Email already in use.' });
-        }
-
-        // 2. Find the default Customer Role ID
-        const customerRole = await Role.findOne({ role_name: 'Customer' });
-        const roleName = customerRole.role_name; // 'Customer'
-
-        if (!customerRole) {
-             // This happens if you skipped Step 1 in the previous response
-             return res.status(500).json({ message: 'Server configuration error: Customer role not found.' });
-        }
-
-        // 3. Create the new Account document
-        const newUser = new Account({
-            first_name,
-            middle_name,
-            last_name,
-            email,
-            phone,
-            password, // Password will be automatically HASHED by the pre-save hook in Account.js
-            role_id: customerRole._id, // Assign the default Customer role
-        });
-
-        // 4. Save the new account to the database
-        await newUser.save();
-
-        // 5. Success!
-        // ✅ Corrected Registration Response (in server.js)
-        res.status(201).json({ 
-            message: 'User registered successfully', 
-            user: {
-                id: newUser._id,
-                email: newUser.email,
-                // 👇 FIX: Use the string name, not the undefined property 'newUser.role'
-                role: roleName, 
-                // 👇 The rest uses the saved newUser object fields:
-                last_name: newUser.last_name,
-                phone: newUser.phone 
-            }
-        });
-
-    } catch (error) {
-        console.error('Registration error:', error);
-        res.status(500).json({ message: 'Server error during registration.', error: error.message });
-    }
-});
-
 // GET /api/reservations/user/:email: Fetches all reservations for a specific user
 app.get('/api/reservations/user/:email', async (req, res) => {
     try {
@@ -311,5 +210,9 @@ app.get('/confirmation.html', (req, res) => {
 // -----------------------
 
 
+
+// server.js - Route for GCash receipt upload
+const reservationController = require('./controllers/reservationController');
+app.post('/api/payment/upload', upload.single('receiptImage'), reservationController.uploadReceipt);
 
 // We will add your PayMongo integration and other GET routes later...

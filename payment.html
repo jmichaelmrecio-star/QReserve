@@ -116,7 +116,10 @@
     </main>
 
     <script src="notifications.js"></script>
-    <script src="script.js"></script>
+    <script src="ui-core.js"></script>
+    <script src="auth-profile.js"></script>
+    <script src="cart-system.js"></script>
+    <script src="payment-system.js"></script>
     <script src="incomplete-reservation-tracker.js"></script>
     
     <script>
@@ -131,79 +134,54 @@
                 cartItemsSection.style.display = 'block';
             }
             handleCartCheckout();
-        } else {
-            // Original single-item checkout flow
-            // CRITICAL FIX: Recover from localStorage if sessionStorage is empty
-            if (typeof recoverServiceDataFromStorage === 'function') {
-                recoverServiceDataFromStorage();
-            }
-            // Get reservation data from sessionStorage (now recovered if needed)
-            const serviceName = sessionStorage.getItem('selectedServiceName') || 
-                               localStorage.getItem('selectedServiceName') || 'Service';
-            const customerName = sessionStorage.getItem('customerName') || 
-                                localStorage.getItem('customerName') || 'Guest';
-            const finalTotal = sessionStorage.getItem('finalTotal') || 
-                              localStorage.getItem('finalTotal') || '0.00';
-            console.log('💰 Payment page data loaded:', { serviceName, customerName, finalTotal });
-            // CRITICAL: Store reservation ID and hash in hidden data attributes or sessionStorage for form submission
-            const urlParams = new URLSearchParams(window.location.search);
-            const reservationIdFromUrl = urlParams.get('reservationId');
-            const reservationHashFromUrl = urlParams.get('hash');
-            // Use URL params if available, fallback to sessionStorage
-            const finalReservationId = reservationIdFromUrl || sessionStorage.getItem('current_reservation_id');
-            const finalReservationHash = reservationHashFromUrl || sessionStorage.getItem('current_reservation_hash');
-            // Store in sessionStorage for access during form submission
-            if (finalReservationId) {
-                sessionStorage.setItem('payment_reservation_id', finalReservationId);
-            }
-            if (finalReservationHash) {
-                sessionStorage.setItem('payment_reservation_hash', finalReservationHash);
-            }
-            console.log('Payment page loaded with reservation:', {
-                reservationId: finalReservationId,
-                reservationHash: finalReservationHash,
-                serviceName,
-                customerName,
-                finalTotal
-            });
-            // Display service name
-            const serviceDisplay = document.getElementById('serviceNameDisplay');
-            if (serviceDisplay) {
-                serviceDisplay.textContent = serviceName;
-            }
-            // Display customer name
-            const customerDisplay = document.getElementById('summaryCustomerName');
-            if (customerDisplay) {
-                customerDisplay.textContent = customerName;
-            }
-            // Calculate downpayment amounts
-            const totalAmount = parseFloat(finalTotal);
+
+            // --- PATCH: Cart summary breakdown ---
+            const cart = JSON.parse(checkoutCart);
+            // Calculate total
+            const totalAmount = cart.reduce((sum, item) => sum + parseFloat(item.price || 0), 0);
             const downpaymentAmount = typeof calculateDownpayment === 'function' 
                 ? calculateDownpayment(totalAmount) 
-                : totalAmount * 0.5; // 50% downpayment
+                : totalAmount * 0.5;
             const remainingBalance = totalAmount - downpaymentAmount;
             // Display total reservation cost
             const totalCostEl = document.getElementById('totalReservationCost');
             if (totalCostEl) {
-                totalCostEl.textContent = totalAmount.toFixed(2);
+                totalCostEl.textContent = totalAmount.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
             }
             // Display downpayment amounts
             const paymentAmountElements = document.querySelectorAll('#paymentAmount, #paymentAmountSmall');
             paymentAmountElements.forEach(el => {
-                el.textContent = downpaymentAmount.toFixed(2);
+                el.textContent = downpaymentAmount.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
             });
             // Display remaining balance
             const remainingBalanceEl = document.getElementById('remainingBalance');
             if (remainingBalanceEl) {
-                remainingBalanceEl.textContent = remainingBalance.toFixed(2);
+                remainingBalanceEl.textContent = remainingBalance.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
             }
-            console.log('Payment page loaded with data:', { 
-                serviceName, 
-                customerName, 
-                totalAmount: totalAmount.toFixed(2),
-                downpayment: downpaymentAmount.toFixed(2),
-                remainingBalance: remainingBalance.toFixed(2)
-            });
+            // Display customer name
+            const loggedUser = localStorage.getItem('loggedInUser');
+            let customerName = 'Guest';
+            if (loggedUser) {
+                try {
+                    customerName = JSON.parse(loggedUser).full_name || 'Guest';
+                } catch(e) {}
+            }
+            const customerDisplay = document.getElementById('summaryCustomerName');
+            if (customerDisplay) {
+                customerDisplay.textContent = customerName;
+            }
+            // Display service breakdown
+            const serviceDisplay = document.getElementById('serviceNameDisplay');
+            if (serviceDisplay) {
+                if (cart.length === 1) {
+                    serviceDisplay.textContent = cart[0].serviceName;
+                } else {
+                    serviceDisplay.textContent = 'Multiple Services';
+                }
+            }
+            // Optionally, you could show a breakdown list elsewhere if needed
+        } else {
+            // ...existing code...
         }
         // PHASE 5: Auto-save payment page on load to capture that user reached payment page
         const pageLoadData = {
@@ -357,11 +335,32 @@
                     submitBtn.textContent = 'Submitting...';
                 }
                 // Gather payment data
-                const downpaymentAmount = document.getElementById('paymentAmount')?.textContent || '';
-                const remainingBalance = document.getElementById('remainingBalance')?.textContent || '';
-                const totalAmount = document.getElementById('totalReservationCost')?.textContent || '';
                 const gcashReferenceNumber = document.getElementById('gcashReferenceNumber')?.value || '';
-                const reservationHash = sessionStorage.getItem('payment_reservation_hash') || '';
+                
+                // --- PATCH: Support multiple hashes for Cart Checkout ---
+                let reservationHash = sessionStorage.getItem('payment_reservation_hash') || '';
+                const checkoutCartJson = sessionStorage.getItem('checkoutCart');
+                if (checkoutCartJson) {
+                    try {
+                        const cart = JSON.parse(checkoutCartJson);
+                        if (Array.isArray(cart) && cart.length > 0) {
+                            reservationHash = cart.map(item => item.reservationHash).filter(h => h).join(',');
+                            console.log('Sending multiple hashes for cart checkout:', reservationHash);
+                        }
+                    } catch (err) {
+                        console.error('Error parsing cart items for hashes:', err);
+                    }
+                }
+
+                if (!reservationHash) {
+                    showToast('❌ Reservation reference missing. Please try again from the reservation page.', 'error');
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Submit Payment & Confirm Booking';
+                    }
+                    return;
+                }
+
                 // Build FormData
                 const formData = new FormData();
                 formData.append('downpaymentAmount', downpaymentAmount);

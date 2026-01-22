@@ -15,7 +15,6 @@
         </a>
         <ul>
           <li><a href="index.html" class="active">Home</a></li>
-          <li><a href="amenities.html">Amenities</a></li>
           <li><a href="help.html">Help</a></li>
         </ul>
         <div class="nav-right" id="navRight"></div>
@@ -192,7 +191,6 @@
             </div>
           </div>
 
-          <a href="amenities.html" class="button-primary">View All Amenities</a>
         </div>
       </section>
 
@@ -217,6 +215,19 @@
         <h2>Currently Blocked Dates</h2>
         <div id="public-blocked-dates">
           <p>Loading blocked dates...</p>
+        </div>
+
+      </section>
+
+      <!-- What Our Customers Say Carousel -->
+      <section id="customer-reviews-carousel" style="background: #f8f9fa; padding: 2.5rem 0 2rem 0; margin-top: 2rem;">
+        <div class="container" style="max-width: 700px; margin: 0 auto; text-align: center;">
+          <h2 style="margin-bottom: 1.5rem; color: var(--primary-color, #28a745);">What Our Customers Say</h2>
+          <div id="reviews-carousel-wrapper" style="position: relative;">
+            <button id="carousel-prev" aria-label="Previous" style="position: absolute; left: 0; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 2rem; color: #888; cursor: pointer; z-index: 2;">&#8249;</button>
+            <img id="carousel-image" src="feedback/1.jpg" alt="Customer Review Photo" style="max-width: 100%; max-height: 350px; border-radius: 12px; box-shadow: 0 4px 16px #0002; transition: opacity 0.3s;" />
+            <button id="carousel-next" aria-label="Next" style="position: absolute; right: 0; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 2rem; color: #888; cursor: pointer; z-index: 2;">&#8250;</button>
+          </div>
         </div>
       </section>
 
@@ -280,12 +291,130 @@
       </div>
       <div class="footer-bottom">
         <p>&copy; 2025 QReserve Project - All Rights Reserved.</p>
+        <p style="margin-top:8px;">
+          <a href="#" id="termsLinkFooter" style="color:var(--primary-color);text-decoration:underline;">View Terms and Conditions</a>
+        </p>
       </div>
     </footer>
 
     <script src="notifications.js"></script>
-    <script src="script.js"></script>
+    <script src="notifications.js"></script>
+    <script src="ui-core.js"></script>
+    <script src="auth-profile.js"></script>
+    <script src="cart-system.js"></script>
     <script src="incomplete-reservation-tracker.js"></script>
     <script src="mobile-responsive.js"></script>
+    <script>
+    // --- Fetch and Render Promotions & Blocked Dates ---
+    async function fetchAndRenderPromotions() {
+      const container = document.getElementById('active-promotions-list');
+      if (!container) return;
+      try {
+        const res = await fetch('http://localhost:3000/api/promocodes/active');
+        const data = await res.json();
+        if (Array.isArray(data) && data.length === 0) {
+          container.innerHTML = '<p>No active promotions at this time.</p>';
+        } else if (Array.isArray(data)) {
+          container.innerHTML = data.map(promo => `
+            <div class="promo-block" style="margin-bottom: 1rem; padding: 10px; border-radius: 6px; background: #f7f7f7; box-shadow: 0 2px 8px #0001;">
+              <strong style="color: var(--primary-color, #1f7ed0);">${promo.code}</strong>: ${promo.description ? promo.description : ''}<br>
+              <span style="color: #555; font-size: 0.95em;">Valid until: ${window.formatDate ? window.formatDate(promo.expiryDate) : promo.expiryDate}</span>
+            </div>
+          `).join('');
+        } else if (data.success && Array.isArray(data.promos)) {
+          // fallback for {success, promos:[]}
+          if (data.promos.length === 0) {
+            container.innerHTML = '<p>No active promotions at this time.</p>';
+          } else {
+            container.innerHTML = data.promos.map(promo => `
+              <div class="promo-block" style="margin-bottom: 1rem; padding: 10px; border-radius: 6px; background: #f7f7f7; box-shadow: 0 2px 8px #0001;">
+                <strong style="color: var(--primary-color, #1f7ed0);">${promo.code}</strong>: ${promo.description ? promo.description : ''}<br>
+                <span style="color: #555; font-size: 0.95em;">Valid until: ${window.formatDate ? window.formatDate(promo.expiryDate) : promo.expiryDate}</span>
+              </div>
+            `).join('');
+          }
+        } else {
+          container.innerHTML = '<p>No active promotions at this time.</p>';
+        }
+      } catch (e) {
+        container.innerHTML = '<p style="color: #c00;">Failed to load promotions.</p>';
+      }
+    }
+
+    async function fetchAndRenderBlockedDates() {
+      const container = document.getElementById('public-blocked-dates');
+      if (!container) return;
+      try {
+        const res = await fetch('http://localhost:3000/api/blocked-dates/active/list');
+        const data = await res.json();
+        if (Array.isArray(data) && data.length === 0) {
+          container.innerHTML = '<p>No blocked dates at this time.</p>';
+        } else if (Array.isArray(data)) {
+          container.innerHTML = '<ul style="padding-left: 1.2em;">' + data.map(block => {
+            const start = window.formatDate ? window.formatDate(block.startDate) : block.startDate;
+            const end = window.formatDate ? window.formatDate(block.endDate) : block.endDate;
+            return `<li><strong>${start}</strong> to <strong>${end}</strong>${block.reason ? ' — ' + block.reason : ''}</li>`;
+          }).join('') + '</ul>';
+        } else if (data.success && Array.isArray(data.blocks)) {
+          if (data.blocks.length === 0) {
+            container.innerHTML = '<p>No blocked dates at this time.</p>';
+          } else {
+            container.innerHTML = '<ul style="padding-left: 1.2em;">' + data.blocks.map(block => {
+              const start = window.formatDate ? window.formatDate(block.startDate) : block.startDate;
+              const end = window.formatDate ? window.formatDate(block.endDate) : block.endDate;
+              return `<li><strong>${start}</strong> to <strong>${end}</strong>${block.reason ? ' — ' + block.reason : ''}</li>`;
+            }).join('') + '</ul>';
+          }
+        } else {
+          container.innerHTML = '<p>No blocked dates at this time.</p>';
+        }
+      } catch (e) {
+        container.innerHTML = '<p style="color: #c00;">Failed to load blocked dates.</p>';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      fetchAndRenderPromotions();
+      fetchAndRenderBlockedDates();
+      // Terms and Conditions modal trigger for footer
+      const termsLink = document.getElementById('termsLinkFooter');
+      if (termsLink) {
+        termsLink.addEventListener('click', function(e) {
+          e.preventDefault();
+          showModal('Terms and Conditions', '<img src="images/terms.png" alt="Terms and Conditions" style="max-width:100%;height:auto;display:block;margin:0 auto;">', 'info');
+        });
+      }
+
+      // Customer Reviews Carousel Logic
+      const images = ['feedback/1.jpg', 'feedback/2.jpg'];
+      let current = 0;
+      const carouselImg = document.getElementById('carousel-image');
+      const prevBtn = document.getElementById('carousel-prev');
+      const nextBtn = document.getElementById('carousel-next');
+      let isTransitioning = false;
+      function updateCarousel() {
+        if (isTransitioning) return;
+        isTransitioning = true;
+        carouselImg.style.opacity = 0.3;
+        setTimeout(() => {
+          carouselImg.src = images[current];
+          carouselImg.onload = () => {
+            carouselImg.style.opacity = 1;
+            setTimeout(() => { isTransitioning = false; }, 150);
+          };
+        }, 150);
+      }
+      prevBtn.addEventListener('click', function() {
+        if (isTransitioning) return;
+        current = (current - 1 + images.length) % images.length;
+        updateCarousel();
+      });
+      nextBtn.addEventListener('click', function() {
+        if (isTransitioning) return;
+        current = (current + 1) % images.length;
+        updateCarousel();
+      });
+    });
+    </script>
   </body>
 </html>

@@ -15,7 +15,7 @@
             </a>
             <ul>
                 <li><a href="index.html">Home</a></li>
-                <li><a href="amenities.html">Amenities</a></li>
+                
                 <li><a href="help.html">Help</a></li>
             </ul>
             <div class="nav-right" id="navRight"></div>
@@ -32,25 +32,18 @@
 
     <!-- Main Content -->
     <main class="feedback-container">
-        <!-- Rating Summary Section -->
-        <section class="rating-summary">
-            <div class="summary-card">
-                <div class="rating-score" id="overall-rating">0.0</div>
-                <div class="rating-label">Overall Rating</div>
-                <div class="rating-stars" id="overall-stars">
-                    <span class="star">☆</span>
-                    <span class="star">☆</span>
-                    <span class="star">☆</span>
-                    <span class="star">☆</span>
-                    <span class="star">☆</span>
-                </div>
-                <p class="rating-count" id="review-count">Based on 0 reviews</p>
-            </div>
 
-            <div class="summary-stats" id="category-stats">
-                <p style="text-align: center; color: #666;">No ratings yet. Be the first to review!</p>
-            </div>
-        </section>
+                <!-- What Our Customers Say Carousel -->
+                <section id="customer-reviews-carousel" style="background: #f8f9fa; padding: 2.5rem 0 2rem 0; margin-top: 2rem;">
+                    <div class="container" style="max-width: 700px; margin: 0 auto; text-align: center;">
+                        <h2 style="margin-bottom: 1.5rem; color: var(--primary-color, #28a745);">What Our Customers Say</h2>
+                        <div id="reviews-carousel-wrapper" style="position: relative;">
+                            <button id="carousel-prev" aria-label="Previous" style="position: absolute; left: 0; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 2rem; color: #888; cursor: pointer; z-index: 2;">&#8249;</button>
+                            <img id="carousel-image" src="feedback/1.jpg" alt="Customer Review Photo" style="max-width: 100%; max-height: 350px; border-radius: 12px; box-shadow: 0 4px 16px #0002; transition: opacity 0.3s;" />
+                            <button id="carousel-next" aria-label="Next" style="position: absolute; right: 0; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 2rem; color: #888; cursor: pointer; z-index: 2;">&#8250;</button>
+                        </div>
+                    </div>
+                </section>
 
         <!-- Testimonials Grid -->
         <section class="testimonials-section">
@@ -66,8 +59,8 @@
             <h2>Share Your Experience</h2>
             <p>Have you stayed with us? We'd love to hear about your experience!</p>
             <div class="cta-buttons">
-                <button class="btn btn-primary" onclick="toggleFeedbackForm()">Leave Feedback</button>
-                <a href="reserve.html" class="btn btn-secondary">Book Now</a>
+                <!-- <button class="btn btn-primary" onclick="toggleFeedbackForm()">Leave Feedback</button> -->
+                <a href="services-list.html" class="btn btn-secondary">Book Now</a>
             </div>
         </section>
 
@@ -193,17 +186,42 @@
     <footer id="footerQuickLinks"></footer>
 
     <script src="notifications.js"></script>
-    <script src="script.js"></script>
-    
-    <script>
-        // Toggle feedback form visibility
-        function toggleFeedbackForm() {
-            const formSection = document.getElementById('feedback-form-section');
-            formSection.style.display = formSection.style.display === 'none' ? 'block' : 'none';
-            if (formSection.style.display === 'block') {
-                formSection.scrollIntoView({ behavior: 'smooth' });
+    <script src="ui-core.js"></script>
+        <script src="auth-profile.js"></script>
+
+        <script>
+        // Customer Reviews Carousel Logic (shared with index.html)
+        document.addEventListener('DOMContentLoaded', function() {
+            const images = ['feedback/1.jpg', 'feedback/2.jpg'];
+            let current = 0;
+            const carouselImg = document.getElementById('carousel-image');
+            const prevBtn = document.getElementById('carousel-prev');
+            const nextBtn = document.getElementById('carousel-next');
+            let isTransitioning = false;
+            function updateCarousel() {
+                if (isTransitioning) return;
+                isTransitioning = true;
+                carouselImg.style.opacity = 0.3;
+                setTimeout(() => {
+                    carouselImg.src = images[current];
+                    carouselImg.onload = () => {
+                        carouselImg.style.opacity = 1;
+                        setTimeout(() => { isTransitioning = false; }, 150);
+                    };
+                }, 150);
             }
-        }
+            prevBtn.addEventListener('click', function() {
+                if (isTransitioning) return;
+                current = (current - 1 + images.length) % images.length;
+                updateCarousel();
+            });
+            nextBtn.addEventListener('click', function() {
+                if (isTransitioning) return;
+                current = (current + 1) % images.length;
+                updateCarousel();
+            });
+        });
+        // ...existing code...
 
         // Star rating interaction
         document.querySelectorAll('.star-input').forEach(star => {
@@ -388,10 +406,6 @@
             
             if (!grid) return;
 
-            if (testimonials.length === 0) {
-                grid.innerHTML = '<p style="text-align: center; color: #666; padding: 2rem;">No testimonials yet. Be the first to share your experience!</p>';
-                return;
-            }
 
             // Sort by date (newest first)
             testimonials.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
