@@ -31,11 +31,23 @@
         .modal-backdrop {
             display: none;
         }
-        /* Hide Dining button/tab for admin */
+        /* Hide removed tabs: Dining, Promotions, Home, Checkin Demo */
         .tab-button[data-target="dining-management"],
         #dining-management,
         .tab-button.dining-tab,
-        .dining-tab {
+        .dining-tab,
+        .tab-button[data-target="promotions"],
+        #promotions,
+        .tab-button.promotions-tab,
+        .promotions-tab,
+        .tab-button[data-target="home"],
+        #home,
+        .tab-button.home-tab,
+        .home-tab,
+        .tab-button[data-target="checkin-demo"],
+        #checkin-demo,
+        .tab-button.checkin-demo-tab,
+        .checkin-demo-tab {
             display: none !important;
         }
     </style>
@@ -73,27 +85,27 @@
                     <div class="modal-body">
                         <div class="mb-3">
                             <label for="accountFirstName" class="form-label">First Name</label>
-                            <input type="text" class="form-control" id="accountFirstName" name="firstName" required>
+                            <input type="text" class="form-control" id="accountFirstName" name="firstName" required readonly>
                         </div>
                         <div class="mb-3">
                             <label for="accountMiddleName" class="form-label">Middle Name (Optional)</label>
-                            <input type="text" class="form-control" id="accountMiddleName" name="middleName" placeholder="N/A if none">
+                            <input type="text" class="form-control" id="accountMiddleName" name="middleName" placeholder="N/A if none" readonly>
                         </div>
                         <div class="mb-3">
                             <label for="accountLastName" class="form-label">Last Name</label>
-                            <input type="text" class="form-control" id="accountLastName" name="lastName" required>
+                            <input type="text" class="form-control" id="accountLastName" name="lastName" required readonly>
                         </div>
                         <div class="mb-3">
                             <label for="accountEmail" class="form-label">Email Address</label>
-                            <input type="email" class="form-control" id="accountEmail" name="email" required>
+                            <input type="email" class="form-control" id="accountEmail" name="email" required readonly>
                         </div>
                         <div class="mb-3">
                             <label for="accountPhone" class="form-label">Contact Number</label>
-                            <input type="tel" class="form-control" id="accountPhone" name="phone" pattern="[0-9]{11}" title="Contact number must be 11 digits (e.g., 09123456789)" required>
+                            <input type="tel" class="form-control" id="accountPhone" name="phone" pattern="[0-9]{11}" title="Contact number must be 11 digits (e.g., 09123456789)" required readonly>
                         </div>
                         <div class="mb-3">
-                            <label for="accountPassword" class="form-label">Password <span id="passwordLabel" class="text-muted">(Min 6 characters)</span></label>
-                            <input type="password" class="form-control" id="accountPassword" name="password" minlength="6" required>
+                            <label for="accountPassword" class="form-label" style="display:none;">Password <span id="passwordLabel" class="text-muted">(Min 6 characters)</span></label>
+                            <input type="password" class="form-control" id="accountPassword" name="password" minlength="6" style="display:none;">
                         </div>
                         <div class="mb-3">
                             <label for="accountRole" class="form-label">Role</label>
@@ -293,6 +305,7 @@
         }, 100);
         
         // Load all admin section components
+        // Only load required admin section components (removed Home, Checkin Demo, Dining, Promotions)
         await adminComponentLoader.loadComponents([
             { path: 'admin-schedule.html', target: 'schedule-management-container' },
             { path: 'admin-users.html', target: 'user-management-container' },
@@ -326,7 +339,7 @@
 
         // Wait a bit for components to render
         setTimeout(() => {
-            // Ensure sections have .tab-pane class
+            // Ensure sections have .tab-pane class (removed Home, Checkin Demo, Dining, Promotions)
             ['schedule-management','nav-promocodes','service-management','user-management','dashboard-area','customer-view-section'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.classList.add('tab-pane');
