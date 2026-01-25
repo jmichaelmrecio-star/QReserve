@@ -198,7 +198,7 @@ async function renderUserReservations() {
       const reservations = data.success ? data.reservations : data;
       
       if (!reservations || reservations.length === 0) {
-        listElement.innerHTML = '<tr><td colspan="6" style="text-align: center;">No reservations found.</td></tr>';
+        listElement.innerHTML = '<tr><td colspan="8" style="text-align: center;">No reservations found.</td></tr>';
       } else {
         let html = '';
         reservations.forEach(res => {
@@ -213,6 +213,11 @@ async function renderUserReservations() {
             // Assume backend serves /uploads/<filename>
             receiptCell = `<a href="/trr-backend/uploads/${res.receiptFileName}" target="_blank"><img src="/trr-backend/uploads/${res.receiptFileName}" alt="Receipt" style="max-width:60px;max-height:60px;border-radius:6px;box-shadow:0 2px 8px #ccc;"></a>`;
           }
+          // Add Checkout button only if status is CHECKED_IN
+          let checkoutBtn = '';
+          if ((res.status || '').toUpperCase() === 'CHECKED_IN') {
+            checkoutBtn = `<button class="button-primary checkout-btn" data-res-id="${res._id || res.reservationId}">Checkout</button>`;
+          }
           html += `<tr>
             <td><strong>${res.reservationId || "N/A"}</strong></td>
             <td>${res.serviceType || "N/A"}</td>
@@ -221,9 +226,32 @@ async function renderUserReservations() {
             <td><span class="${statusClass}">${res.status || "Pending"}</span></td>
             <td>${qrLink}</td>
             <td>${receiptCell}</td>
+            <td>${checkoutBtn}</td>
           </tr>`;
         });
         listElement.innerHTML = html;
+        // Attach event listeners for checkout buttons
+        document.querySelectorAll('.checkout-btn').forEach(btn => {
+          btn.addEventListener('click', async function() {
+            const resId = this.getAttribute('data-res-id');
+            if (!resId) return;
+            if (!confirm('Are you sure you want to checkout this reservation?')) return;
+            try {
+              const response = await fetch(`http://localhost:3000/api/reservations/checkout/${resId}`, {
+                method: 'PUT',
+                headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+              });
+              if (response.ok) {
+                showAlert('Checkout successful!', 'success');
+                renderUserReservations();
+              } else {
+                showAlert('Checkout failed.', 'error');
+              }
+            } catch (err) {
+              showAlert('Network error during checkout.', 'error');
+            }
+          });
+        });
       }
     } else {
       const errorMsg = data.message || "Unknown error";
