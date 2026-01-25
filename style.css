@@ -352,7 +352,6 @@ nav .nav-right {
 /* --- Main Content Layout --- */
 main {
   margin: 0 auto;
-  padding: 0 var(--spacing);
 }
 
 
@@ -4374,9 +4373,7 @@ textarea:disabled {
 
 /* Ultra-large screens (1440px+) */
 @media (min-width: 1440px) {
-  main {
-    max-width: 1200px;
-  }
+
 
   .amenities-grid {
     grid-template-columns: repeat(4, 1fr);
