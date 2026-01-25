@@ -237,9 +237,13 @@ async function renderUserReservations() {
             if (!resId) return;
             if (!confirm('Are you sure you want to checkout this reservation?')) return;
             try {
-              const response = await fetch(`http://localhost:3000/api/reservations/checkout/${resId}`, {
+              const response = await fetch(`http://localhost:3000/api/reservations/update-status/${resId}`, {
                 method: 'PUT',
-                headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+                headers: {
+                  'Authorization': `Bearer ${getAuthToken()}`,
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ status: 'COMPLETED' })
               });
               if (response.ok) {
                 showAlert('Checkout successful!', 'success');
