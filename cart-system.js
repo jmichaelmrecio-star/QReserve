@@ -166,7 +166,7 @@ async function proceedToCartCheckout() {
   }
 
   if (checkoutReservations.length === cart.length) {
-    sessionStorage.setItem('checkoutCart', JSON.stringify(checkoutReservations));
+    // No more sessionStorage: redirect to payment page directly
     window.location.href = 'payment.html';
   } else {
     showAlert("Some items failed to process. Please try again.", "error");
@@ -177,31 +177,7 @@ async function proceedToCartCheckout() {
   }
 }
 
-function handleCartCheckout() {
-  const cartJson = sessionStorage.getItem('checkoutCart');
-  if (!cartJson) return;
-  
-  const cart = JSON.parse(cartJson);
-  const total = calculateCartTotalFromItems(cart);
-  const downpayment = total * 0.5;
-  
-  const cartItemsList = document.getElementById('cart-items-container') || document.getElementById('cart-items-for-payment');
-  if (cartItemsList) {
-    cartItemsList.innerHTML = cart.map((item, idx) => `
-      <div class="summary-item">
-        <p><strong>${idx + 1}. ${item.serviceName}</strong></p>
-        <p>Check-in: ${formatDate(item.checkIn)} | Guests: ${item.guests}</p>
-        <p class="price-text">₱${parseFloat(item.price).toLocaleString()}</p>
-      </div>
-    `).join('');
-  }
-
-  const totalEl = document.getElementById("summary-total-cost") || document.getElementById("totalReservationCost") || document.getElementById("cart-total-amount");
-  const payEl = document.getElementById("summary-downpayment") || document.getElementById("paymentAmount") || document.getElementById("cart-downpayment-amount");
-
-  if (totalEl) totalEl.textContent = total.toLocaleString(undefined, {minimumFractionDigits:2});
-  if (payEl) payEl.textContent = downpayment.toLocaleString(undefined, {minimumFractionDigits:2});
-}
+// handleCartCheckout removed: sessionStorage cart is no longer used
 
 // Initialization
 document.addEventListener("DOMContentLoaded", () => {
