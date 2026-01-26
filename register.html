@@ -286,9 +286,9 @@
               registrationInProgress = false;
               return;
             }
-            // Middle initial: allow empty or at least 2 characters (if not empty and not N/A)
-            if (middleInitial && middleInitial.toLowerCase() !== 'n/a' && middleInitial.length < 2) {
-              showModal('Registration Error', 'Middle initial must be at least 2 characters or left blank/N/A.', 'error');
+            // Middle initial: allow empty, single character, or "N/A"
+            if (middleInitial && middleInitial.toLowerCase() !== 'n/a' && middleInitial.length < 1) {
+              showModal('Registration Error', 'Middle initial must be entered or left blank/N/A.', 'error');
               if (submitBtn) submitBtn.disabled = false;
               registrationInProgress = false;
               return;
