@@ -263,39 +263,7 @@
       </section> -->
     </main>
 
-    <footer>
-      <div class="footer-content">
-        <div class="footer-section contact-info">
-          <h3>Tito Renz Resort</h3>
-          <p>Your seamless booking experience starts here.</p>
-          <p>📍 Norzagaray, Bulacan, Philippines</p>
-          <p>📞 0977 246 8920 or 0916 640 3411</p>
-          <p>📧 titorenznorzagaray@gmail.com</p>
-        </div>
-
-        <div class="footer-section quick-links">
-          <h3>Quick Links</h3>
-          <ul>
-            <!-- Dynamically populated by renderFooterQuickLinks() -->
-          </ul>
-        </div>
-
-        <div class="footer-section about-contact">
-          <h3>About & Contact</h3>
-          <ul>
-
-            <li><a href="contact.html">Send Us a Message</a></li>
-            <li><a href="help.html">Help / Guides</a></li>
-          </ul>
-        </div>
-      </div>
-      <div class="footer-bottom">
-        <p>&copy; 2025 QReserve Project - All Rights Reserved.</p>
-        <p style="margin-top:8px;">
-          <a href="#" id="termsLinkFooter" style="color:var(--primary-color);text-decoration:underline;">View Terms and Conditions</a>
-        </p>
-      </div>
-    </footer>
+    <footer></footer>
 
     <script src="notifications.js"></script>
     <script src="notifications.js"></script>
@@ -376,14 +344,6 @@
     document.addEventListener('DOMContentLoaded', function() {
       fetchAndRenderPromotions();
       fetchAndRenderBlockedDates();
-      // Terms and Conditions modal trigger for footer
-      const termsLink = document.getElementById('termsLinkFooter');
-      if (termsLink) {
-        termsLink.addEventListener('click', function(e) {
-          e.preventDefault();
-          showModal('Terms and Conditions', '<img src="images/terms.png" alt="Terms and Conditions" style="max-width:100%;height:auto;display:block;margin:0 auto;">', 'info');
-        });
-      }
 
       // Customer Reviews Carousel Logic
       const images = ['feedback/1.jpg', 'feedback/2.jpg'];
