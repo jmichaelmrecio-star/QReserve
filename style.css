@@ -1145,7 +1145,6 @@ footer {
     font-size: 0.8rem;
   }
 }
-}
 
 /* Featured Amenities Section - Parallax Style */
 #featured-amenities {
@@ -4307,7 +4306,7 @@ textarea:disabled {
     width: 95%;
     max-width: 550px;
   }
-}
+
 
 /* Medium devices and up (769px+) - Desktop optimizations */
 @media (min-width: 769px) {
