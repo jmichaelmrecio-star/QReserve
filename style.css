@@ -1145,7 +1145,10 @@ footer {
     font-size: 0.8rem;
   }
 }
+<<<<<<< Updated upstream
+=======
 }
+>>>>>>> Stashed changes
 
 /* Featured Amenities Section - Parallax Style */
 #featured-amenities {
@@ -1247,7 +1250,6 @@ footer {
   width: 100vw;
   margin-left: calc(50% - 50vw);
   margin-right: calc(50% - 50vw);
-  margin-bottom: 3rem;
   margin-top: calc(-1 * var(--header-offset)); /* Pull up to overlap header */
   padding-top: calc(
     var(--header-offset) + 3rem
@@ -1281,8 +1283,7 @@ footer {
 
 /* Filter section with Bluesky.jpg background (brighter image - less opacity) */
 .amenities-filters-section {
-  background: linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)),
-    url("images/Bluesky.jpg");
+  background: linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2));
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -1294,7 +1295,6 @@ footer {
   width: 100vw;
   margin-left: calc(50% - 50vw);
   margin-right: calc(50% - 50vw);
-  margin-bottom: 3rem;
 
   /* Padding for content */
   padding: 3rem var(--spacing);
@@ -1308,7 +1308,6 @@ footer {
 .amenities-filters-section h2 {
   color: white;
   font-size: 2rem;
-  margin-bottom: 2rem;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
@@ -3525,7 +3524,7 @@ textarea:disabled {
 .feedback-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: var(--spacing-xl) var(--spacing-md);
+  padding: 1.5rem;
 }
 
 /* Rating Summary Section */
@@ -3835,15 +3834,12 @@ textarea:disabled {
   .page-hero-section {
     min-height: 40vh;
     padding-top: calc(var(--header-offset) + 2rem);
-    padding-bottom: 2rem;
     background-attachment: scroll; /* Disable parallax on mobile */
-    margin-bottom: 2rem;
   }
 
   .amenities-hero h1,
   .page-hero-section h1 {
     font-size: 2rem;
-    margin-bottom: 0.75rem;
   }
 
   .amenities-hero p,
