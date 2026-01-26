@@ -19,6 +19,9 @@ router.post('/reset-password', authController.resetPassword);
 // Password strength validation
 router.post('/validate-password', authController.validatePassword);
 
+// User profile update
+router.put('/update-profile/:id', authController.updateUserProfile);
+
 // NEW: Endpoint to generate staff check-in token (no authentication required)
 router.get('/staff-token', authController.getStaffToken);
 

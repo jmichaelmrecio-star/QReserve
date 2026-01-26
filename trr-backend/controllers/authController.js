@@ -168,6 +168,8 @@ exports.loginUser = async (req, res) => {
                 full_name: fullName, 
                 email: user.email, 
                 phone: user.phone || 'N/A', // Ensures phone is sent
+                birthday: user.birthday || '', // Include birthday
+                address: user.address || '', // Include address
                 role: userRole 
             },
             redirect: redirectPath
@@ -677,3 +679,77 @@ exports.validatePassword = async (req, res) => {
         });
     }
 };
+
+// --- Update User Profile ---
+exports.updateUserProfile = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { email, phone, address } = req.body;
+        
+        // Validate required fields
+        if (!email || !phone) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Email and phone are required.' 
+            });
+        }
+        
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Invalid email format.' 
+            });
+        }
+        
+        // Validate phone (11 digits)
+        if (!/^\d{11}$/.test(phone)) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Phone must be 11 digits.' 
+            });
+        }
+        
+        // Find and update user
+        const user = await Account.findByIdAndUpdate(
+            id,
+            { 
+                email, 
+                phone, 
+                address: address || null,
+                updated_at: new Date()
+            },
+            { new: true, runValidators: true }
+        );
+        
+        if (!user) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'User not found.' 
+            });
+        }
+        
+        return res.status(200).json({ 
+            success: true, 
+            message: 'Profile updated successfully.',
+            user: {
+                id: user._id,
+                full_name: user.first_name + (user.middle_name ? ' ' + user.middle_name : '') + ' ' + user.last_name,
+                email: user.email,
+                phone: user.phone,
+                address: user.address || '',
+                birthday: user.birthday || '',
+                role: user.role_id
+            }
+        });
+        
+    } catch (error) {
+        console.error('Error updating profile:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Server error updating profile.',
+            details: error.message 
+        });
+    }
+}

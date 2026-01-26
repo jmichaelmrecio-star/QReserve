@@ -409,7 +409,6 @@ const navLinks = {
     { text: "Amenities", href: "services-list.html" },
     { text: "Reviews", href: "feedback.html" },
     { text: "🛒 Cart", href: "cart.html", id: "cart-link" },
-    { text: "My Dashboard", href: "customer-dashboard.html" },
   ],
   admin: [
     { text: "Admin Dashboard", href: "admin-dashboard.html" },
@@ -424,6 +423,7 @@ const footerQuickLinks = {
   public: [
     { text: "Amenities", href: "services-list.html" },
     { text: "Reviews", href: "feedback.html" },
+    { text: "Cart", href: "cart.html" },
   ],
   customer: [
     { text: "Amenities", href: "services-list.html" },
@@ -611,7 +611,7 @@ function renderNavigation() {
       </button>
       <div class="dropdown-content" id="profile-menu">
         <div style="padding: 0.75rem 1rem; border-bottom: 1px solid #ddd; font-weight: 600; color: white; text-align: center;">${userName}</div>
-        <a href="profile.html">My Profile</a>
+        <a href="customer-dashboard.html">My Profile</a>
         <a href="#" onclick="logout(); return false;">Logout</a>
       </div>`;
     navUl.appendChild(profileLi);
