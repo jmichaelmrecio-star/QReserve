@@ -4517,8 +4517,8 @@ textarea:disabled {
   }
 }
 
-/* Dark mode support (optional) */
-@media (prefers-color-scheme: dark) {
+/* Dark mode support disabled - causing text visibility issues */
+/* @media (prefers-color-scheme: dark) {
   :root {
     --background-color: #1a1a1a;
     --text-color: #f0f0f0;
@@ -4555,7 +4555,7 @@ textarea:disabled {
   .data-table tbody tr:hover {
     background: #3a3a3a;
   }
-}
+} */
 
 /* ========== END ENHANCED MOBILE RESPONSIVENESS ========== */
 
