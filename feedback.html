@@ -25,6 +25,7 @@
     <!-- Page Header with Hero Background -->
     <section class="page-hero-section">
         <div class="hero-content">
+            <br><br>
             <h1>What Our Guests Say</h1>
             <p>Read authentic reviews from travelers who stayed at Tito Renz Resort</p>
         </div>
@@ -34,9 +35,9 @@
     <main class="feedback-container">
 
                 <!-- What Our Customers Say Carousel -->
-                <section id="customer-reviews-carousel" style="background: #f8f9fa; padding: 2.5rem 0 2rem 0; margin-top: 2rem;">
+                <section id="customer-reviews-carousel" style="background: #f8f9fa; padding: 1rem 0 2rem 0;">
                     <div class="container" style="max-width: 700px; margin: 0 auto; text-align: center;">
-                        <h2 style="margin-bottom: 1.5rem; color: var(--primary-color, #28a745);">What Our Customers Say</h2>
+                        <!-- <h2 style="margin-bottom: 1.5rem; color: var(--primary-color, #28a745);">What Our Customers Say</h2> -->
                         <div id="reviews-carousel-wrapper" style="position: relative;">
                             <button id="carousel-prev" aria-label="Previous" style="position: absolute; left: 0; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 2rem; color: #888; cursor: pointer; z-index: 2;">&#8249;</button>
                             <img id="carousel-image" src="feedback/1.jpg" alt="Customer Review Photo" style="max-width: 100%; max-height: 350px; border-radius: 12px; box-shadow: 0 4px 16px #0002; transition: opacity 0.3s;" />
@@ -47,6 +48,7 @@
 
         <!-- Testimonials Grid -->
         <section class="testimonials-section">
+            <br>
             <h2>Guest Testimonials</h2>
             <div class="testimonials-grid" id="testimonials-grid">
                 <!-- Testimonials will be loaded dynamically from localStorage -->
@@ -59,7 +61,7 @@
             <h2>Share Your Experience</h2>
             <p>Have you stayed with us? We'd love to hear about your experience!</p>
             <div class="cta-buttons">
-                <!-- <button class="btn btn-primary" onclick="toggleFeedbackForm()">Leave Feedback</button> -->
+                <button class="btn btn-primary" onclick="toggleFeedbackForm()" style="cursor: pointer;">Leave Feedback</button>
                 <a href="services-list.html" class="btn btn-secondary" onclick="window.location.href='services-list.html'; return false;">Book Now</a>
             </div>
         </section>
@@ -145,8 +147,8 @@
                     <small style="color: #999;">Minimum 20 characters required</small>
                 </div>
 
-                <!-- Photo Upload (Optional) -->
-                <div class="form-group" style="margin-bottom: 1.5rem;">
+                <!-- Photo Upload (Optional) - DISABLED FOR NOW -->
+                <!-- <div class="form-group" style="margin-bottom: 1.5rem;">
                     <label for="feedbackPhoto" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Upload Photo (Optional)</label>
                     <div style="border: 2px dashed #ddd; border-radius: 6px; padding: 2rem; text-align: center; cursor: pointer; transition: all 0.3s;" id="photo-upload-area">
                         <div style="font-size: 2rem; margin-bottom: 0.5rem;">📷</div>
@@ -158,7 +160,7 @@
                         <img id="photo-preview-img" src="" alt="Photo Preview" style="max-width: 100%; max-height: 300px; border-radius: 6px;">
                         <button type="button" onclick="removePhoto()" style="display: block; margin-top: 0.5rem; padding: 0.5rem 1rem; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">Remove Photo</button>
                     </div>
-                </div>
+                </div> --> 
 
                 <!-- Consent Checkbox -->
                 <div class="form-group" style="margin-bottom: 1.5rem;">
@@ -190,6 +192,23 @@
         <script src="auth-profile.js"></script>
 
         <script>
+        // Toggle Feedback Form Visibility
+        function toggleFeedbackForm() {
+            const formSection = document.getElementById('feedback-form-section');
+            if (formSection.style.display === 'none' || !formSection.style.display) {
+                formSection.style.display = 'block';
+                // Scroll to form
+                formSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } else {
+                formSection.style.display = 'none';
+            }
+        }
+
+        // Close Feedback Form
+        function closeFeedbackForm() {
+            document.getElementById('feedback-form-section').style.display = 'none';
+        }
+
         // Customer Reviews Carousel Logic (shared with index.html)
         document.addEventListener('DOMContentLoaded', function() {
             const images = ['feedback/1.jpg', 'feedback/2.jpg'];
@@ -265,7 +284,8 @@
             });
         });
 
-        // Photo upload handling
+        // Photo upload handling - DISABLED FOR NOW
+        /*
         const photoUploadArea = document.getElementById('photo-upload-area');
         const photoInput = document.getElementById('feedbackPhoto');
         const photoPreview = document.getElementById('photo-preview');
@@ -320,6 +340,7 @@
             photoPreview.style.display = 'none';
             photoUploadArea.style.display = 'block';
         }
+        */
 
         // Form submission
         document.getElementById('guestFeedbackForm').addEventListener('submit', async function(e) {
@@ -347,10 +368,10 @@
                 .map(cb => cb.value);
             formData.append('categories', JSON.stringify(categories));
 
-            // Add photo if uploaded
-            if (photoInput.files[0]) {
-                formData.append('photo', photoInput.files[0]);
-            }
+            // Add photo if uploaded - DISABLED FOR NOW
+            // if (photoInput.files[0]) {
+            //     formData.append('photo', photoInput.files[0]);
+            // }
 
             // Store feedback locally and in localStorage
             try {
@@ -373,15 +394,24 @@
                 feedbackList.push(feedbackData);
                 localStorage.setItem('guestFeedback', JSON.stringify(feedbackList));
 
+                // Reload testimonials to show the new feedback immediately
+                loadTestimonials();
+                updateRatingSummary();
+
                 // Show success message
-                document.getElementById('feedback-success-message').style.display = 'block';
+                showToast('Thank you for your feedback! Your testimonial has been posted.', 'success');
                 this.reset();
                 document.getElementById('guestRating').value = '';
                 document.getElementById('rating-display').textContent = '';
-                photoPreview.style.display = 'none';
-                photoUploadArea.style.display = 'block';
+                // photoPreview.style.display = 'none';
+                // photoUploadArea.style.display = 'block';
+                
+                // Close the form after 2 seconds
+                setTimeout(() => {
+                    closeFeedbackForm();
+                }, 2000);
 
-                showToast('Thank you for your feedback!', 'success');
+                //showToast('Thank you for your feedback!', 'success');
 
                 // Reload testimonials and ratings
                 loadTestimonials();
@@ -401,7 +431,30 @@
 
         // Load and display testimonials dynamically
         function loadTestimonials() {
-            const testimonials = JSON.parse(localStorage.getItem('guestFeedback') || '[]');
+            let testimonials = JSON.parse(localStorage.getItem('guestFeedback') || '[]');
+            
+            // If no testimonials exist, load sample demo testimonials
+            if (testimonials.length === 0) {
+                testimonials = [
+                    {
+                        name: "Maria Santos",
+                        location: "Quezon City, Philippines",
+                        rating: 4,
+                        comment: "Great value for money! The location is convenient, and the staff is very helpful. The room was comfortable though could use some minor updates. Overall, a very pleasant stay. Will definitely come back!",
+                        visitDate: "2024-12-28",
+                        submittedAt: "2025-01-05T09:20:00Z"
+                    },
+                    {
+                        name: "Carlos Rodriguez",
+                        location: "Makati, Philippines",
+                        rating: 5,
+                        comment: "Celebrated our anniversary here and it was perfect! The sunset views, romantic dinner setup, and attentive staff made it unforgettable. Thank you Tito Renz for making our special day even more special!",
+                        visitDate: "2024-12-10",
+                        submittedAt: "2024-12-15T13:15:00Z"
+                    }
+                ];
+            }
+            
             const grid = document.getElementById('testimonials-grid');
             
             if (!grid) return;
@@ -442,6 +495,11 @@
         // Calculate and update rating summary
         function updateRatingSummary() {
             const testimonials = JSON.parse(localStorage.getItem('guestFeedback') || '[]');
+            
+            // Check if rating display elements exist (they're optional)
+            if (!document.getElementById('overall-rating')) {
+                return; // Skip if elements don't exist
+            }
             
             if (testimonials.length === 0) {
                 document.getElementById('overall-rating').textContent = '0.0';
