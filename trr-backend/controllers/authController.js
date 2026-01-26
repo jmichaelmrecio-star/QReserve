@@ -93,7 +93,7 @@ exports.registerUser = async (req, res) => {
         return res.status(201).json({ 
             success: true,
             message: 'Registration successful. Please check your email to verify your account.', 
-            redirect: 'login.html',
+            token: verificationToken, // Added for frontend redirect
             emailSent: true
         }); 
 

@@ -1,3 +1,116 @@
+// Check for duplicate reservation or cart item for the same user, service, and date range
+exports.checkCartDuplicate = async (req, res) => {
+    try {
+        const accountId = req.user.accountId;
+        const { serviceId, checkin_date, checkout_date } = req.body;
+        if (!serviceId || !checkin_date || !checkout_date) {
+            return res.status(400).json({ success: false, message: 'Missing required fields.' });
+        }
+        const checkIn = new Date(checkin_date);
+        const checkOut = new Date(checkout_date);
+        // Find any reservation or cart item for this user, service, and overlapping date range
+        const existing = await Reservation.findOne({
+            accountId,
+            serviceId,
+            status: { $in: ['CART', 'PENDING', 'CONFIRMED', 'PAID'] },
+            $or: [
+                { check_in: { $lt: checkOut }, check_out: { $gt: checkIn } }
+            ]
+        });
+        if (existing) {
+            return res.status(200).json({ success: true, duplicate: true, message: 'You already have a reservation or cart item for this service and date range.' });
+        }
+        return res.status(200).json({ success: true, duplicate: false });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to check for duplicate cart item.' });
+    }
+};
+// --- CART API ENDPOINTS ---
+// Get all cart items for logged-in user
+exports.getCartItems = async (req, res) => {
+    try {
+        const accountId = req.user.accountId;
+        const cartItems = await Reservation.find({ accountId, status: 'CART' });
+        res.status(200).json({ success: true, cart: cartItems });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to fetch cart items.' });
+    }
+};
+
+// Add item to cart for logged-in user
+exports.addCartItem = async (req, res) => {
+    try {
+        const accountId = req.user.accountId;
+        const {
+            serviceId,
+            serviceType,
+            number_of_guests,
+            checkin_date,
+            checkout_date,
+            customer_name,
+            customer_contact,
+            customer_email,
+            customer_address,
+            basePrice,
+            finalTotal,
+            selectedDuration,
+            selectedTimeSlot,
+            discountCode,
+            discountValue
+        } = req.body;
+
+        // Minimal validation (add more as needed)
+        if (!serviceId || !checkin_date || !checkout_date) {
+            return res.status(400).json({ success: false, message: 'Missing required fields.' });
+        }
+
+        const reservationHash = crypto.randomBytes(16).toString('hex');
+        const formalReservationId = await generateFormalReservationId();
+
+        const newReservation = new Reservation({
+            accountId,
+            serviceId,
+            serviceType,
+            full_name: customer_name,
+            check_in: new Date(checkin_date),
+            check_out: new Date(checkout_date),
+            guests: number_of_guests,
+            phone: customer_contact,
+            email: customer_email,
+            address: customer_address,
+            basePrice,
+            finalTotal,
+            discountCode: discountCode || null,
+            discountValue: discountValue || 0,
+            reservationHash,
+            reservationId: formalReservationId,
+            selectedDuration: selectedDuration || null,
+            selectedTimeSlot: selectedTimeSlot || null,
+            status: 'CART',
+            paymentStatus: 'CART',
+        });
+
+        await newReservation.save();
+        res.status(201).json({ success: true, cartItem: newReservation });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to add item to cart.' });
+    }
+};
+
+// Remove item from cart for logged-in user
+exports.removeCartItem = async (req, res) => {
+    try {
+        const accountId = req.user.accountId;
+        const { id } = req.params;
+        const deleted = await Reservation.findOneAndDelete({ _id: id, accountId, status: 'CART' });
+        if (!deleted) {
+            return res.status(404).json({ success: false, message: 'Cart item not found.' });
+        }
+        res.status(200).json({ success: true });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to remove cart item.' });
+    }
+};
 const emailService = require('../utils/emailService');
 // Send custom email to customer for a reservation
 exports.sendCustomEmail = async (req, res) => {
@@ -325,8 +438,8 @@ exports.createReservation = async (req, res) => {
             durationLabel: priceData.label,
             inclusions: priceData.inclusions,
             // Initial Statuses
-            status: 'PENDING', 
-            paymentStatus: 'PENDING',
+            status: 'CART', 
+            paymentStatus: 'CART',
         });
 
         await newReservation.save();
@@ -405,10 +518,10 @@ exports.finalizeReservation = async (req, res) => {
             reservation.downpaymentAmount = downpaymentAmount;
             reservation.remainingBalance = remainingBalance;
             reservation.paymentType = 'downpayment';
-            reservation.status = 'PAID'; // Still mark as PAID to allow check-in
+            reservation.status = 'PENDING'; // Mark as PENDING after checkout, admin will mark as PAID
         } else {
-            reservation.paymentStatus = 'PAID';
-            reservation.status = 'PAID';
+            reservation.paymentStatus = 'PAID'; // Payment is complete, but status is still PENDING for admin approval
+            reservation.status = 'PENDING';
         }
         
         // Save the updated reservation

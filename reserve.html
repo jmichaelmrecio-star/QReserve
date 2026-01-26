@@ -573,19 +573,23 @@
 	});
 
 	// Handler for Add to Cart button
-	function handleAddToCart() {
-
+	async function handleAddToCart() {
 		// Try to get from sessionStorage, fallback to form fields if missing
+		// Always update hidden price fields from visible display before validation
+		const basePriceDisplay = document.getElementById('basePriceDisplay')?.textContent?.replace(/[^\d.]/g, '') || '';
+		const finalTotalDisplay = document.getElementById('finalTotalDisplay')?.textContent?.replace(/[^\d.]/g, '') || '';
+		if (document.getElementById('basePriceInput')) document.getElementById('basePriceInput').value = basePriceDisplay;
+		if (document.getElementById('finalTotalInput')) document.getElementById('finalTotalInput').value = finalTotalDisplay;
+
 		let serviceId = sessionStorage.getItem('selectedServiceId') || document.getElementById('serviceIdInput')?.value;
 		let serviceName = sessionStorage.getItem('selectedServiceName') || document.getElementById('selectedServiceDisplay')?.textContent;
 		let serviceType = sessionStorage.getItem('selectedServiceType') || document.getElementById('serviceTypeInput')?.value;
 		let durationId = sessionStorage.getItem('selectedDuration') || document.getElementById('duration-selector')?.value;
 		let durationLabel = sessionStorage.getItem('selectedDurationLabel');
-		let price = parseFloat(document.getElementById('finalTotalInput')?.value);
+		let price = parseFloat(finalTotalDisplay);
 		if (!price || price <= 0) {
-			// Try to get from visible total
-			const priceText = document.getElementById('finalTotalDisplay')?.textContent?.replace(/[^\d.]/g, '');
-			price = parseFloat(priceText) || 0;
+			// Try to get from hidden input as fallback
+			price = parseFloat(document.getElementById('finalTotalInput')?.value) || 0;
 		}
 		const checkIn = document.getElementById('checkin')?.value;
 		const checkOut = document.getElementById('checkout')?.value;
@@ -607,38 +611,63 @@
 			return;
 		}
 
-	    // Add to cart
-	    const cartItem = addToCart({
-	        serviceId: serviceId,
-	        serviceName: serviceName,
-	        serviceType: serviceType,
-	        durationId: durationId,
-	        durationLabel: durationLabel,
-	        checkIn: checkIn,
-	        checkOut: checkOut,
-	        guests: guests,
-	        price: price
-	    });
+		// 1. Check for duplicate reservation/cart item before adding
+		try {
+			const token = localStorage.getItem('authToken'); // Or however you store JWT
+			const duplicateCheck = await fetch('http://localhost:3000/api/reservations/cart/check-duplicate', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${token}`
+				},
+				body: JSON.stringify({
+					serviceId: serviceId,
+					checkin_date: checkIn,
+					checkout_date: checkOut
+				})
+			}).then(res => res.json());
 
-	    if (cartItem) {
-	        // Ask user if they want to continue shopping or go to cart
-	        showConfirm(
-	            'Added to Cart!',
-	            `<p><strong>${serviceName}</strong> has been added to your cart.</p><p>What would you like to do next?</p>`,
-	            () => {
-	                window.location.href = 'cart.html';
-	            },
-	            () => {
-	                // Continue shopping - go back to services list
-	                window.location.href = 'services-list.html';
-	            },
-	            {
-	                confirmText: 'View Cart',
-	                cancelText: 'Continue Shopping',
-	                type: 'success'
-	            }
-	        );
-	    }
+			if (duplicateCheck.success && duplicateCheck.duplicate) {
+				showModal('Duplicate Reservation', duplicateCheck.message || 'You already have a reservation or cart item for this service and date range.', 'error');
+				return;
+			}
+		} catch (err) {
+			showModal('Error', 'Could not check for duplicate reservation. Please try again.', 'error');
+			return;
+		}
+
+		// Add to cart
+		const cartItem = addToCart({
+			serviceId: serviceId,
+			serviceName: serviceName,
+			serviceType: serviceType,
+			durationId: durationId,
+			durationLabel: durationLabel,
+			checkIn: checkIn,
+			checkOut: checkOut,
+			guests: guests,
+			price: price
+		});
+
+		if (cartItem) {
+			// Ask user if they want to continue shopping or go to cart
+			showConfirm(
+				'Added to Cart!',
+				`<p><strong>${serviceName}</strong> has been added to your cart.</p><p>What would you like to do next?</p>`,
+				() => {
+					window.location.href = 'cart.html';
+				},
+				() => {
+					// Continue shopping - go back to services list
+					window.location.href = 'services-list.html';
+				},
+				{
+					confirmText: 'View Cart',
+					cancelText: 'Continue Shopping',
+					type: 'success'
+				}
+			);
+		}
 	}
 
 	// View Reservation Summary Modal Functionality
