@@ -431,29 +431,31 @@
 
         // Load and display testimonials dynamically
         function loadTestimonials() {
-            let testimonials = JSON.parse(localStorage.getItem('guestFeedback') || '[]');
+            // Demo testimonials (always included)
+            const demoTestimonials = [
+                {
+                    name: "Maria Santos",
+                    location: "Quezon City, Philippines",
+                    rating: 4,
+                    comment: "Great value for money! The location is convenient, and the staff is very helpful. The room was comfortable though could use some minor updates. Overall, a very pleasant stay. Will definitely come back!",
+                    visitDate: "2024-12-28",
+                    submittedAt: "2025-01-05T09:20:00Z"
+                },
+                {
+                    name: "Carlos Rodriguez",
+                    location: "Makati, Philippines",
+                    rating: 5,
+                    comment: "Celebrated our anniversary here and it was perfect! The sunset views, romantic dinner setup, and attentive staff made it unforgettable. Thank you Tito Renz for making our special day even more special!",
+                    visitDate: "2024-12-10",
+                    submittedAt: "2024-12-15T13:15:00Z"
+                }
+            ];
             
-            // If no testimonials exist, load sample demo testimonials
-            if (testimonials.length === 0) {
-                testimonials = [
-                    {
-                        name: "Maria Santos",
-                        location: "Quezon City, Philippines",
-                        rating: 4,
-                        comment: "Great value for money! The location is convenient, and the staff is very helpful. The room was comfortable though could use some minor updates. Overall, a very pleasant stay. Will definitely come back!",
-                        visitDate: "2024-12-28",
-                        submittedAt: "2025-01-05T09:20:00Z"
-                    },
-                    {
-                        name: "Carlos Rodriguez",
-                        location: "Makati, Philippines",
-                        rating: 5,
-                        comment: "Celebrated our anniversary here and it was perfect! The sunset views, romantic dinner setup, and attentive staff made it unforgettable. Thank you Tito Renz for making our special day even more special!",
-                        visitDate: "2024-12-10",
-                        submittedAt: "2024-12-15T13:15:00Z"
-                    }
-                ];
-            }
+            // Get user-submitted testimonials from localStorage
+            const userTestimonials = JSON.parse(localStorage.getItem('guestFeedback') || '[]');
+            
+            // Combine demo and user testimonials
+            let testimonials = [...userTestimonials, ...demoTestimonials];
             
             const grid = document.getElementById('testimonials-grid');
             

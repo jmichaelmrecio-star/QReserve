@@ -234,10 +234,12 @@ function filterServices() {
     }
     
     if (capacityFilter > 0) {
-        if (capacityFilter === 6) {
-             filtered = filtered.filter(s => s.max_guests >= 6);
+        if (capacityFilter === 20) {
+            // "20 and above" - filter for services with max_guests >= 20
+            filtered = filtered.filter(s => s.max_guests >= 20);
         } else {
-             filtered = filtered.filter(s => s.max_guests <= capacityFilter);
+            // "Up to X" - filter for services with max_guests <= capacity
+            filtered = filtered.filter(s => s.max_guests <= capacityFilter);
         }
     }
     
