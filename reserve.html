@@ -415,16 +415,71 @@
 			// Patch: Sync selected duration to sessionStorage and hidden input
 			const durationSelect = document.getElementById('duration-selector');
 			const selectedDurationInput = document.getElementById('selectedDurationInput');
+			const checkinInput = document.getElementById('checkin');
+			const checkoutInput = document.getElementById('checkout');
+			
+			// Function to auto-fill checkout date based on duration and checkin
+			function autoFillCheckoutDate() {
+				if (!durationSelect.value || !checkinInput.value) return;
+				
+				// Find the selected duration option in the service data
+				const serviceId = sessionStorage.getItem('selectedServiceId') || document.getElementById('serviceIdInput').value;
+				const service = window.resortServices?.find(s => (s._id || s.id) === serviceId);
+				
+				if (!service) return;
+				
+				// Get the duration option
+				const allOptions = [...(service.timeSlots || []), ...(service.durations || [])];
+				const selectedOption = allOptions.find(opt => opt.id === durationSelect.value);
+				
+				if (!selectedOption) return;
+				
+				// Parse checkin datetime
+				const checkinDate = new Date(checkinInput.value);
+				if (isNaN(checkinDate)) return;
+				
+				// Calculate checkout date based on duration
+				let checkoutDate = new Date(checkinDate);
+				
+				// If it has hours property (e.g., 2 hours, 4 hours)
+				if (selectedOption.hours) {
+					checkoutDate.setHours(checkoutDate.getHours() + parseInt(selectedOption.hours));
+				}
+				// If it has days property (e.g., 1 day, 2 days)
+				else if (selectedOption.days) {
+					checkoutDate.setDate(checkoutDate.getDate() + parseInt(selectedOption.days));
+				}
+				// Default to 1 day if no duration unit specified
+				else {
+					checkoutDate.setDate(checkoutDate.getDate() + 1);
+				}
+				
+				// Format as datetime-local format (YYYY-MM-DDTHH:MM)
+				const year = checkoutDate.getFullYear();
+				const month = String(checkoutDate.getMonth() + 1).padStart(2, '0');
+				const day = String(checkoutDate.getDate()).padStart(2, '0');
+				const hours = String(checkoutDate.getHours()).padStart(2, '0');
+				const minutes = String(checkoutDate.getMinutes()).padStart(2, '0');
+				
+				checkoutInput.value = `${year}-${month}-${day}T${hours}:${minutes}`;
+			}
+			
 			if (durationSelect && selectedDurationInput) {
 				durationSelect.addEventListener('change', function() {
 					sessionStorage.setItem('selectedDuration', durationSelect.value);
 					selectedDurationInput.value = durationSelect.value;
+					autoFillCheckoutDate();
 				});
 				// Set initial value if already selected
 				if (durationSelect.value) {
 					sessionStorage.setItem('selectedDuration', durationSelect.value);
 					selectedDurationInput.value = durationSelect.value;
 				}
+			}
+			
+			// Also auto-fill checkout when checkin date changes
+			if (checkinInput) {
+				checkinInput.addEventListener('change', autoFillCheckoutDate);
 			}
 		});
 		// Cancel Reservation button logic
@@ -750,8 +805,8 @@
 	function prefillUserDataOrRedirectLogin() {
 	  const user = (typeof getLoggedInUser === 'function') ? getLoggedInUser() : null;
 	  if (user) {
-	    if (user.name) document.getElementById('name').value = user.name;
-	    if (user.contact) document.getElementById('contact').value = user.contact;
+	    if (user.full_name) document.getElementById('name').value = user.full_name;
+	    if (user.phone) document.getElementById('contact').value = user.phone;
 	    if (user.email) document.getElementById('email').value = user.email;
 	    if (user.address) document.getElementById('address').value = user.address;
 	  } else {

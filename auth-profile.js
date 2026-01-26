@@ -146,10 +146,21 @@ function checkLoginStatusForReservation() {
       const nameInput = document.getElementById("name") || document.getElementById("customer_name");
       const emailInput = document.getElementById("email") || document.getElementById("customer_email");
       const phoneInput = document.getElementById("contact") || document.getElementById("customer_contact");
+      const addressInput = document.getElementById("address") || document.getElementById("customer_address");
+      const birthdayInput = document.getElementById("birthday") || document.getElementById("customer_birthday");
       
       if (nameInput) nameInput.value = user.full_name || "";
       if (emailInput) emailInput.value = user.email || "";
       if (phoneInput) phoneInput.value = user.phone || "";
+      if (addressInput) addressInput.value = user.address || "";
+      if (birthdayInput && user.birthday) {
+        // Format birthday from ISO to YYYY-MM-DD if needed
+        const date = new Date(user.birthday);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        birthdayInput.value = `${year}-${month}-${day}`;
+      }
     }
   }
 }
