@@ -8,22 +8,58 @@
     <link rel="stylesheet" href="style.css">
     <style>
         .guide-section {
+            background-color: transparent;
+        }
+        .guides-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        @media (max-width: 992px) {
+            .guides-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        @media (max-width: 768px) {
+            .guides-container {
+                grid-template-columns: 1fr;
+            }
+        }
+        .guide-item {
             background-color: white;
             padding: 2rem;
             border-radius: var(--border-radius);
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
         }
-        .guide-item {
-            margin-bottom: 2rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid #e9ecef;
+        .guide-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
         }
         .guide-item h3 {
             color: var(--primary-color);
-            margin-bottom: 0.5rem;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid var(--primary-color);
         }
         .guide-item ol {
             margin-left: 1.5rem;
+            line-height: 1.8;
+            flex-grow: 1;
+        }
+        .guide-item ol li {
+            margin-bottom: 1rem;
+            padding-left: 0.5rem;
+        }
+        .guide-item p {
+            margin-bottom: 1rem;
+            color: #666;
+            font-style: italic;
         }
     </style>
 </head>
@@ -48,41 +84,54 @@
             </div>
         </section>
 
-        <section class="guide-section" style="margin-top: 2rem;">
-            <h2>QReserve System Guides</h2>
-            <p>Find step-by-step instructions for using our web-based reservation system.</p>
-
+        <section class="guide-section" style=" max-width: 1600px; margin-left: auto; margin-right: auto; padding: 2rem; padding-top: 0;">
+            <div class="guides-container">
             <div class="guide-item">
                 <h3>Guide 1: How to Book a Reservation</h3>
                 <ol>
-                    <li>Click the **Amenities** link in the navigation bar.</li>
-                    <li>Select your desired service type (Room or Cottage).</li>
-                    <li>Enter the required **Check-in** and **Check-out** dates and times.</li>
-                    <li>Fill in the number of guests.</li>
-                    <li>Click **Confirm & Submit Reservation** to proceed to payment simulation.</li>
+                    <li>Click the <strong>Amenities</strong> in the navigation bar.</li>
+                    <li>Select your desired service type <strong>(Room or Venue)</strong>.</li>
+                    <li>After selecting the service type you want, choose your desired <strong>Duration/Time-Slot</strong>.</li>
+                    <li>Once you have decided the amenity and duration of your liking, click <strong>Proceed to Reservation Form</strong> button.</li>
+                    <li>Fill out the reservation form with your personal information, then submit the form to complete your booking.</li>
+                    <li>After submitting the form, complete the payment process to finalize your reservation.</li>
                 </ol>
             </div>
 
             <div class="guide-item">
-                <h3>Guide 2: QR Code Check-in Process</h3>
+                <h3>Guide 2: How to Check-in with/using QR Code</h3>
                 <ol>
-                    <li>After confirming your reservation, you will be shown a unique **QR Code**.</li>
-                    <li>Save this page or take a screenshot of the QR code.</li>
-                    <li>Upon arrival at the resort, present the code to the staff member.</li>
-                    <li>The staff will scan the code using the QReserve system to instantly verify your booking details and process your **check-in** seamlessly.</li>
+                    <li>After confirming your reservation, you will be shown a unique <strong>QR Code</strong>.</li>
+                    <li>Save this page or take a screenshot of the <strong>QR Code</strong>.</li>
+                    <li>Upon arrival at the resort, present the <strong>QR Code</strong> to the staff member.</li>
+                    <li>The staff will scan the <strong>QR Code</strong> using the QReserve system to instantly verify your booking details and process your <strong>check-in</strong> seamlessly.</li>
                 </ol>
             </div>
 
             <div class="guide-item">
-                <h3>Guide 3: Viewing Past Bookings</h3>
+                <h3>Guide 3: How to View Reservations</h3>
                 <p>Registered users can view their current and past reservations.</p>
                 <ol>
                     <li>Ensure you are logged into your account.</li>
-                    <li>Click on the **My Profile** link in the navigation bar.</li>
-                    <li>Scroll down to the **My Past Reservations** section to view your booking history and status.</li>
+                    <li>Click the <strong>Profile icon</strong> in the navigation bar.</li>
+                    <li>Click the <strong>My Profile</strong></li>
+                    <li>Scroll down until you see <strong>My Recent Reservations</strong> section to view your reservation details and history.</li>
                 </ol>
             </div>
+
+            <div class ="guide-item">
+                <h3>Guide 4: How to Reserve Multiple Services at Once</h3>
+                <p>You can cancel your reservation up to 24 hours before your scheduled check-in time.</p>
+                <ol>
+                    <li>Click the <strong>Cart</strong> button in the navigation bar.</li>
+                    <li>Review the items in your cart to ensure they are correct.</li>
+                    <li>To remove an item, click the <strong>Remove</strong> button next to the item you wish to delete.</li>
+                    <li>To clear your cart, click the <strong>Clear Cart</strong> button.</li>
+                    <li>Once you have reviewed and are satisfied with your cart, click the <strong>Proceed to Checkout</strong> button to finalize your reservation.</li>
+                </ol>
             
+            </div>
+            </div>
         </section>
     </main>
 
