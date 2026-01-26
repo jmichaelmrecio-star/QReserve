@@ -316,20 +316,18 @@ function addResumeReservationNav() {
     const incompleteReservations = getIncompleteReservations();
     const userEmail = localStorage.getItem('qreserve_logged_user_email');
     
-    // Only show if user is logged in
-    if (!userEmail) {
+    // Only show if user is logged in AND has incomplete reservations
+    if (!userEmail || incompleteReservations.length === 0) {
         return;
     }
     
     // Check if button already exists
     const existingBtn = document.getElementById('resume-reservation-nav-btn');
     if (existingBtn) {
-        // Update existing button with indicator if needed
-        const hasIncomplete = incompleteReservations.length > 0;
-        const indicator = hasIncomplete ? ' <span style="color: #dc3545; font-weight: bold;">(!)</span>' : '';
+        // Update existing button - no need to check again since we already filtered above
         existingBtn.innerHTML = `
             <a href="#" onclick="showResumeReservationModal(); return false;" style="color: #28a745; font-weight: bold;">
-                ↺ Resume${indicator}
+                ↺ Resume <span style="color: #dc3545; font-weight: bold;">(!)</span>
             </a>
         `;
         return;
@@ -343,13 +341,9 @@ function addResumeReservationNav() {
     resumeLi.id = 'resume-reservation-nav-btn';
     resumeLi.classList.add('nav-action'); // Add nav-action class for proper layout alignment
     
-    // Add indicator if there are incomplete reservations
-    const hasIncomplete = incompleteReservations.length > 0;
-    const indicator = hasIncomplete ? ' <span style="color: #dc3545; font-weight: bold;">(!)</span>' : '';
-    
     resumeLi.innerHTML = `
         <a href="#" onclick="showResumeReservationModal(); return false;" style="color: #28a745; font-weight: bold;">
-            ↺ Resume${indicator}
+            ↺ Resume <span style="color: #dc3545; font-weight: bold;">(!)</span>
         </a>
     `;
     
