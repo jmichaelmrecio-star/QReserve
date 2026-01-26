@@ -1,3 +1,172 @@
+// --- Account Edit Modal Logic ---
+// --- Account Create Modal Logic ---
+// --- Modal Close Logic ---
+function closeAccountModal() {
+  const modal = document.getElementById('accountModal');
+  if (window.bootstrap && window.bootstrap.Modal) {
+    window.bootstrap.Modal.getOrCreateInstance(modal).hide();
+  } else {
+    modal.style.display = 'none';
+    modal.classList.remove('show');
+    modal.setAttribute('aria-hidden', 'true');
+  }
+}
+window.closeAccountModal = closeAccountModal;
+function openCreateAccountModal() {
+  // Clear all fields
+  document.getElementById('accountModalTitle').textContent = 'Add New Account (Not Supported)';
+  document.getElementById('accountFirstName').value = '';
+  document.getElementById('accountFirstName').readOnly = true;
+  document.getElementById('accountMiddleName').value = '';
+  document.getElementById('accountMiddleName').readOnly = true;
+  document.getElementById('accountLastName').value = '';
+  document.getElementById('accountLastName').readOnly = true;
+  document.getElementById('accountEmail').value = '';
+  document.getElementById('accountEmail').readOnly = true;
+  document.getElementById('accountPhone').value = '';
+  document.getElementById('accountPhone').readOnly = true;
+  document.getElementById('accountPassword').value = '';
+  document.getElementById('accountPassword').style.display = 'none';
+  document.getElementById('accountRole').value = '';
+  delete document.getElementById('accountForm').dataset.editingId;
+
+  // Show modal
+  const modal = document.getElementById('accountModal');
+  if (window.bootstrap && window.bootstrap.Modal) {
+    const bsModal = window.bootstrap.Modal.getOrCreateInstance(modal);
+    bsModal.show();
+  } else {
+    modal.style.display = 'block';
+    modal.classList.add('show');
+    modal.setAttribute('aria-hidden', 'false');
+  }
+}
+window.openCreateAccountModal = openCreateAccountModal;
+async function openEditAccountModal(userId) {
+  try {
+    // Find user in memory (from window._adminUsersById)
+    const user = window._adminUsersById && window._adminUsersById[userId];
+    if (!user) throw new Error('User not found in memory');
+
+    // Populate modal fields (read-only except role)
+    document.getElementById('accountModalTitle').textContent = 'Edit Account Role';
+    document.getElementById('accountFirstName').value = user.first_name || '';
+    document.getElementById('accountFirstName').readOnly = true;
+    document.getElementById('accountMiddleName').value = user.middle_name || '';
+    document.getElementById('accountMiddleName').readOnly = true;
+    document.getElementById('accountLastName').value = user.last_name || '';
+    document.getElementById('accountLastName').readOnly = true;
+    document.getElementById('accountEmail').value = user.email || '';
+    document.getElementById('accountEmail').readOnly = true;
+    document.getElementById('accountPhone').value = user.phone || '';
+    document.getElementById('accountPhone').readOnly = true;
+    document.getElementById('accountPassword').value = '';
+    document.getElementById('accountPassword').style.display = 'none';
+    document.getElementById('accountRole').value = user.role_id || '';
+
+    // Store userId for update
+    document.getElementById('accountForm').dataset.editingId = userId;
+
+    // Hide error message
+    const msg = document.getElementById('accountFormMessage');
+    if (msg) { msg.classList.add('d-none'); msg.textContent = ''; }
+
+    // Show modal (Bootstrap 5)
+    const modal = document.getElementById('accountModal');
+    if (window.bootstrap && window.bootstrap.Modal) {
+      const bsModal = window.bootstrap.Modal.getOrCreateInstance(modal);
+      bsModal.show();
+    } else {
+      modal.style.display = 'block';
+      modal.classList.add('show');
+      modal.setAttribute('aria-hidden', 'false');
+    }
+  } catch (e) {
+    showAlert('Failed to load user for editing.', 'danger');
+  }
+}
+// --- Account Edit Modal Logic ---
+function openEditAccountModal(userId) {
+  try {
+    const user = window._adminUsersById && window._adminUsersById[userId];
+    if (!user) throw new Error('User not found in memory');
+
+    // Populate modal fields
+    document.getElementById('accountModalTitle').textContent = 'Edit Account';
+    document.getElementById('accountFirstName').value = user.first_name || '';
+    document.getElementById('accountMiddleName').value = user.middle_name || '';
+    document.getElementById('accountLastName').value = user.last_name || '';
+    document.getElementById('accountEmail').value = user.email || '';
+    document.getElementById('accountPhone').value = user.phone || '';
+    document.getElementById('accountPassword').value = '';
+    document.getElementById('accountRole').value = user.role_id || '';
+
+    // Store userId for update
+    document.getElementById('accountForm').dataset.editingId = userId;
+
+    // Hide error message
+    const msg = document.getElementById('accountFormMessage');
+    if (msg) { msg.classList.add('d-none'); msg.textContent = ''; }
+
+    // Show modal (Bootstrap 5)
+    const modal = document.getElementById('accountModal');
+    if (window.bootstrap && window.bootstrap.Modal) {
+      const bsModal = window.bootstrap.Modal.getOrCreateInstance(modal);
+      bsModal.show();
+    } else {
+      modal.style.display = 'block';
+      modal.classList.add('show');
+      modal.setAttribute('aria-hidden', 'false');
+    }
+  } catch (e) {
+    showAlert('Failed to load user for editing.', 'danger');
+  }
+}
+
+// Patch form submit to handle edit mode
+const accountForm = document.getElementById('accountForm');
+if (accountForm) {
+  accountForm.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const editingId = accountForm.dataset.editingId;
+    // Only allow role update if editing
+    if (editingId) {
+      const newRoleName = accountForm.accountRole.options[accountForm.accountRole.selectedIndex].text;
+      try {
+        const response = await fetch(`http://localhost:3000/api/users/${editingId}/role`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getAuthToken()}` },
+          body: JSON.stringify({ newRoleName })
+        });
+        if (response.ok) {
+          showAlert('Account role updated.', 'success');
+          if (typeof renderUsersList === 'function') renderUsersList();
+          if (window.bootstrap && window.bootstrap.Modal) {
+            window.bootstrap.Modal.getOrCreateInstance(document.getElementById('accountModal')).hide();
+          } else {
+            document.getElementById('accountModal').style.display = 'none';
+          }
+          accountForm.reset();
+          delete accountForm.dataset.editingId;
+        } else {
+          const msg = document.getElementById('accountFormMessage');
+          if (msg) {
+            msg.classList.remove('d-none');
+            msg.textContent = 'Failed to update account role.';
+          }
+        }
+      } catch (err) {
+        const msg = document.getElementById('accountFormMessage');
+        if (msg) {
+          msg.classList.remove('d-none');
+          msg.textContent = 'Error updating account role.';
+        }
+      }
+    }
+  });
+}
+
+window.openEditAccountModal = openEditAccountModal;
 // Show QR code modal for admin reservation
 window.showReservationQRModal = function(reservationId) {
   // Show modal (Bootstrap 5)
@@ -309,8 +478,8 @@ function showAlert(message, type = "info") {
   };
   if (typeof showToast === "function") {
     showToast(message, typeMap[type] || "info");
-  } else {
-    alert(message);
+  } else if (typeof showModal === "function") {
+    showModal(type.charAt(0).toUpperCase() + type.slice(1), `<p>${message}</p>`, typeMap[type] || "info");
   }
 }
 
@@ -766,7 +935,10 @@ async function renderUsersList() {
     });
     const users = await response.json();
     if (Array.isArray(users)) {
+      // Build a map for quick lookup by ID for editing
+      window._adminUsersById = {};
       tbody.innerHTML = users.map(user => {
+        window._adminUsersById[user._id] = user;
         // Compose full name
         const name = [user.first_name, user.middle_name, user.last_name].filter(Boolean).join(' ');
         // Status
@@ -817,6 +989,48 @@ async function deleteUser(userId) {
 }
 
 // --- Service Management ---
+// --- Service Edit/Deactivate Logic ---
+async function editService(serviceId) {
+  if (typeof showModal === 'function') {
+    showModal('Not Supported', '<p>Editing service details is not supported (no backend route).</p>', 'warning');
+  }
+}
+async function deactivateServiceAndRefresh(serviceId) {
+  if (!confirm('Are you sure you want to deactivate this service?')) return;
+  try {
+    const response = await fetch(`http://localhost:3000/api/services/${serviceId}/deactivate`, {
+      method: 'PUT',
+      headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+    });
+    if (response.ok) {
+      showAlert('Service deactivated.', 'success');
+      if (typeof renderServiceTable === 'function') renderServiceTable();
+    } else {
+      showAlert('Failed to deactivate service.', 'danger');
+    }
+  } catch (e) {
+    showAlert('Error deactivating service.', 'danger');
+  }
+}
+async function activateServiceAndRefresh(serviceId) {
+  try {
+    const response = await fetch(`http://localhost:3000/api/services/${serviceId}/activate`, {
+      method: 'PUT',
+      headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+    });
+    if (response.ok) {
+      showAlert('Service activated.', 'success');
+      if (typeof renderServiceTable === 'function') renderServiceTable();
+    } else {
+      showAlert('Failed to activate service.', 'danger');
+    }
+  } catch (e) {
+    showAlert('Error activating service.', 'danger');
+  }
+}
+window.editService = editService;
+window.deactivateServiceAndRefresh = deactivateServiceAndRefresh;
+window.activateServiceAndRefresh = activateServiceAndRefresh;
 
 async function fetchAllServicesAdmin() {
   try {
@@ -836,52 +1050,105 @@ async function renderServiceTable() {
 
   const data = await fetchAllServicesAdmin();
   if (data.success) {
-    tbody.innerHTML = data.services.map(service => {
-      // Main image thumbnail
-      const mainImg = service.image ? `<a href="${service.image}" target="_blank"><img src="${service.image}" style="max-width:60px;max-height:60px;object-fit:cover;" /></a>` : '';
-      // Gallery thumbnails
-      const gallery = Array.isArray(service.gallery) && service.gallery.length > 0
-        ? service.gallery.map(img => `<a href="${img}" target="_blank"><img src="${img}" style="max-width:40px;max-height:40px;margin:2px;object-fit:cover;" /></a>`).join('')
-        : '';
-      // Inclusions
-      const inclusions = Array.isArray(service.inclusions) ? service.inclusions.filter(Boolean).join(', ') : '';
-      // Durations/Time slots
-      let durations = '';
-      if (Array.isArray(service.durations) && service.durations.length > 0) {
-        durations = service.durations.map(d => `${escapeHtml(d.label)} (${d.hours || ''}h) ₱${d.price ? parseFloat(d.price).toLocaleString() : ''}`).join('<br>');
-      } else if (Array.isArray(service.timeSlots) && service.timeSlots.length > 0) {
-        durations = service.timeSlots.map(ts => `${escapeHtml(ts.label)} ₱${ts.price ? parseFloat(ts.price).toLocaleString() : ''}`).join('<br>');
-      }
-      // Ensure 13 columns for DataTables
-      return `
-        <tr>
-          <td>${escapeHtml(service.id || service._id)}</td>
-          <td>${escapeHtml(service.name)}</td>
-          <td>${escapeHtml(service.type)}</td>
-          <td>${escapeHtml(service.category)}</td>
-          <td>${service.max_guests || ''}</td>
-          <td>${escapeHtml(service.description || '')}</td>
-          <td>${mainImg}</td>
-          <td>${gallery}</td>
-          <td>${inclusions}</td>
-          <td>${escapeHtml(service.notes || '')}</td>
-          <td>${durations}</td>
-          <td>${service.isActive ? 'Active' : 'Inactive'}</td>
-          <td>
-            <button class="btn btn-sm" onclick="editService('${service._id}')">Edit</button>
-            <button class="btn btn-sm ${service.isActive ? 'btn-danger' : 'btn-success'}" 
-                    onclick="${service.isActive ? 'deactivate' : 'activate'}ServiceAndRefresh('${service._id}')">
-              ${service.isActive ? 'Deactivate' : 'Activate'}
-            </button>
-          </td>
-        </tr>
-      `;
-    }).join("");
+    if (Array.isArray(data.services) && data.services.length > 0) {
+      tbody.innerHTML = data.services.map(service => {
+        // Main image thumbnail
+        const mainImg = service.image ? `<a href="${service.image}" target="_blank"><img src="${service.image}" style="max-width:60px;max-height:60px;object-fit:cover;" /></a>` : '';
+        // Gallery thumbnails
+        const gallery = Array.isArray(service.gallery) && service.gallery.length > 0
+          ? service.gallery.map(img => `<a href="${img}" target="_blank"><img src="${img}" style="max-width:40px;max-height:40px;margin:2px;object-fit:cover;" /></a>`).join('')
+          : '';
+        // Inclusions
+        const inclusions = Array.isArray(service.inclusions) ? service.inclusions.filter(Boolean).join(', ') : '';
+        // Durations/Time slots
+        let durations = '';
+        if (Array.isArray(service.durations) && service.durations.length > 0) {
+          durations = service.durations.map(d => `${escapeHtml(d.label)} (${d.hours || ''}h) ₱${d.price ? parseFloat(d.price).toLocaleString() : ''}`).join('<br>');
+        } else if (Array.isArray(service.timeSlots) && service.timeSlots.length > 0) {
+          durations = service.timeSlots.map(ts => `${escapeHtml(ts.label)} ₱${ts.price ? parseFloat(ts.price).toLocaleString() : ''}`).join('<br>');
+        }
+        // Ensure 13 columns for DataTables
+        return `
+          <tr>
+            <td>${escapeHtml(service.id || service._id)}</td>
+            <td>${escapeHtml(service.name)}</td>
+            <td>${escapeHtml(service.type)}</td>
+            <td>${escapeHtml(service.category)}</td>
+            <td>${service.max_guests || ''}</td>
+            <td>${escapeHtml(service.description || '')}</td>
+            <td>${mainImg}</td>
+            <td>${gallery}</td>
+            <td>${inclusions}</td>
+            <td>${escapeHtml(service.notes || '')}</td>
+            <td>${durations}</td>
+            <td>${service.isActive ? 'Active' : 'Inactive'}</td>
+            <td>
+              <button class="btn btn-sm" onclick="editService('${service._id}')">Edit</button>
+              <button class="btn btn-sm ${service.isActive ? 'btn-danger' : 'btn-success'}" 
+                      onclick="${service.isActive ? 'deactivate' : 'activate'}ServiceAndRefresh('${service._id}')">
+                ${service.isActive ? 'Deactivate' : 'Activate'}
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    } else {
+      tbody.innerHTML = '<tr><td colspan="13" class="text-center">No services found.</td></tr>';
+    }
   }
 }
 
 
 // --- Reservation Actions ---
+// --- Check-in and Checkout Actions ---
+async function checkInReservation(reservationId, email, name) {
+  if (!confirm(`Check in reservation for ${name || 'this guest'}?`)) return;
+  try {
+    // The backend expects a PUT to /api/reservations/update-status/:id with status: 'CHECKED_IN'
+    const response = await fetch(`http://localhost:3000/api/reservations/update-status/${reservationId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${getAuthToken()}`
+      },
+      body: JSON.stringify({ status: 'CHECKED_IN' })
+    });
+    if (response.ok) {
+      showAlert('Guest checked in.', 'success');
+      if (typeof renderAdminReservations === 'function') renderAdminReservations();
+    } else {
+      showAlert('Failed to check in guest.', 'danger');
+    }
+  } catch (e) {
+    showAlert('Error during check-in.', 'danger');
+  }
+}
+
+async function checkoutReservation(reservationId, email, name) {
+  if (!confirm(`Checkout reservation for ${name || 'this guest'}?`)) return;
+  try {
+    // Use the public update-status route to set status to COMPLETED
+    const response = await fetch(`http://localhost:3000/api/reservations/update-status/${reservationId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${getAuthToken()}`
+      },
+      body: JSON.stringify({ status: 'COMPLETED' })
+    });
+    if (response.ok) {
+      showAlert('Guest checked out.', 'success');
+      if (typeof renderAdminReservations === 'function') renderAdminReservations();
+    } else {
+      showAlert('Failed to checkout guest.', 'danger');
+    }
+  } catch (e) {
+    showAlert('Error during checkout.', 'danger');
+  }
+}
+
+window.checkInReservation = checkInReservation;
+window.checkoutReservation = checkoutReservation;
 
 async function confirmReservation(id) {
   try {

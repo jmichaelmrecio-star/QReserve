@@ -3,7 +3,32 @@
     <div class="card p-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2 class="mb-0">Reservation Management</h2>
-            <button id="report-button" class="btn btn-primary">Generate Report</button>
+            <button id="report-button" class="btn btn-primary btn-sm" style="min-width:110px;max-width:150px;">Report</button>
+        <!-- Report Generation Modal -->
+        <div class="modal fade" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="reportModalLabel">Generate Reservation Report</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="reportForm">
+                            <div class="mb-3">
+                                <label for="reportStartDate" class="form-label">Start Date</label>
+                                <input type="date" class="form-control" id="reportStartDate" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="reportEndDate" class="form-label">End Date</label>
+                                <input type="date" class="form-control" id="reportEndDate" required>
+                            </div>
+                            <div id="reportStatus" class="mb-2"></div>
+                            <button type="submit" class="btn btn-success w-100">Generate CSV</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
         </div>
 
         <div class="table-responsive">
@@ -90,11 +115,10 @@
     const reportButton = document.getElementById('report-button');
     if (reportButton) {
         reportButton.addEventListener('click', function() {
-            if (typeof generateReservationsReport === 'function') {
-                generateReservationsReport();
-            } else {
-                alert('Report generation feature coming soon!');
-            }
+            const reportModal = new bootstrap.Modal(document.getElementById('reportModal'));
+            document.getElementById('reportForm').reset();
+            document.getElementById('reportStatus').innerHTML = '';
+            reportModal.show();
         });
     }
 })();
