@@ -423,12 +423,12 @@ const navLinks = {
 const footerQuickLinks = {
   public: [
     { text: "Amenities", href: "services-list.html" },
-    { text: "Check-in Demo", href: "checkin-demo.html" },
+    { text: "Reviews", href: "feedback.html" },
   ],
   customer: [
     { text: "Amenities", href: "services-list.html" },
-    { text: "My Dashboard", href: "customer-dashboard.html" },
-    { text: "Check-in Demo", href: "checkin-demo.html" },
+    { text: "Reviews", href: "feedback.html" },
+    { text: "Cart", href: "cart.html" },
   ],
   admin: [
     { text: "Check-in Demo", href: "checkin-demo.html" },
@@ -643,6 +643,59 @@ function renderFooterQuickLinks() {
   });
 }
 
+// Render complete footer for all pages
+function renderCompleteFooter() {
+  const footer = document.querySelector('footer');
+  if (!footer) return;
+  
+  const role = getCurrentRole();
+  const quickLinks = footerQuickLinks[role] || footerQuickLinks.public;
+  
+  footer.innerHTML = `
+    <div class="footer-content">
+      <div class="footer-section contact-info">
+        <h3>Tito Renz Resort</h3>
+        <p>Your seamless booking experience starts here.</p>
+        <p>📍 Norzagaray, Bulacan, Philippines</p>
+        <p>📞 0977 246 8920 or 0916 640 3411</p>
+        <p>📧 titorenznorzagaray@gmail.com</p>
+      </div>
+
+      <div class="footer-section quick-links">
+        <h3>Quick Links</h3>
+        <ul>
+          ${quickLinks.map(link => `<li><a href="${link.href}">${link.text}</a></li>`).join('')}
+        </ul>
+      </div>
+
+      <div class="footer-section about-contact">
+        <h3>About & Contact</h3>
+        <ul>
+          <li><a href="contact.html">Send Us a Message</a></li>
+          <li><a href="help.html">Help / Guides</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2025 QReserve Project - All Rights Reserved.</p>
+      <p style="margin-top:8px;">
+        <a href="#" id="termsLinkFooter" style="color:var(--primary-color);text-decoration:underline;">View Terms and Conditions</a>
+      </p>
+    </div>
+  `;
+  
+  // Attach terms link handler
+  setTimeout(() => {
+    const termsLink = document.getElementById('termsLinkFooter');
+    if (termsLink && typeof showModal === 'function') {
+      termsLink.addEventListener('click', function(e) {
+        e.preventDefault();
+        showModal('Terms and Conditions', '<img src="images/terms.png" alt="Terms and Conditions" style="max-width:100%;height:auto;display:block;margin:0 auto;">', 'info');
+      });
+    }
+  }, 0);
+}
+
 function attachDropdownToggle() {
   const profileButton = document.getElementById("profile-icon");
   const profileMenu = document.getElementById("profile-menu");
@@ -687,7 +740,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   renderNavigation();
-  renderFooterQuickLinks();
+  renderCompleteFooter();
 
   // Featured Amenities Carousel System
   const sectionButtons = document.querySelectorAll(".amenities-section-btn");
