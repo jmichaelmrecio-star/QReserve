@@ -301,11 +301,14 @@
               });
               const result = await response.json();
               console.log('Registration response:', result);
-              if (response.ok && (result.success === true || (result.message && result.message.toLowerCase().includes('registration successful')))) {
-                showModal('Registration Successful', 'Your account has been created. Please log in.', 'success', {
-                  onClose: () => window.location.href = 'login.html'
-                });
-                return;
+                if (response.ok && (result.success === true || (result.message && result.message.toLowerCase().includes('registration successful')))) {
+                  // If backend returns a verification token, redirect with it
+                  let redirectUrl = 'verify-email.html';
+                  if (result.token) {
+                    redirectUrl += '?token=' + encodeURIComponent(result.token);
+                  }
+                  window.location.href = redirectUrl;
+                  return;
               } else {
                 showModal('Registration Error', result.message || 'Registration failed.', 'error');
                 if (submitBtn) submitBtn.disabled = false;
