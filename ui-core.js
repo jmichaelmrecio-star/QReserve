@@ -600,11 +600,17 @@ function renderNavigation() {
   if (roleFromStorage !== "public") {
     const profileLi = document.createElement("li");
     profileLi.classList.add("profile-dropdown");
+    
+    // Get logged-in user's full name
+    const loggedInUserStr = localStorage.getItem('loggedInUser');
+    const userName = loggedInUserStr ? JSON.parse(loggedInUserStr).full_name || 'User' : 'User';
+    
     profileLi.innerHTML = `
       <button id="profile-icon" class="icon-button" aria-expanded="false" aria-controls="profile-menu">
         <span style="font-size: 1.5rem;">👤</span>
       </button>
       <div class="dropdown-content" id="profile-menu">
+        <div style="padding: 0.75rem 1rem; border-bottom: 1px solid #ddd; font-weight: 600; color: white; text-align: center;">${userName}</div>
         <a href="profile.html">My Profile</a>
         <a href="#" onclick="logout(); return false;">Logout</a>
       </div>`;
