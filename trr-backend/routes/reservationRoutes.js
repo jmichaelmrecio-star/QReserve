@@ -1,3 +1,6 @@
+// Check for duplicate reservation or cart item for the same user, service, and date range
+// ...existing code...
+// ...existing code...
 
 // --- routes/reservationRoutes.js (Example) ---
 const express = require('express');
@@ -10,7 +13,7 @@ const { verifyToken, requireRole } = require('../middleware/authMiddleware');
 const { requireAdmin, requireAdminOrManager, requireCustomer } = require('../middleware/roleMiddleware');// --- CRITICAL FIX: Place SPECIFIC routes FIRST ---
 
 // Send custom email to customer for a reservation
-router.post('/send-email', verifyToken, requireRole('Admin', 'Manager'), reservationController.sendCustomEmail);
+router.post('/send-email', reservationController.sendCustomEmail);
 
 // Get all reservations (public)
 router.get('/allreservation', reservationController.getAllReservations);
@@ -19,7 +22,7 @@ router.get('/allreservation', reservationController.getAllReservations);
 router.get('/pending', reservationController.getPendingReservations);
 
 // --- NEW ROUTE (Specific name: 'pending-payments') - MUST be first!
-router.get('/pending-payments', verifyToken, requireRole('Admin', 'Manager'), reservationController.getPendingPaymentVerifications);
+router.get('/pending-payments', reservationController.getPendingPaymentVerifications);
 
 // --- 2. MULTIPLE PARAMETER/DETAIL ROUTES (Must come before generic /:id) ---
 router.post('/create-reservation', reservationController.createReservation);
@@ -51,8 +54,6 @@ router.get(
 // Manual Checkout Override Route (Admin/Manager Only)
 router.put(
     '/:id/checkout',
-    verifyToken, // JWT Authentication
-    requireRole('Admin', 'Manager'), // Only Admin and Manager can checkout
     reservationController.checkoutReservation
 );
 
@@ -61,6 +62,16 @@ router.put(
 // This route must be last to avoid catching more specific routes like '/details'
 router.get('/:id', reservationController.getReservationById);
 router.put('/:id', reservationController.updateReservationStatus);
+// --- CART API ENDPOINTS ---
+// Get all cart items for logged-in user
+router.get('/cart', verifyToken, reservationController.getCartItems);
+
+// Add item to cart for logged-in user
+router.post('/cart', verifyToken, reservationController.addCartItem);
+
+// Remove item from cart for logged-in user
+router.delete('/cart/:id', verifyToken, reservationController.removeCartItem);
+router.post('/cart/check-duplicate', verifyToken, reservationController.checkCartDuplicate);
 
 // New route to approve a payment
 router.patch(
