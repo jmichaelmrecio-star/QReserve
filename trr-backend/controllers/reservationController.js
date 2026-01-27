@@ -164,32 +164,26 @@ async function generateFormalReservationId() {
     const day = String(today.getDate()).padStart(2, '0');
     const datePrefix = `TRR-${year}${month}${day}`;
     
-    // Find ALL reservations created today (not just the last one) to be safe
-    const startOfDay = new Date(year, today.getMonth(), today.getDate(), 0, 0, 0, 0);
-    const endOfDay = new Date(year, today.getMonth(), today.getDate(), 23, 59, 59, 999);
+    // Find the last reservation created today
+    const startOfDay = new Date(today.setHours(0, 0, 0, 0));
+    const endOfDay = new Date(today.setHours(23, 59, 59, 999));
     
     const todaysReservations = await Reservation.find({
-        reservationId: { $regex: `^${datePrefix}` } // More reliable: check by prefix
-    });
+        dateCreated: { $gte: startOfDay, $lte: endOfDay }
+    }).sort({ dateCreated: -1 }).limit(1);
     
     let sequenceNumber = 1;
-    
-    // Extract all sequence numbers from today's reservations
-    const existingSequences = todaysReservations
-        .map(r => {
-            const match = r.reservationId.match(/-(\d{3})$/);
-            return match ? parseInt(match[1]) : 0;
-        })
-        .sort((a, b) => b - a); // Sort descending to get the highest
-    
-    if (existingSequences.length > 0 && existingSequences[0] > 0) {
-        sequenceNumber = existingSequences[0] + 1;
+    if (todaysReservations.length > 0 && todaysReservations[0].reservationId) {
+        // Extract the sequence number from the last reservation ID
+        const lastId = todaysReservations[0].reservationId;
+        const match = lastId.match(/-(\d{3})$/);
+        if (match) {
+            sequenceNumber = parseInt(match[1]) + 1;
+        }
     }
     
     const formattedSequence = String(sequenceNumber).padStart(3, '0');
-    const newId = `${datePrefix}-${formattedSequence}`;
-    console.log(`🆔 Generated Formal Reservation ID: ${newId} (Next in sequence after ${existingSequences[0] || 0})`);
-    return newId;
+    return `${datePrefix}-${formattedSequence}`;
 }
 
 // Helper function to calculate price from service data
@@ -237,8 +231,6 @@ async function findServiceByAnyId(serviceId, { includeInactive = false } = {}) {
 
 exports.createReservation = async (req, res) => {
     try {
-        console.log('📍 createReservation called with body:', JSON.stringify(req.body, null, 2));
-        
         const {
             serviceId,
             serviceType,
@@ -375,7 +367,6 @@ exports.createReservation = async (req, res) => {
         }
 
         // --- D. Service Validation & Price Calculation ---
-        console.log('🔍 Looking for service with ID:', serviceId);
         let service = await findServiceByAnyId(serviceId);
         if (!service) {
             // Fallback to hardcoded services (legacy)
@@ -383,7 +374,7 @@ exports.createReservation = async (req, res) => {
         }
         
         if (!service) {
-            console.error('❌ Service not found for ID:', serviceId);
+            console.error('Service not found for ID:', serviceId);
             return res.status(400).json({ success: false, message: 'Invalid service selected.' });
         }
         
@@ -396,14 +387,11 @@ exports.createReservation = async (req, res) => {
 
         // Validate duration/timeslot and calculate expected price
         const durationOrSlot = selectedTimeSlot || selectedDuration;
-        console.log('⏱️  Duration/Slot provided:', durationOrSlot);
         if (!durationOrSlot) {
             return res.status(400).json({ success: false, message: 'Duration or time slot selection is required.' });
         }
 
-        console.log('🧮 Calculating price for duration:', durationOrSlot);
         const priceData = calculateServicePrice(service, durationOrSlot, numberOfGuests);
-        console.log('💰 Price calculation result:', priceData);
         if (!priceData) {
             return res.status(400).json({ success: false, message: 'Invalid duration/time slot or guest count for the selected service.' });
         }
@@ -412,11 +400,9 @@ exports.createReservation = async (req, res) => {
         const expectedBasePrice = priceData.price;
         const expectedFinalTotal = discountValue ? (expectedBasePrice - discountValue) : expectedBasePrice;
         
-        console.log('💵 Price validation:', { expectedBasePrice, receivedBase: basePrice, expectedFinalTotal, receivedFinal: finalTotal });
-        
         // Allow 1 peso tolerance for rounding differences
         if (Math.abs(parseFloat(basePrice) - expectedBasePrice) > 1 || Math.abs(parseFloat(finalTotal) - expectedFinalTotal) > 1) {
-            console.error(`❌ Price mismatch: Expected base=${expectedBasePrice}, received=${basePrice}; Expected final=${expectedFinalTotal}, received=${finalTotal}`);
+            console.error(`Price mismatch: Expected base=${expectedBasePrice}, received=${basePrice}; Expected final=${expectedFinalTotal}, received=${finalTotal}`);
             return res.status(400).json({ 
                 success: false, 
                 message: 'Price validation failed. Please refresh and try again.',
@@ -425,13 +411,10 @@ exports.createReservation = async (req, res) => {
         }
 
         // --- E. Generate Reservation Hash and Formal Reservation ID ---
-        console.log('🔐 Generating reservation hash and formal ID...');
         const reservationHash = crypto.randomBytes(16).toString('hex');
         const formalReservationId = await generateFormalReservationId();
-        console.log('✅ Generated IDs:', { reservationHash: reservationHash.substring(0, 8) + '...', formalReservationId });
         
         // --- F. Create Reservation Record ---
-        console.log('📝 Creating reservation record...');
         const newReservation = new Reservation({
             accountId,
             serviceId,
@@ -459,9 +442,7 @@ exports.createReservation = async (req, res) => {
             paymentStatus: 'CART',
         });
 
-        console.log('💾 Saving reservation to database...');
         await newReservation.save();
-        console.log('✅ Reservation saved successfully:', newReservation._id);
 
         res.status(201).json({ 
             success: true, 
@@ -472,12 +453,7 @@ exports.createReservation = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('❌ Error creating reservation:', {
-            message: error.message,
-            stack: error.stack,
-            name: error.name,
-            code: error.code
-        });
+        console.error('Error creating reservation:', error);
         res.status(500).json({ success: false, message: 'Failed to create reservation.', error: error.message });
     }
 };

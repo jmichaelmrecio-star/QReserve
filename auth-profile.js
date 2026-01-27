@@ -215,12 +215,8 @@ async function renderUserReservations() {
         reservations.forEach(res => {
           const totalPaid = res.totalPaid || res.finalTotal || 0;
           const hash = res.qrCodeHash || res.reservationHash || "";
-          const status = (res.status || "pending").toUpperCase();
-          const canViewQR = status !== "PENDING" && status !== "CART" && status !== "CANCELLED";
           const qrLink = hash 
-            ? canViewQR
-              ? `<a href="confirmation.html?hash=${hash}" style="display: inline-block; padding: 6px 12px; background-color: var(--primary-color); color: white; text-decoration: none; border-radius: 4px; font-weight: 500; font-size: 0.9rem; transition: background-color 0.3s; border: none; cursor: pointer;" onmouseover="this.style.backgroundColor='#1e7a34'" onmouseout="this.style.backgroundColor='var(--primary-color)'">View QR</a>`
-              : `<button style="display: inline-block; padding: 6px 12px; background-color: #cccccc; color: #666666; border: none; border-radius: 4px; font-weight: 500; font-size: 0.9rem; cursor: not-allowed;" disabled>View QR</button>`
+            ? `<a href="confirmation.html?hash=${hash}" class="btn btn-sm btn-outline-primary">View QR</a>` 
             : "N/A";
           const statusClass = `status-${(res.status || "pending").toLowerCase().replace(/_/g, "-")}`;
           let receiptCell = "<span style='color:#999;'>Not uploaded</span>";
@@ -237,11 +233,11 @@ async function renderUserReservations() {
             <td><strong>${res.reservationId || "N/A"}</strong></td>
             <td>${res.serviceType || "N/A"}</td>
             <td>${formatDate(res.check_in || res.checkin_date)}</td>
-            <td>${formatDate(res.check_out || res.checkout_date)}</td>
-            <td><span class="${statusClass}">${res.status || "Pending"}</span></td>
             <td>₱${parseFloat(totalPaid).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-            <td>${receiptCell}</td>
+            <td><span class="${statusClass}">${res.status || "Pending"}</span></td>
             <td>${qrLink}</td>
+            <td>${receiptCell}</td>
+            <td>${checkoutBtn}</td>
           </tr>`;
         });
         listElement.innerHTML = html;
