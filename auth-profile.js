@@ -210,7 +210,11 @@ async function renderUserReservations() {
     const data = await response.json();
 
     if (data.success || Array.isArray(data)) {
-      const reservations = data.success ? data.reservations : data;
+      const allReservations = data.success ? data.reservations : data;
+      // Filter out CART items - only show paid/confirmed reservations
+      const reservations = allReservations.filter(res => 
+        res.status && res.status.toUpperCase() !== 'CART'
+      );
       
       if (!reservations || reservations.length === 0) {
         listElement.innerHTML = '<tr><td colspan="8" style="text-align: center;">No reservations found.</td></tr>';

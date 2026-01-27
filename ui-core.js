@@ -929,7 +929,11 @@ async function renderAdminReservations() {
          // Fetch all reservations for admin
          const response = await fetch("http://localhost:3000/api/reservations/allreservation");
          const data = await response.json();
-         const reservations = Array.isArray(data.reservations) ? data.reservations : [];
+         const allReservations = Array.isArray(data.reservations) ? data.reservations : [];
+         // Filter out CART items - only show paid/confirmed reservations
+         const reservations = allReservations.filter(res => 
+             res.status && res.status.toUpperCase() !== 'CART'
+         );
          if (reservations.length === 0) {
            tbody.innerHTML = '<tr><td colspan="12" class="text-center">No reservations found.</td></tr>';
            return;
@@ -1117,8 +1121,12 @@ async function deleteUser(userId) {
 // --- Service Management ---
 // --- Service Edit/Deactivate Logic ---
 async function editService(serviceId) {
-  if (typeof showModal === 'function') {
-    showModal('Not Supported', '<p>Editing service details is not supported (no backend route).</p>', 'warning');
+  if (typeof openEditServiceModal === 'function') {
+    openEditServiceModal(serviceId);
+  } else {
+    if (typeof showModal === 'function') {
+      showModal('Not Ready', '<p>Edit modal is not yet loaded. Please refresh the page.</p>', 'warning');
+    }
   }
 }
 async function deactivateServiceAndRefresh(serviceId) {
@@ -1160,7 +1168,7 @@ window.activateServiceAndRefresh = activateServiceAndRefresh;
 
 async function fetchAllServicesAdmin() {
   try {
-    const response = await fetch("http://localhost:3000/api/services", {
+    const response = await fetch("http://localhost:3000/api/services/admin/all", {
       headers: { "Authorization": `Bearer ${getAuthToken()}` }
     });
     return await response.json();
@@ -1175,9 +1183,11 @@ async function renderServiceTable() {
   if (!tbody) return;
 
   const data = await fetchAllServicesAdmin();
-  if (data.success) {
-    if (Array.isArray(data.services) && data.services.length > 0) {
-      tbody.innerHTML = data.services.map(service => {
+  // Handle both array response and {success: true, services: []} response
+  const services = Array.isArray(data) ? data : (data.success && Array.isArray(data.services) ? data.services : []);
+  
+  if (services.length > 0) {
+    tbody.innerHTML = services.map(service => {
         // Main image thumbnail (fix for local dev)
         let mainImgUrl = service.image;
         if (mainImgUrl && mainImgUrl.startsWith('/uploads/')) {
@@ -1220,10 +1230,10 @@ async function renderServiceTable() {
             <td>${durations}</td>
             <td>${service.isActive ? 'Active' : 'Inactive'}</td>
             <td>
-              <button class="btn btn-sm" onclick="editService('${service._id}')">Edit</button>
+              <button class="btn btn-sm btn-primary" onclick="editService('${service._id}')">Edit</button>
               <button class="btn btn-sm ${service.isActive ? 'btn-danger' : 'btn-success'}" 
                       onclick="${service.isActive ? 'deactivate' : 'activate'}ServiceAndRefresh('${service._id}')">
-                ${service.isActive ? 'Deactivate' : 'Activate'}
+                ${service.isActive ? 'Deactivate' : 'Reactivate'}
               </button>
             </td>
           </tr>
@@ -1232,7 +1242,6 @@ async function renderServiceTable() {
     } else {
       tbody.innerHTML = '<tr><td colspan="13" class="text-center">No services found.</td></tr>';
     }
-  }
 }
 
 
