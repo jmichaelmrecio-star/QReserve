@@ -1,20 +1,34 @@
 /* --- CSS VARIABLES for Easy Customization --- */
 :root {
-  /* ========== COLOR PALETTE ========== */
-  --primary-color: #28a745; /* Green for Header and Buttons */
-  --primary-hover: #1e7e34; /* Slightly darker green for hovers */
-  --secondary-color: #6c757d; /* Neutral Grey */
-  --background-color: #f8f9fa; /* Light background */
-  --text-color: #343a40; /* Dark text */
-  --danger-color: #dc3545; /* Red for destructive actions */
-  --danger-hover: #c82333; /* Darker red on hover */
-  --success-color: #28a745; /* Green for success states */
-  --warning-color: #ffc107; /* Yellow/orange for warnings */
-  --info-color: #17a2b8; /* Cyan for info */
-  --border-color: #dee2e6; /* Light grey borders */
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.12);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.15);
+  /* ========== COLOR PALETTE - RESORT BRAND THEME ========== */
+  /* Primary Green - Brand Color */
+  --primary-color: #2d8f5ce0; /* Rich sophisticated green */
+  --primary-hover: #1e7a34; /* Darker green for hovers */
+  --primary-light: #e8f5e9; /* Very light green for backgrounds */
+  --primary-dark: #1b5e20; /* Deep green for accents */
+  
+  /* Secondary Colors */
+  --secondary-color: #d4a574; /* Gold/Amber for luxury feel */
+  --secondary-hover: #c9a961; /* Darker gold on hover */
+  
+  /* Neutral Colors */
+  --background-color: #f5f4f1; /* Soft cream instead of pure white */
+  --background-darker: #ede8df; /* Slightly darker cream for contrast */
+  --text-color: #4a5568; /* Slate blue for better readability */
+  --text-light: #6b7280; /* Lighter text for secondary content */
+  
+  /* Status Colors */
+  --success-color: #2d8f5c; /* Green for success states */
+  --danger-color: #d97757; /* Coral/Terracotta for errors */
+  --danger-hover: #c8644a; /* Darker coral on hover */
+  --warning-color: #f59e0b; /* Amber for warnings */
+  --info-color: #00897b; /* Teal for info/complementary */
+  
+  /* UI Elements */
+  --border-color: #d4ccc4; /* Softer borders matching cream */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
   
   /* ========== SPACING SCALE ========== */
   --spacing-xs: 0.5rem;
@@ -169,9 +183,9 @@ nav a[href="login.html"] {
 nav a[href="login.html"] {
   padding: 0.4rem 0.9rem;
   border-radius: 8px;
-  border: 2px solid rgba(255, 255, 255, 0.9);
-  background: rgba(255, 255, 255, 0.04);
-  color: #ffffff;
+  border: 2px solid #f5f4f1;
+  background: rgba(245, 244, 241, 0.04);
+  color: #f5f4f1;
   font-weight: 600;
   /* No transitions/animations for auth buttons: immediate style changes only */
   transition: none;
@@ -203,8 +217,8 @@ nav a[href="register.html"] {
 nav a[href="register.html"]:hover,
 nav a[href="register.html"]:focus,
 nav a[href="register.html"]:active {
-  /* Filled green -> inverted white on hover/click */
-  background: white;
+  /* Filled green -> inverted cream on hover/click */
+  background: #f5f4f1;
   color: var(--primary-color) !important;
   border-color: var(--primary-color);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
@@ -222,7 +236,7 @@ nav a[href="login.html"][aria-current="page"] {
 
 nav a[href="register.html"].active,
 nav a[href="register.html"][aria-current="page"] {
-  background: white;
+  background: #f5f4f1;
   color: var(--primary-color) !important;
   border-color: var(--primary-color);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
@@ -275,8 +289,8 @@ nav ul li a {
 
 nav ul li a:hover,
 nav ul li a:focus-visible {
-  background-color: rgba(255, 255, 255, 0.12);
-  color: #ffffff !important;
+  background-color: rgba(245, 244, 241, 0.12);
+  color: #f5f4f1 !important;
   /* Increase font-size and padding so layout reflows (neighbors will shift) */
   font-size: calc(var(--nav-font-size) * var(--hover-font-multiplier));
   padding: var(--nav-hover-vertical) var(--nav-hover-horizontal);
@@ -322,7 +336,7 @@ nav a[href="register.html"]:active {
   padding: 0.48rem 1rem !important;
   font-size: var(--nav-font-size) !important;
   color: var(--primary-color) !important;
-  background: white !important;
+  background: #f5f4f1 !important;
   border-color: var(--primary-color) !important;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08) !important;
   transform: translateY(-50%) !important;
@@ -389,7 +403,7 @@ main.services-parallax {
   margin-left: calc(50% - 50vw);
   margin-right: calc(50% - 50vw);
   padding-top: var(--header-offset);
-  padding-bottom: 3rem;
+  padding-bottom: 0;
   padding-left: 0;
   padding-right: 0;
   background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)),
@@ -451,7 +465,7 @@ nav .nav-right .button-secondary {
 
 /* --- Form Styles (reserve.html) --- */
 #reservation-form-area {
-  background-color: white;
+  background-color: #f5f4f1;
   padding: 2rem;
   border-radius: var(--border-radius);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
@@ -466,15 +480,20 @@ nav .nav-right .button-secondary {
 }
 
 fieldset {
-  border: 1px solid #dee2e6;
+  border: 1px solid #d4ccc4;
   padding: var(--spacing);
   margin-bottom: var(--spacing);
   border-radius: var(--border-radius);
+  background-color: var(--background-darker);
+}
+
+fieldset:nth-of-type(even) {
+  background-color: var(--background-color);
 }
 
 /* --- Unified Form Box Styling --- */
 .form-box {
-  background-color: white;
+  background-color: #f5f4f1;
   padding: 2.5rem;
   border-radius: var(--border-radius);
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
@@ -520,11 +539,11 @@ fieldset {
 }
 
 .form-box-hero .form-content {
-  background-color: rgba(255, 255, 255, 0.95);
+  background-color: rgba(245, 244, 241, 0.95);
   backdrop-filter: blur(5px);
   padding: 2.5rem;
   color: inherit;
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  border-top: 1px solid rgba(221, 216, 208, 0.3);
 }
 
 /* Center login form vertically */
@@ -634,8 +653,9 @@ main#register-area .form-box-hero {
   border: none;
   cursor: pointer;
   padding: 0.5rem;
+  padding-bottom: 1rem;
   font-size: 1.2rem;
-  color: #6c757d;
+  color: #4a5568;
   transition: color 0.2s;
 }
 
@@ -657,7 +677,7 @@ main#register-area .form-box-hero {
 .form-box .form-group textarea {
   width: 100%;
   padding: 0.75rem;
-  border: 1px solid #ced4da;
+  border: 1px solid #d4ccc4;
   border-radius: 6px;
   font-size: 1rem;
   transition: border-color 0.2s, box-shadow 0.2s;
@@ -669,7 +689,7 @@ main#register-area .form-box-hero {
 .form-box .form-group textarea:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
+  box-shadow: 0 0 0 3px rgba(45, 143, 92, 0.1);
 }
 
 .form-box button[type="submit"] {
@@ -685,14 +705,15 @@ main#register-area .form-box-hero {
 
 .form-box button[type="submit"]:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+  box-shadow: 0 4px 12px rgba(45, 143, 92, 0.3);
 }
 
 .form-box .form-footer {
   text-align: center;
   font-size: 0.9rem;
-  margin-top: 1rem;
-  color: #666;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+  color: var(--text-color);
 }
 
 .form-box .form-footer a {
@@ -720,7 +741,7 @@ form input,
 form select {
   width: 100%;
   padding: 0.75rem;
-  border: 1px solid #ced4da;
+  border: 1px solid #d4ccc4;
   margin-bottom: 0.5rem;
   border-radius: 4px;
   font-size: 1rem;
@@ -731,14 +752,14 @@ form input:focus,
 form select:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
+  box-shadow: 0 0 0 3px rgba(45, 143, 92, 0.1);
   transform: translateY(-1px);
 }
 
 form textarea {
   width: 100%;
   padding: 0.75rem;
-  border: 1px solid #ced4da;
+  border: 1px solid #d4ccc4;
   border-radius: 4px;
   font-size: 1rem;
   resize: none;
@@ -749,7 +770,7 @@ form textarea {
 form textarea:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
+  box-shadow: 0 0 0 3px rgba(45, 143, 92, 0.1);
 }
 
 /* Make the submit button full width */
@@ -787,7 +808,7 @@ footer {
 }
 
 .card {
-  background-color: white;
+  background-color: var(--background-darker);
   padding: 1.5rem;
   border-radius: var(--border-radius);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
@@ -884,7 +905,7 @@ footer {
 
 .section-tagline {
   font-size: 1.2rem;
-  color: #666;
+  color: #6b7280;
   margin-bottom: 3rem;
   text-align: center;
 }
@@ -1335,7 +1356,7 @@ footer {
 }
 
 .filter-group label {
-  color: #f8f9fa;
+  color: #f5f4f1;
   font-weight: 600;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.35);
 }
@@ -1430,7 +1451,7 @@ footer {
 
 /* New Amenity Showcase Cards for Featured Amenities on index.html */
 .amenity-showcase-card {
-  background-color: #fff;
+  background-color: #f5f4f1;
   border-radius: var(--border-radius);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   overflow: hidden;
@@ -1461,7 +1482,7 @@ footer {
 }
 
 .amenity-showcase-card p {
-  color: #555;
+  color: #6b7280;
   font-size: 1rem;
   line-height: 1.6;
   padding: 0 1rem;
@@ -1506,7 +1527,7 @@ footer {
 }
 
 .amenities-section-btn.active {
-  background-color: white;
+  background-color: #f5f4f1;
   border-color: white;
   color: var(--primary-color);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
@@ -1539,7 +1560,7 @@ footer {
   overflow: hidden;
   border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-  background: white;
+  background: #f5f4f1;
 }
 
 /* Individual carousel slide */
@@ -1607,11 +1628,11 @@ footer {
   background: linear-gradient(
     135deg,
     rgba(40, 167, 69, 0.4) 0%,
-    rgba(40, 167, 69, 0.3) 100%
+    rgba(45, 143, 92, 0.3) 100%
   );
   border-color: rgba(255, 255, 255, 0.8);
   transform: scale(1.15);
-  box-shadow: 0 6px 20px rgba(40, 167, 69, 0.3);
+  box-shadow: 0 6px 20px rgba(45, 143, 92, 0.3);
 }
 
 .carousel-nav-btn:active {
@@ -1689,7 +1710,7 @@ footer {
 
 /* Amenity Card Styles for amenities.html */
 .amenity-card {
-  background-color: #fff;
+  background-color: #f5f4f1;
   border-radius: var(--border-radius);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
   overflow: hidden;
@@ -1722,7 +1743,7 @@ footer {
 }
 .amenity-card .amenity-desc {
   font-size: 1.05rem;
-  color: #555;
+  color: #6b7280;
   margin-bottom: 0.8rem;
   line-height: 1.5;
 }
@@ -1756,7 +1777,7 @@ footer {
   justify-content: center;
 }
 #amenity-gallery-modal .modal-content {
-  background: #fff;
+  background: var(--background-color);
   border-radius: var(--border-radius);
   max-width: 95vw;
   max-height: 90vh;
@@ -1816,7 +1837,7 @@ footer {
 
 .amenity-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 10px 20px rgba(40, 167, 69, 0.1);
+  box-shadow: 0 10px 20px rgba(45, 143, 92, 0.1);
 }
 
 .amenity-card h3 {
@@ -1826,7 +1847,7 @@ footer {
 
 /* Resort Dining Section */
 #resort-dining {
-  background-color: #f8f9fa;
+  background-color: #f5f4f1;
   padding: 5rem 0;
 }
 
@@ -1857,7 +1878,7 @@ footer {
 }
 
 .section-label {
-  color: #6c757d;
+  color: #4a5568;
   font-weight: bold;
   display: block;
   margin-bottom: 0.5rem;
@@ -1879,7 +1900,7 @@ footer {
 
 /* --- New Button Style for Dark Backgrounds --- */
 .button-secondary {
-  background-color: white;
+  background-color: #f5f4f1;
   color: var(--primary-color); /* Green text */
   padding: 12px 30px;
   text-decoration: none;
@@ -1907,9 +1928,10 @@ footer {
 
 /* --- NEW FOOTER STYLES --- */
 footer {
-  background-color: #f8f9fa; /* Light background for contrast */
-  color: var(--text-color);
+  background-color: #2d8f5c; /* Rich green footer */
+  color: #f5f4f1;
   padding: 3rem 0 1rem 0;
+  margin-top: 0;
 }
 
 .footer-content {
@@ -1926,8 +1948,13 @@ footer {
   min-width: 200px;
 }
 
+.footer-section p {
+  color: #f5f4f1;
+  margin-bottom: 0.5rem;
+}
+
 .footer-section h3 {
-  color: var(--primary-color);
+  color: #d4a574;
   margin-bottom: 1rem;
   font-size: 1.2rem;
 }
@@ -1938,7 +1965,7 @@ footer {
 }
 
 .footer-section ul li a {
-  color: var(--text-color);
+  color: #f5f4f1;
   text-decoration: none;
   margin-bottom: 0.5rem;
   display: block;
@@ -1946,15 +1973,27 @@ footer {
 }
 
 .footer-section ul li a:hover {
-  color: var(--primary-color);
+  color: #d4a574;
+}
+
+/* Contact Info Text Colors */
+.footer-section .contact-info,
+.footer-section .contact-info p,
+.footer-section .contact-info strong {
+  color: #f5f4f1;
 }
 
 .footer-bottom {
   text-align: center;
   margin-top: 2rem;
   padding-top: 1rem;
-  border-top: 1px solid #dee2e6;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
   font-size: 0.9rem;
+  color: #f5f4f1;
+}
+
+.footer-bottom p {
+  color: #f5f4f1;
 }
 
 /* --- DROPDOWN MENU STYLES --- */
@@ -2082,7 +2121,7 @@ footer {
 .data-table {
   width: 100%;
   border-collapse: collapse;
-  background: white;
+  background: #f5f4f1;
   border-radius: 10px;
   overflow: hidden;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
@@ -2092,7 +2131,7 @@ footer {
 .data-table td {
   padding: 14px 16px;
   text-align: center; 
-  border: 1px solid #dee2e6;
+  border: 1px solid #d4ccc4;
   vertical-align: middle;
   font-size: 0.95rem;
 }
@@ -2112,19 +2151,19 @@ footer {
 }
 
 .data-table tbody tr:nth-child(even) {
-  background: #fbfdff;
+  background: var(--background-darker);
 }
 
 .data-table tbody tr:hover {
-  background: #f0f6ff;
+  background: #e0dbd2;
 }
 
 /* Reservation table styling - improved with proper borders and alignment */
 .reservation-table {
   width: 100%;
   border-collapse: collapse;
-  background: white;
-  border: 1px solid #dee2e6;
+  background: var(--background-color);
+  border: 1px solid #d4ccc4;
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
@@ -2134,7 +2173,7 @@ footer {
 .reservation-table td {
   padding: 14px 16px;
   text-align: left;
-  border-right: 1px solid #dee2e6;
+  border-right: 1px solid #d4ccc4;
   vertical-align: middle;
   font-size: 0.95rem;
   white-space: normal;
@@ -2149,7 +2188,7 @@ footer {
   background: linear-gradient(135deg, #f5f7fa 0%, #eef0f5 100%);
   font-weight: 700;
   color: #2e3a46;
-  border-bottom: 2px solid #999;
+  border-bottom: 2px solid #9ca3af;
   position: sticky;
   top: 0;
   z-index: 10;
@@ -2214,7 +2253,7 @@ footer {
 
 /* Status badge for promo codes (Active/Inactive) */
 .status-badge-active {
-  background-color: #28a745;
+  background-color: #2d8f5c;
   color: #ffffff;
   padding: 8px 12px;
   border-radius: 999px;
@@ -2226,7 +2265,7 @@ footer {
 }
 
 .status-badge-inactive {
-  background-color: #6c757d;
+  background-color: #4a5568;
   color: #ffffff;
   padding: 8px 12px;
   border-radius: 999px;
@@ -2323,8 +2362,8 @@ footer {
 }
 /* Ensure option text is readable regardless of selector background */
 .status-selector option {
-  background: white; /* Make option backgrounds neutral */
-  color: #343a40;
+  background: #f5f4f1; /* Make option backgrounds neutral */
+  color: #4a5568;
 }
 
 /* ======================================================
@@ -2357,8 +2396,8 @@ footer {
 }
 
 .tab-button {
-  background: white;
-  border: 1px solid #dee2e6;
+  background: #f5f4f1;
+  border: 1px solid #d4ccc4;
   padding: 8px 14px;
   border-radius: 8px;
   cursor: pointer;
@@ -2377,7 +2416,7 @@ footer {
   background: var(--primary-color);
   color: white;
   border-color: var(--primary-color);
-  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+  box-shadow: 0 2px 8px rgba(45, 143, 92, 0.3);
   transform: scale(1.02);
 }
 
@@ -2423,7 +2462,7 @@ footer {
 }
 
 .modal-content {
-  background-color: #ffffff;
+  background-color: #f5f4f1;
   margin: 5% auto;
   padding: 30px;
   border-radius: 12px;
@@ -2436,23 +2475,23 @@ footer {
 }
 
 .modal-content.modal-success {
-  border-top-color: #28a745;
+  border-top-color: #2d8f5c;
 }
 
 .modal-content.modal-error {
-  border-top-color: #dc3545;
+  border-top-color: #d97757;
 }
 
 .modal-content.modal-warning {
-  border-top-color: #ffc107;
+  border-top-color: #f59e0b;
 }
 
 .modal-content.modal-info {
-  border-top-color: #17a2b8;
+  border-top-color: #00897b;
 }
 
 .close-button {
-  color: #aaa;
+  color: #b5bcc2;
   float: right;
   font-size: 28px;
   font-weight: bold;
@@ -2560,7 +2599,7 @@ footer {
   font-weight: 700;
   color: #2e3a46;
   padding: 14px 16px;
-  border-bottom: 2px solid #dee2e6;
+  border-bottom: 2px solid #d4ccc4;
 }
 
 /* Improved table responsive wrapper styling */
@@ -2580,7 +2619,7 @@ footer {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  background: white;
+  background: #f5f4f1;
   border-radius: 10px;
   overflow: hidden;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
@@ -2592,7 +2631,7 @@ footer {
   color: #2e3a46;
   padding: 14px 16px;
   text-align: left;
-  border-bottom: 2px solid #dee2e6;
+  border-bottom: 2px solid #d4ccc4;
   white-space: nowrap;
 }
 
@@ -2620,7 +2659,7 @@ footer {
 }
 
 .table-striped tbody tr:nth-child(even) {
-  background: #f8f9fa;
+  background: #f5f4f1;
 }
 
 .table-hover tbody tr:hover {
@@ -2659,7 +2698,7 @@ footer {
 .form-group input,
 .form-group select {
   padding: 0.75rem;
-  border: 1px solid #dee2e6;
+  border: 1px solid #d4ccc4;
   border-radius: 6px;
   font-size: 0.95rem;
 }
@@ -2670,7 +2709,7 @@ footer {
 
 /* Unified payment form card */
 #gcashPaymentForm {
-  background-color: white;
+  background-color: #f5f4f1;
   padding: 2rem;
   border-radius: 12px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
@@ -2705,7 +2744,7 @@ footer {
 
 .summary-label {
   font-weight: 500;
-  color: #6c757d;
+  color: #4a5568;
   font-size: 0.95rem;
 }
 
@@ -2749,7 +2788,7 @@ footer {
 #gcashPaymentForm input[type="text"] {
   width: 100%;
   padding: 0.75rem 1rem;
-  border: 2px solid #dee2e6;
+  border: 2px solid #d4ccc4;
   border-radius: 6px;
   font-size: 0.95rem;
   transition: border-color 0.3s, box-shadow 0.3s;
@@ -2758,13 +2797,13 @@ footer {
 #gcashPaymentForm input[type="text"]:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
+  box-shadow: 0 0 0 3px rgba(45, 143, 92, 0.1);
 }
 
 #gcashPaymentForm small {
   display: block;
   margin-top: 0.5rem;
-  color: #6c757d;
+  color: #4a5568;
   font-size: 0.85rem;
   line-height: 1.4;
 }
@@ -2793,14 +2832,14 @@ footer {
 .qr-code {
   width: 200px;
   height: 200px;
-  border: 2px solid #dee2e6;
+  border: 2px solid #d4ccc4;
   border-radius: 8px;
   padding: 8px;
-  background-color: #f8f9fa;
+  background-color: #f5f4f1;
 }
 
 .qr-instruction {
-  color: #6c757d;
+  color: #4a5568;
   font-size: 0.95rem;
   margin-top: 1rem;
   line-height: 1.5;
@@ -2837,7 +2876,7 @@ footer {
 .btn-primary {
   background-color: var(--primary-color);
   color: white !important;
-  box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+  box-shadow: 0 4px 8px rgba(45, 143, 92, 0.3);
 }
 
 .btn-primary:hover {
@@ -2847,7 +2886,7 @@ footer {
 }
 
 .btn-secondary {
-  background-color: #6c757d;
+  background-color: #4a5568;
   color: white !important;
   box-shadow: 0 4px 8px rgba(108, 117, 125, 0.3);
 }
@@ -2869,7 +2908,7 @@ main.container h2 {
 
 main.container > p {
   text-align: center;
-  color: #6c757d;
+  color: #4a5568;
   margin-bottom: 2rem;
   font-size: 1rem;
   line-height: 1.6;
@@ -2931,7 +2970,7 @@ main.container > p {
 }
 
 .modal-content {
-  background-color: white;
+  background-color: #f5f4f1;
   padding: 0;
   border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
@@ -3028,7 +3067,7 @@ main.container > p {
 
 .summary-detail-label {
   font-weight: 600;
-  color: #6c757d;
+  color: #4a5568;
   font-size: 0.95rem;
   flex: 0 0 40%;
 }
@@ -3064,14 +3103,14 @@ main.container > p {
 }
 
 .discount-value {
-  color: #dc3545;
+  color: #d97757;
 }
 
 .inclusions-list {
   list-style-position: inside;
   margin: 0;
   padding: 0;
-  background-color: #f8f9fa;
+  background-color: #f5f4f1;
   padding: 1rem;
   border-radius: 8px;
   border-left: 4px solid var(--primary-color);
@@ -3079,7 +3118,7 @@ main.container > p {
 
 .inclusions-list li {
   margin-bottom: 0.5rem;
-  color: #343a40;
+  color: #4a5568;
   font-size: 0.95rem;
   line-height: 1.5;
 }
@@ -3094,7 +3133,7 @@ main.container > p {
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
-  background-color: #f8f9fa;
+  background-color: #f5f4f1;
 }
 
 .modal-footer .btn {
@@ -3299,7 +3338,7 @@ textarea:disabled {
 
 /* Individual cart item */
 .cart-item {
-  background: white;
+  background: #f5f4f1;
   border-radius: var(--border-radius);
   box-shadow: var(--shadow-sm);
   display: flex;
@@ -3373,7 +3412,7 @@ textarea:disabled {
   transition: all var(--transition-base) var(--transition-easing);
   width: 100%;
   margin-top: 0.5rem;
-  box-shadow: 0 2px 6px rgba(40, 167, 69, 0.3);
+  box-shadow: 0 2px 6px rgba(45, 143, 92, 0.3);
 }
 
 .btn-add-to-cart:hover {
@@ -3440,15 +3479,15 @@ textarea:disabled {
 }
 
 .strength-bar.weak {
-  background-color: #dc3545;
+  background-color: #d97757;
 }
 
 .strength-bar.fair {
-  background-color: #ffc107;
+  background-color: #f59e0b;
 }
 
 .strength-bar.good {
-  background-color: #17a2b8;
+  background-color: #00897b;
 }
 
 .strength-bar.strong {
@@ -3466,7 +3505,7 @@ textarea:disabled {
 }
 
 #passwordRequirementsContainer li.unmet {
-  color: #999;
+  color: #9ca3af;
 }
 
 /* Password match indicator */
@@ -3520,7 +3559,7 @@ textarea:disabled {
 }
 
 #remove-receipt-btn:hover {
-  background-color: #c82333 !important;
+  background-color: #c8644a !important;
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
 }
@@ -3556,7 +3595,7 @@ textarea:disabled {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: white;
+  background: #f5f4f1;
   padding: var(--spacing-lg);
   border-radius: var(--border-radius-lg);
   box-shadow: var(--shadow-sm);
@@ -3648,7 +3687,7 @@ textarea:disabled {
 }
 
 .testimonial-card {
-  background: white;
+  background: #f5f4f1;
   border-radius: var(--border-radius-lg);
   padding: var(--spacing-lg);
   box-shadow: var(--shadow-md);

@@ -725,7 +725,7 @@ function renderCompleteFooter() {
     <div class="footer-bottom">
       <p>&copy; 2025 QReserve Project - All Rights Reserved.</p>
       <p style="margin-top:8px;">
-        <a href="#" id="termsLinkFooter" style="color:var(--primary-color);text-decoration:underline;">View Terms and Conditions</a>
+        <a href="#" id="termsLinkFooter" style="color:#d4a574;text-decoration:underline;font-weight:600;">View Terms and Conditions</a>
       </p>
     </div>
   `;
