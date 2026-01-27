@@ -23,14 +23,22 @@ async function loadCustomerReservations() {
         if (userRole === 'admin' || userRole === 'manager') {
             response = await fetch('http://localhost:3000/api/reservations/allreservation');
             const data = await response.json();
-            reservations = data.reservations || [];
+            const allReservations = data.reservations || [];
+            // Filter out CART items - only show paid/confirmed reservations
+            reservations = allReservations.filter(res => 
+                res.status && res.status.toUpperCase() !== 'CART'
+            );
         } else {
             if (!user.email) {
                 console.error('No user email found');
                 return;
             }
             response = await fetch(`http://localhost:3000/api/reservations/user/${user.email}`);
-            reservations = await response.json();
+            const allReservations = await response.json();
+            // Filter out CART items - only show paid/confirmed reservations
+            reservations = allReservations.filter(res => 
+                res.status && res.status.toUpperCase() !== 'CART'
+            );
         }
         displayCustomerReservations(reservations);
     } catch (error) {

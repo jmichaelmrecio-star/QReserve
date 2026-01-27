@@ -30,7 +30,10 @@ router.post('/create', upload.fields([
 	{ name: 'image', maxCount: 1 },
 	{ name: 'gallery', maxCount: 10 }
 ]), serviceController.createService);
-router.put('/:id', serviceController.updateService);
+router.put('/:id', upload.fields([
+	{ name: 'image', maxCount: 1 },
+	{ name: 'gallery', maxCount: 10 }
+]), serviceController.updateService);
 router.put('/:id/activate', serviceController.activateService);
 router.put('/:id/deactivate', serviceController.deleteService);
 router.delete('/:id', serviceController.deleteService);
