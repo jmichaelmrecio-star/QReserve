@@ -1145,15 +1145,10 @@ footer {
     font-size: 0.8rem;
   }
 }
-<<<<<<< Updated upstream
-=======
-}
->>>>>>> Stashed changes
 
 /* Featured Amenities Section - Parallax Style */
 #featured-amenities {
-  background: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)),
-    url("images/Pool_Area_top_view_2.jpg");
+  background: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url("images/Pool_Area_top_view_2.jpg");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -2096,7 +2091,7 @@ footer {
 .data-table th,
 .data-table td {
   padding: 14px 16px;
-  text-align: left;
+  text-align: center; 
   border: 1px solid #dee2e6;
   vertical-align: middle;
   font-size: 0.95rem;
@@ -2204,6 +2199,7 @@ footer {
 .status-checked-in,
 .status-pending,
 .status-confirmed,
+.status-paid,
 .status-completed,
 .status-cancelled {
   display: inline-block;
@@ -2245,31 +2241,37 @@ footer {
 
 /* Pending (Default / Awaiting Action) */
 .status-pending {
-  background-color: #f4c542; /* Amber */
-  color: #2f2a1d;
+  background-color: #ff9800; /* Orange */
+  color: #ffffff;
 }
 
 /* Confirmed (Ready to Go) */
 .status-confirmed {
-  background-color: #2f8f2f; /* Deep green */
+  background-color: #4caf50; /* Green */
+  color: #ffffff;
+}
+
+/* Paid (Payment Received) */
+.status-paid {
+  background-color: #00bcd4; /* Cyan */
   color: #ffffff;
 }
 
 /* Completed (Success/Past Event) */
 .status-completed {
-  background-color: #5b6777; /* Slate */
+  background-color: #808080; /* Gray */
   color: #ffffff;
 }
 
 /* Checked-in (Onsite Guests) */
 .status-checked-in {
-  background-color: #1f7ed0; /* Rich blue */
+  background-color: #2196f3; /* Blue */
   color: #ffffff;
 }
 
 /* Cancelled (Failed/Deleted) */
 .status-cancelled {
-  background-color: #d63b45; /* Red */
+  background-color: #f44336; /* Red */
   color: #ffffff;
 }
 
@@ -2296,19 +2298,27 @@ footer {
 
 /* Color Coding based on the classes applied in script.js */
 .status-selector.status-pending {
-  background-color: #f4c542;
-  color: #2f2a1d;
-}
-.status-selector.status-confirmed {
-  background-color: #2f8f2f;
+  background-color: #ff9800;
   color: #ffffff;
 }
-.status-selector.status-cancelled {
-  background-color: #d63b45;
+.status-selector.status-confirmed {
+  background-color: #4caf50;
+  color: #ffffff;
+}
+.status-selector.status-paid {
+  background-color: #00bcd4;
   color: #ffffff;
 }
 .status-selector.status-completed {
-  background-color: #5b6777;
+  background-color: #808080;
+  color: #ffffff;
+}
+.status-selector.status-checked-in {
+  background-color: #2196f3;
+  color: #ffffff;
+}
+.status-selector.status-cancelled {
+  background-color: #f44336;
   color: #ffffff;
 }
 /* Ensure option text is readable regardless of selector background */
@@ -2414,11 +2424,13 @@ footer {
 
 .modal-content {
   background-color: #ffffff;
-  margin: 10% auto;
+  margin: 5% auto;
   padding: 30px;
   border-radius: 12px;
   width: 90%;
-  max-width: 600px;
+  max-width: 900px;
+  max-height: 90vh;
+  overflow-y: auto;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
   animation: slideDown 0.3s ease-out;
 }
@@ -4273,7 +4285,6 @@ textarea:disabled {
   tbody td {
     padding: 0.75rem;
   }
-}
 
   /* Navigation spacing */
   nav ul li a {
@@ -4515,6 +4526,7 @@ textarea:disabled {
 }
 
 /* Dark mode support (optional) */
+/* ===== COMMENTED OUT: Dark mode styling causing global color issues =====
 @media (prefers-color-scheme: dark) {
   :root {
     --background-color: #1a1a1a;
@@ -4553,6 +4565,7 @@ textarea:disabled {
     background: #3a3a3a;
   }
 }
+===== END COMMENTED SECTION ===== */
 
 /* ========== END ENHANCED MOBILE RESPONSIVENESS ========== */
 
