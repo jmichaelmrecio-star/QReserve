@@ -23,7 +23,7 @@
 
     <main class="container page-content has-fixed-header-offset">
         <!-- Page Hero Section -->
-        <section class="page-hero-section" style="margin-bottom: 3rem;">
+        <section class="page-hero-section" style="margin-bottom: 1.5rem;">
             <div class="hero-content">
                 <br><br>
                 <h1>Get in Touch</h1>
@@ -31,17 +31,17 @@
             </div>
         </section>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; max-width: 1200px; margin: 0 auto;">
+        <div style="display: grid; grid-template-columns: 0.8fr 1.2fr; gap: 1rem; max-width: 1200px; margin: 0 auto;">
             <!-- Contact Information -->
             <div class="contact-info-section">
-                <h2 style="margin-bottom: 1.5rem;">Get in Touch</h2>
+                <h2>Get in Touch</h2>
                 
-                <div class="contact-info-card" style="margin-bottom: 1.5rem; padding: 1.5rem; background: #f8f9fa; border-radius: 8px;">
+                <div class="contact-info-card" style="padding: 1rem; background: #f8f9fa; border-radius: 8px;">
                     <h3 style="margin-top: 0; color: var(--primary-color);">📍 Location</h3>
-                    <p>Norzagaray, Bulacan, Philippines</p>
+                    <p>Sitio Bulalo, Norzagaray, Philippines</p>
                 </div>
 
-                <div class="contact-info-card" style="margin-bottom: 1.5rem; padding: 1.5rem; background: #f8f9fa; border-radius: 8px;">
+                <div class="contact-info-card" style="padding: 1rem; background: #f8f9fa; border-radius: 8px;">
                     <h3 style="margin-top: 0; color: var(--primary-color);">📞 Phone</h3>
                     <p>
                         <a href="tel:09772468920">0977 246 8920</a><br>
@@ -49,16 +49,27 @@
                     </p>
                 </div>
 
-                <div class="contact-info-card" style="margin-bottom: 1.5rem; padding: 1.5rem; background: #f8f9fa; border-radius: 8px;">
+                <div class="contact-info-card" style="padding: 1rem; background: #f8f9fa; border-radius: 8px;">
                     <h3 style="margin-top: 0; color: var(--primary-color);">📧 Email</h3>
                     <p>
                         <a href="mailto:titorenznorzagaray@gmail.com">titorenznorzagaray@gmail.com</a>
                     </p>
                 </div>
 
-                <div class="contact-info-card" style="padding: 1.5rem; background: #f8f9fa; border-radius: 8px;">
+                <div class="contact-info-card" style="padding: 1rem; background: #f8f9fa; border-radius: 8px;">
                     <h3 style="margin-top: 0; color: var(--primary-color);">⏰ Response Time</h3>
                     <p>We typically respond within 24 hours during business days.</p>
+                </div>
+
+                <!-- Alternative Contact Method -->
+                <div style="padding: 1.5rem; background: #f8f9fa00; border-radius: 8px;">
+                    <h3 style="margin-bottom: 1rem; color: var(--primary-color);">Prefer to reach out directly?</h3>
+                    <p style="font-size: 0.95rem;">You can also:</p>
+                    <ul style="list-style: none; padding: 0; margin: 0;">
+                        <li style="margin-bottom: 0.5rem;"><a href="mailto:titorenznorzagaray@gmail.com" class="button-secondary" style="display: block; padding: 0.5rem; text-align: center;">📧 Send Email</a></li>
+                        <li style="margin-bottom: 0.5rem;"><a href="tel:09772468920" class="button-secondary" style="display: block; padding: 0.5rem; text-align: center;">📞 Call Us</a></li>
+                        <li><a href="help.html" class="button-secondary" style="display: block; padding: 0.5rem; text-align: center;">❓ Visit Help Center</a></li>
+                    </ul>
                 </div>
             </div>
 
@@ -101,9 +112,9 @@
                     </div>
 
                     <!-- Spam Prevention -->
-                    <div class="form-group" id="spamCheckContainer" style="display: flex; gap: 1rem; align-items: center;">
-                        <input type="checkbox" id="notSpamCheck" name="notSpam" required>
-                        <label for="notSpamCheck" style="margin: 0;">I'm not a robot and I understand my message will be reviewed</label>
+                    <div style="display: flex; align-items: center; gap: 8px; margin-top: 15px;">
+                        <input type="checkbox" id="notSpamCheck" name="notSpam" required style="width: auto;">
+                        <label for="notSpamCheck" style="font-weight: bold; margin-bottom: 0.6rem;">I'm not a robot and I understand my message will be reviewed</label>
                     </div>
 
                     <button type="submit" class="button-primary" style="width: 100%; padding: 0.75rem;">Send Message</button>
@@ -113,17 +124,6 @@
                     * Required fields
                 </p>
             </div>
-        </div>
-
-        <!-- Alternative Contact Method -->
-        <div style="margin-top: 4rem; padding: 2rem; background: #f8f9fa; border-radius: 8px; text-align: center; max-width: 1000px; margin-left: auto; margin-right: auto;">
-            <h3>Prefer to reach out directly?</h3>
-            <p>You can also:</p>
-            <ul style="list-style: none; padding: 0;">
-                <li><a href="mailto:titorenznorzagaray@gmail.com" class="button-secondary" style="display: inline-block; margin: 0.5rem;">📧 Send Email</a></li>
-                <li><a href="tel:09772468920" class="button-secondary" style="display: inline-block; margin: 0.5rem;">📞 Call Us</a></li>
-                <li><a href="help.html" class="button-secondary" style="display: inline-block; margin: 0.5rem;">❓ Visit Help Center</a></li>
-            </ul>
         </div>
     </main>
 
