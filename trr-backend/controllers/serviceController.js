@@ -153,10 +153,48 @@ exports.calculatePrice = async (req, res) => {
  */
 exports.createService = async (req, res) => {
     try {
-        const serviceData = req.body;
-        const newService = new Service(serviceData);
+        // Parse fields from form-data
+        const body = req.body;
+        // Parse durations and inclusions if sent as JSON strings
+        let durations = [];
+        if (body.durations) {
+            try {
+                durations = JSON.parse(body.durations);
+            } catch (e) { durations = []; }
+        }
+        let inclusions = [];
+        if (body.inclusions) {
+            try {
+                inclusions = JSON.parse(body.inclusions);
+            } catch (e) { inclusions = []; }
+        }
+
+        // Handle file uploads
+        let imagePath = '';
+        if (req.files && req.files.image && req.files.image[0]) {
+            imagePath = '/uploads/' + req.files.image[0].filename;
+        }
+        let galleryPaths = [];
+        if (req.files && req.files.gallery) {
+            galleryPaths = req.files.gallery.map(f => '/uploads/' + f.filename);
+        }
+
+        // Map frontend fields to Service model
+        const newService = new Service({
+            id: body.serviceId,
+            name: body.name,
+            type: body.type,
+            category: body.category,
+            max_guests: body.maxGuests,
+            description: body.description,
+            image: imagePath,
+            gallery: galleryPaths,
+            durations: durations,
+            inclusions: inclusions,
+            notes: body.notes || '',
+            isActive: true
+        });
         await newService.save();
-        
         res.status(201).json({
             message: 'Service created successfully',
             service: newService
