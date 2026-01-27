@@ -101,6 +101,90 @@
 </div>
 
 <script>
+// Handle Create Service Form Submission
+async function handleCreateServiceForm(e) {
+    e.preventDefault();
+    const form = e.target;
+    const messageDiv = document.getElementById('createServiceMessage');
+    messageDiv.textContent = '';
+
+    // Collect form data
+    const serviceId = document.getElementById('serviceIdInput').value.trim();
+    const name = document.getElementById('serviceNameInput').value.trim();
+    const type = document.getElementById('serviceTypeInput').value;
+    const category = document.getElementById('serviceCategoryInput').value;
+    const maxGuests = document.getElementById('serviceMaxGuestsInput').value;
+    const description = document.getElementById('serviceDescriptionInput').value.trim();
+    const image = document.getElementById('serviceImageInput').files[0];
+    const gallery = document.getElementById('serviceGalleryInput').files;
+    const inclusions = document.getElementById('serviceInclusionsInput').value.split(',').map(i => i.trim()).filter(i => i);
+    const notes = document.getElementById('serviceNotesInput').value.trim();
+
+    // Durations
+    const durationInputs = document.querySelectorAll('#durationsContainer input[name="duration[]"]');
+    const durations = Array.from(durationInputs).map(input => input.value.trim()).filter(Boolean);
+
+    // Validate required fields
+    if (!serviceId || !name || !type || !category || !maxGuests || !description || !image || durations.length === 0) {
+        messageDiv.textContent = 'Please fill in all required fields and add at least one duration.';
+        messageDiv.style.color = 'red';
+        return;
+    }
+
+    // Prepare form data for backend (multipart/form-data)
+    const formData = new FormData();
+    formData.append('serviceId', serviceId);
+    formData.append('name', name);
+    formData.append('type', type);
+    formData.append('category', category);
+    formData.append('maxGuests', maxGuests);
+    formData.append('description', description);
+    formData.append('image', image);
+    for (let i = 0; i < gallery.length; i++) {
+        formData.append('gallery', gallery[i]);
+    }
+    formData.append('inclusions', JSON.stringify(inclusions));
+    formData.append('notes', notes);
+    formData.append('durations', JSON.stringify(durations));
+
+    try {
+        const response = await fetch('/api/services', {
+            method: 'POST',
+            body: formData
+        });
+        const result = await response.json();
+        if (response.ok) {
+            messageDiv.textContent = 'Service created successfully!';
+            messageDiv.style.color = 'green';
+            form.reset();
+            document.getElementById('durationsContainer').innerHTML = '';
+        } else {
+            messageDiv.textContent = result.message || 'Failed to create service.';
+            messageDiv.style.color = 'red';
+        }
+    } catch (err) {
+        messageDiv.textContent = 'Error: ' + err.message;
+        messageDiv.style.color = 'red';
+    }
+}
+// Add Duration Row function
+function addDurationRow() {
+    const container = document.getElementById('durationsContainer');
+    if (!container) return;
+    // Create a wrapper div for the row
+    const row = document.createElement('div');
+    row.className = 'input-group mb-2 duration-row';
+    row.innerHTML = `
+        <input type="text" class="form-control" name="duration[]" placeholder="e.g. 8:00 AM - 12:00 PM" required>
+        <button type="button" class="btn btn-danger remove-duration-btn">Remove</button>
+    `;
+    // Add remove functionality
+    row.querySelector('.remove-duration-btn').onclick = function() {
+        row.remove();
+    };
+    container.appendChild(row);
+}
+
 // Initialize service management when component loads
 (function initServiceManagement() {
     const serviceCreateForm = document.getElementById('createServiceForm');
