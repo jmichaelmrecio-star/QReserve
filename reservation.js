@@ -68,12 +68,15 @@ function renderServiceCards(servicesOverride = null) {
   }
 
   container.innerHTML = services.map(service => {
-    // Determine correct image URL
-    // If image path contains uploads/ or doesn't start with images/, it's likely from backend storage
+    // Determine correct image URL (matches admin table logic)
     let imageUrl = service.image || 'images/placeholder.jpg';
-    if (imageUrl && !imageUrl.startsWith('http') && !imageUrl.startsWith('images/')) {
-      // Backend uploaded image - prefix with API URL
-      imageUrl = `http://localhost:3000/uploads/${imageUrl}`;
+    // Handle /uploads/ prefix: strip leading slash if present, use as-is
+    if (imageUrl && imageUrl.startsWith('/uploads/')) {
+      imageUrl = imageUrl.replace(/^\//, '');
+    }
+    // If still not a full URL and doesn't start with images/, it's likely a filename needing the uploads prefix
+    if (imageUrl && !imageUrl.startsWith('http') && !imageUrl.startsWith('images/') && !imageUrl.startsWith('uploads/')) {
+      imageUrl = `uploads/${imageUrl}`;
     }
     
     return `

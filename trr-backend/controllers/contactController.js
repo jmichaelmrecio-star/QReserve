@@ -1,19 +1,28 @@
 const nodemailer = require('nodemailer');
+const fs = require('fs');
+const path = require('path');
 
 /**
  * Contact Message Handler
  * Receives contact form submissions and sends email notifications
+ * Falls back to file storage if email is not configured
  */
 
 // Configure email transporter (using Gmail or other SMTP service)
-// NOTE: Replace with your actual email service credentials
-const emailTransporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: process.env.EMAIL_USER || 'your-email@gmail.com',
-        pass: process.env.EMAIL_PASSWORD || 'your-app-password'
-    }
-});
+let emailTransporter = null;
+const emailConfigured = process.env.EMAIL_USER && process.env.EMAIL_PASSWORD;
+
+if (emailConfigured) {
+    emailTransporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASSWORD
+        }
+    });
+} else {
+    console.warn('⚠️ Email credentials not configured in .env file. Contact messages will be stored locally.');
+}
 
 /**
  * Send contact form message
@@ -67,50 +76,73 @@ exports.sendContactMessage = async (req, res) => {
         // Log the message for rate limiting
         recentMessages.push({ email, timestamp: now });
 
-        // Prepare email content
-        const adminEmailContent = `
-            <h2>New Contact Form Message</h2>
-            <p><strong>From:</strong> ${name}</p>
-            <p><strong>Email:</strong> ${email}</p>
-            ${phone ? `<p><strong>Phone:</strong> ${phone}</p>` : ''}
-            <p><strong>Subject:</strong> ${subject}</p>
-            <hr>
-            <h3>Message:</h3>
-            <p>${message.replace(/\n/g, '<br>')}</p>
-        `;
+        // Create message object
+        const messageData = {
+            timestamp: new Date().toISOString(),
+            name,
+            email,
+            phone,
+            subject,
+            message
+        };
 
-        const userEmailContent = `
-            <h2>Thank you for contacting Tito Renz Resort!</h2>
-            <p>Hi ${name},</p>
-            <p>We have received your message and will get back to you as soon as possible.</p>
-            <hr>
-            <h3>Your Message:</h3>
-            <p><strong>Subject:</strong> ${subject}</p>
-            <p>${message.replace(/\n/g, '<br>')}</p>
-            <hr>
-            <p style="color: #999; font-size: 12px;">
-                If you have any urgent concerns, please call us at 0977 246 8920 or 0916 640 3411.
-            </p>
-        `;
+        // Try to send email if configured, otherwise save to file
+        if (emailConfigured && emailTransporter) {
+            try {
+                // Prepare email content
+                const adminEmailContent = `
+                    <h2>New Contact Form Message</h2>
+                    <p><strong>From:</strong> ${name}</p>
+                    <p><strong>Email:</strong> ${email}</p>
+                    ${phone ? `<p><strong>Phone:</strong> ${phone}</p>` : ''}
+                    <p><strong>Subject:</strong> ${subject}</p>
+                    <hr>
+                    <h3>Message:</h3>
+                    <p>${message.replace(/\n/g, '<br>')}</p>
+                `;
 
-        // Send email to admin
-        await emailTransporter.sendMail({
-            from: process.env.EMAIL_USER || 'noreply@titorenzresort.com',
-            to: process.env.ADMIN_EMAIL || 'titorenznorzagaray@gmail.com',
-            subject: `New Contact Form: ${subject} - From ${name}`,
-            html: adminEmailContent
-        });
+                const userEmailContent = `
+                    <h2>Thank you for contacting Tito Renz Resort!</h2>
+                    <p>Hi ${name},</p>
+                    <p>We have received your message and will get back to you as soon as possible.</p>
+                    <hr>
+                    <h3>Your Message:</h3>
+                    <p><strong>Subject:</strong> ${subject}</p>
+                    <p>${message.replace(/\n/g, '<br>')}</p>
+                    <hr>
+                    <p style="color: #999; font-size: 12px;">
+                        If you have any urgent concerns, please call us at 0977 246 8920 or 0916 640 3411.
+                    </p>
+                `;
 
-        // Send confirmation email to user
-        await emailTransporter.sendMail({
-            from: process.env.EMAIL_USER || 'noreply@titorenzresort.com',
-            to: email,
-            subject: 'Message Received - Tito Renz Resort',
-            html: userEmailContent
-        });
+                // Send email to admin
+                await emailTransporter.sendMail({
+                    from: process.env.EMAIL_USER,
+                    to: process.env.ADMIN_EMAIL || 'titorenznorzagaray@gmail.com',
+                    subject: `New Contact Form: ${subject} - From ${name}`,
+                    html: adminEmailContent
+                });
 
-        // Log the contact message (optional - store in database)
-        console.log(`Contact message received from ${name} (${email}): ${subject}`);
+                // Send confirmation email to user
+                await emailTransporter.sendMail({
+                    from: process.env.EMAIL_USER,
+                    to: email,
+                    subject: 'Message Received - Tito Renz Resort',
+                    html: userEmailContent
+                });
+
+                console.log(`✅ Contact message sent via email from ${name} (${email}): ${subject}`);
+
+            } catch (emailError) {
+                console.warn(`⚠️ Email sending failed, saving to file instead:`, emailError.message);
+                // Save to file as fallback
+                saveContactMessageToFile(messageData);
+            }
+        } else {
+            // Email not configured - save to file
+            console.log(`📝 Email not configured, saving contact message to file from ${name} (${email})`);
+            saveContactMessageToFile(messageData);
+        }
 
         // Success response
         res.status(200).json({
@@ -119,16 +151,7 @@ exports.sendContactMessage = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error sending contact message:', error);
-        
-        // Handle specific errors
-        if (error.code === 'EAUTH') {
-            return res.status(500).json({
-                success: false,
-                message: 'Email service temporarily unavailable. Please try again later.'
-            });
-        }
-
+        console.error('❌ Error processing contact message:', error);
         res.status(500).json({
             success: false,
             message: 'Failed to send message. Please try again or contact us directly.'
@@ -137,17 +160,54 @@ exports.sendContactMessage = async (req, res) => {
 };
 
 /**
+ * Save contact message to file as fallback
+ */
+function saveContactMessageToFile(messageData) {
+    try {
+        const uploadsDir = path.join(__dirname, '../uploads');
+        const messagesDir = path.join(uploadsDir, 'contact-messages');
+        
+        // Ensure directories exist
+        if (!fs.existsSync(uploadsDir)) {
+            fs.mkdirSync(uploadsDir, { recursive: true });
+        }
+        if (!fs.existsSync(messagesDir)) {
+            fs.mkdirSync(messagesDir, { recursive: true });
+        }
+
+        // Create filename with timestamp
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const filename = `contact-${timestamp}.json`;
+        const filepath = path.join(messagesDir, filename);
+
+        // Save to file
+        fs.writeFileSync(filepath, JSON.stringify(messageData, null, 2));
+        console.log(`✅ Contact message saved to: ${filename}`);
+    } catch (fileError) {
+        console.error('Error saving contact message to file:', fileError);
+    }
+}
+
+/**
  * Health check for contact service
  * GET /api/contact/health
  */
 exports.contactServiceHealth = async (req, res) => {
     try {
-        // Verify email transporter
-        await emailTransporter.verify();
-        res.status(200).json({
-            success: true,
-            message: 'Contact service is operational'
-        });
+        if (emailConfigured && emailTransporter) {
+            // Verify email transporter if configured
+            await emailTransporter.verify();
+            res.status(200).json({
+                success: true,
+                message: 'Contact service is operational (Email enabled)'
+            });
+        } else {
+            // Email not configured but file storage works
+            res.status(200).json({
+                success: true,
+                message: 'Contact service is operational (Using local file storage)'
+            });
+        }
     } catch (error) {
         console.error('Contact service health check failed:', error);
         res.status(500).json({

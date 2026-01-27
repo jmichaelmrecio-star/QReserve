@@ -111,6 +111,7 @@
     if (typeof renderAdminReservations === 'function') {
         renderAdminReservations();
     }
+    
     // Report button handler
     const reportButton = document.getElementById('report-button');
     if (reportButton) {
@@ -119,6 +120,160 @@
             document.getElementById('reportForm').reset();
             document.getElementById('reportStatus').innerHTML = '';
             reportModal.show();
+        });
+    }
+    
+    // Report form submit handler
+    const reportForm = document.getElementById('reportForm');
+    if (reportForm) {
+        reportForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            let startDate = document.getElementById('reportStartDate').value.trim();
+            let endDate = document.getElementById('reportEndDate').value.trim();
+            const statusDiv = document.getElementById('reportStatus');
+            statusDiv.innerHTML = '';
+            
+            if (!startDate || !endDate) {
+                statusDiv.innerHTML = '<div class="alert alert-danger">Please select both dates.</div>';
+                return;
+            }
+            if (endDate < startDate) {
+                statusDiv.innerHTML = '<div class="alert alert-warning">End date cannot be before start date.</div>';
+                return;
+            }
+            
+            statusDiv.innerHTML = '<div class="alert alert-info">Generating report...</div>';
+            console.log('Report request - Start Date:', startDate, 'End Date:', endDate);
+            
+            try {
+                const response = await fetch(`http://localhost:3000/api/reservations/admin/reports/generate?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`);
+                console.log('Report API Response Status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Report data received:', data);
+                
+                if (data.success && data.report) {
+                    const report = data.report;
+                    
+                    // Build comprehensive CSV content
+                    let csvContent = '';
+                    
+                    // Header section
+                    csvContent += '=== TITO RENZ RESORT RESERVATION REPORT ===\n';
+                    csvContent += `Report Period,${startDate} to ${endDate}\n`;
+                    csvContent += `Generated On,${new Date().toLocaleString()}\n`;
+                    csvContent += '\n';
+                    
+                    // Summary section
+                    csvContent += '=== SUMMARY ===\n';
+                    csvContent += `Total Reservations,${report.totalReservations}\n`;
+                    csvContent += `Total Income,PHP ${report.totalIncome.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n`;
+                    csvContent += '\n';
+                    
+                    // Service breakdown section
+                    if (report.serviceBreakdown && Object.keys(report.serviceBreakdown).length > 0) {
+                        csvContent += '=== BREAKDOWN BY SERVICE TYPE ===\n';
+                        csvContent += 'Service Type,Reservations,Revenue\n';
+                        for (const [serviceType, data] of Object.entries(report.serviceBreakdown)) {
+                            csvContent += `${serviceType},${data.count},PHP ${data.revenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n`;
+                        }
+                        csvContent += '\n';
+                    }
+                    
+                    // Detailed reservations section
+                    if (report.detailedReservations && report.detailedReservations.length > 0) {
+                        csvContent += '=== DETAILED RESERVATION LIST ===\n';
+                        csvContent += 'Reservation ID,Customer Name,Email,Service Type,Check-in,Check-out,Guests,Base Price,Discount,Final Total,Status,GCash Ref,Date Created\n';
+                        
+                        report.detailedReservations.forEach(res => {
+                            csvContent += `${res.reservationId},"${res.customerName}",${res.email},${res.serviceType},${res.checkIn},${res.checkOut},${res.guests},PHP ${res.basePrice.toLocaleString('en-US')},PHP ${res.discount.toLocaleString('en-US')},PHP ${res.finalTotal.toLocaleString('en-US')},${res.status},${res.gcashRef},${res.dateCreated}\n`;
+                        });
+                    }
+                    
+                    // Create and download CSV
+                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `tito_renz_reservation_report_${startDate}_to_${endDate}.csv`;
+                    a.style.display = 'none';
+                    document.body.appendChild(a);
+                    a.click();
+                    
+                    // Cleanup
+                    setTimeout(() => {
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                    }, 100);
+                    
+                    statusDiv.innerHTML = `<div class="alert alert-success"><strong>Success!</strong> Report generated with ${report.totalReservations} reservation(s) and downloaded.</div>`;
+                    
+                    // Auto-close modal after 2 seconds
+                    setTimeout(() => {
+                        const reportModal = bootstrap.Modal.getInstance(document.getElementById('reportModal'));
+                        if (reportModal) reportModal.hide();
+                    }, 2000);
+                    
+                } else {
+                    statusDiv.innerHTML = `<div class="alert alert-danger">${data.message || 'Failed to generate report.'}</div>`;
+                }
+            } catch (err) {
+                console.error('Report generation error:', err);
+                statusDiv.innerHTML = `<div class="alert alert-danger"><strong>Error:</strong> ${err.message || 'Failed to generate report. Please try again.'}</div>`;
+            }
+        });
+    }
+    
+    // Send Email form submit handler
+    const sendEmailForm = document.getElementById('sendEmailForm');
+    if (sendEmailForm) {
+        sendEmailForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const reservationId = document.getElementById('emailReservationId').value;
+            const subject = document.getElementById('emailSubject').value.trim();
+            const body = document.getElementById('emailBody').value.trim();
+            const statusDiv = document.getElementById('sendEmailStatus');
+            
+            if (!subject || !body) {
+                statusDiv.innerHTML = '<div class="alert alert-warning">Please fill in both subject and message.</div>';
+                return;
+            }
+            
+            statusDiv.innerHTML = '<div class="alert alert-info">Sending email...</div>';
+            
+            try {
+                const response = await fetch('http://localhost:3000/api/reservations/send-email', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${typeof getAuthToken === 'function' ? getAuthToken() : ''}`
+                    },
+                    body: JSON.stringify({ reservationId, subject, body })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    statusDiv.innerHTML = '<div class="alert alert-success">✓ Email sent successfully!</div>';
+                    
+                    // Auto-close modal after 2 seconds
+                    setTimeout(() => {
+                        const emailModal = bootstrap.Modal.getInstance(document.getElementById('sendEmailModal'));
+                        if (emailModal) emailModal.hide();
+                        sendEmailForm.reset();
+                        statusDiv.innerHTML = '';
+                    }, 2000);
+                } else {
+                    statusDiv.innerHTML = `<div class="alert alert-danger">Failed to send email: ${data.message || 'Unknown error'}</div>`;
+                }
+            } catch (err) {
+                console.error('Email sending error:', err);
+                statusDiv.innerHTML = '<div class="alert alert-danger">Error sending email. Please try again.</div>';
+            }
         });
     }
 })();
