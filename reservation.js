@@ -68,13 +68,16 @@ function renderServiceCards(servicesOverride = null) {
   }
 
   container.innerHTML = services.map(service => `
-    <div class="service-card" onclick="showServiceModal('${service._id || service.id}')">
+    <div class="service-card">
       <img src="${service.image || 'images/placeholder.jpg'}" alt="${service.name}">
       <div class="card-content">
         <h3>${escapeHtml(service.name)}</h3>
         <p class="price">Starts at ₱${getStartingPrice(service).toLocaleString()}</p>
         <p>Max Guests: ${service.max_guests || 'N/A'}</p>
-        <button class="button-primary" style="margin-top: 10px; width: 100%;">Details</button>
+        <div class="card-buttons" style="display: flex; gap: 10px; margin-top: 10px;">
+          <button class="button-primary" style="flex: 1;" onclick="showServiceModal('${service._id || service.id}')">Details</button>
+          <button class="button-secondary" style="flex: 1;" onclick="showGalleryModal('${service._id || service.id}')">Photos</button>
+        </div>
       </div>
     </div>
   `).join("");

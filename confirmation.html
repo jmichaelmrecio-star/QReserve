@@ -178,35 +178,42 @@
         if (qrCodeHash) {
             // Support multiple hashes from cart checkout
             const hashes = qrCodeHash.split(',').filter(h => h.trim());
-            const primaryHash = hashes[0];
 
             // 1. Generate QR Code (using full hash string for batch check-in support)
             generateQRCode(qrCodeHash);
 
-            // 2. Fetch Details for the primary/first reservation
-            const reservation = await fetchConfirmationDetails(primaryHash);
+            // 2. Fetch Details for ALL reservations
+            const reservations = await Promise.all(
+                hashes.map(hash => fetchConfirmationDetails(hash))
+            );
+            
+            // Filter out any failed fetches (null values)
+            const validReservations = reservations.filter(r => r !== null);
 
-            if (reservation) {
+            if (validReservations.length > 0) {
+                const firstReservation = validReservations[0];
+                
                 // Display formal reservation ID
                 if (formalIdDisplay) {
-                    const idText = hashes.length > 1 
-                        ? `${reservation.reservationId} (+${hashes.length - 1} more)`
-                        : (reservation.reservationId || reservation._id || 'N/A');
+                    const idText = validReservations.length > 1 
+                        ? `${firstReservation.reservationId} (+${validReservations.length - 1} more)`
+                        : (firstReservation.reservationId || firstReservation._id || 'N/A');
                     formalIdDisplay.textContent = idText;
                 }
-                // Display service type
+                
+                // Display ALL service names
                 if (serviceDisplay) {
-                    const serviceText = hashes.length > 1 
-                        ? 'Multiple Services' 
-                        : `${reservation.serviceType} Booking`;
-                    serviceDisplay.textContent = serviceText;
+                    const serviceNames = validReservations
+                        .map(res => res.serviceType || 'Unknown Service')
+                        .join(', ');
+                    serviceDisplay.textContent = serviceNames;
                 }
                 
                 // If multiple, update subtitle
-                if (hashes.length > 1) {
+                if (validReservations.length > 1) {
                     const subtitle = card.querySelector('p');
                     if (subtitle) {
-                        subtitle.textContent = `Thank you! Your ${hashes.length} reservations are confirmed. Scan below for check-in.`;
+                        subtitle.textContent = `Thank you! Your ${validReservations.length} reservations are confirmed. Scan below for check-in.`;
                     }
                 }
             } else {
