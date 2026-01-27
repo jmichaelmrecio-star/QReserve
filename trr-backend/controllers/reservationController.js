@@ -756,7 +756,8 @@ exports.updateReservationStatus = async (req, res) => {
         const normalizedStatus = status.toString().trim().toUpperCase();
 
         // Validate the status is one of the allowed admin actions
-        const allowedStatuses = ['CONFIRMED', 'CANCELLED', 'COMPLETED'];
+        // CHECKED_IN is used for manual/QR check-in from admin dashboard
+        const allowedStatuses = ['CONFIRMED', 'CHECKED_IN', 'CANCELLED', 'COMPLETED'];
         if (!allowedStatuses.includes(normalizedStatus)) {
             return res.status(400).json({ message: `Invalid status provided: ${status}` });
         }
@@ -765,7 +766,7 @@ exports.updateReservationStatus = async (req, res) => {
 
         if (normalizedStatus === 'CANCELLED') {
             nextFields.paymentStatus = 'REFUNDED';
-        } else if (normalizedStatus === 'CONFIRMED' || normalizedStatus === 'COMPLETED') {
+        } else if (['CONFIRMED', 'CHECKED_IN', 'COMPLETED'].includes(normalizedStatus)) {
             nextFields.paymentStatus = 'PAID';
         }
         nextFields.updatedAt = new Date();
