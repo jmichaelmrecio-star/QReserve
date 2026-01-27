@@ -301,14 +301,11 @@
               });
               const result = await response.json();
               console.log('Registration response:', result);
-                if (response.ok && (result.success === true || (result.message && result.message.toLowerCase().includes('registration successful')))) {
-                  // If backend returns a verification token, redirect with it
-                  let redirectUrl = 'verify-email.html';
-                  if (result.token) {
-                    redirectUrl += '?token=' + encodeURIComponent(result.token);
-                  }
-                  window.location.href = redirectUrl;
-                  return;
+              if (response.ok && (result.success === true || (result.message && result.message.toLowerCase().includes('registration successful')))) {
+                showModal('Registration Successful', 'Your account has been created. Please log in.', 'success', {
+                  onClose: () => window.location.href = 'login.html'
+                });
+                return;
               } else {
                 showModal('Registration Error', result.message || 'Registration failed.', 'error');
                 if (submitBtn) submitBtn.disabled = false;
@@ -330,7 +327,7 @@
         if (termsLink) {
           termsLink.addEventListener('click', function(e) {
             e.preventDefault();
-            showModal('Terms and Conditions', '<img src="images/terms.png" alt="Terms and Conditions" style="max-width:100%;height:auto;display:block;margin:0 auto;">', 'info');
+            showModal('Terms and Conditions', '<img src="images/terms.png" alt="Terms and Conditions" style="width:100%;display:block;margin:0 auto;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);\">', 'info');
           });
         }
       });

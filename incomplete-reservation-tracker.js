@@ -2,6 +2,31 @@
 // INCOMPLETE RESERVATION TRACKING SYSTEM
 // ========================================
 
+// Add animations for modal if not already defined
+(function() {
+    if (!document.getElementById('incomplete-modal-animations')) {
+        const style = document.createElement('style');
+        style.id = 'incomplete-modal-animations';
+        style.textContent = `
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+            @keyframes slideDown {
+                from { 
+                    transform: translateY(-50px);
+                    opacity: 0;
+                }
+                to { 
+                    transform: translateY(0);
+                    opacity: 1;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+})();
+
 /**
  * Saves the current reservation progress to localStorage
  * Called whenever user makes changes on services-list.html or reserve.html
@@ -20,20 +45,29 @@ function saveReservationProgress(page, data) {
     // Get existing incomplete reservations
     let incompleteReservations = JSON.parse(localStorage.getItem('qreserve_incomplete_reservations')) || [];
     
-    // Remove any existing reservation for this user
-    incompleteReservations = incompleteReservations.filter(r => r.email !== userEmail);
+    // Use selected service as unique identifier (or generate one if needed)
+    const uniqueId = data.selectedServiceId || data.selectedService || 'default_' + Date.now();
+    
+    // Check if we already have this reservation and update it, don't remove all
+    const existingIndex = incompleteReservations.findIndex(r => r.email === userEmail && r.uniqueId === uniqueId);
     
     // Create new incomplete reservation object
     const newReservation = {
         email: userEmail,
+        uniqueId: uniqueId,
         page: page,
         data: data,
         savedAt: new Date().toISOString(),
         timestamp: Date.now()
     };
     
-    // Add to array and save
-    incompleteReservations.push(newReservation);
+    // Update existing or add new
+    if (existingIndex !== -1) {
+        incompleteReservations[existingIndex] = newReservation;
+    } else {
+        incompleteReservations.push(newReservation);
+    }
+    
     localStorage.setItem('qreserve_incomplete_reservations', JSON.stringify(incompleteReservations));
     
     console.log('Reservation progress saved:', newReservation);
@@ -57,19 +91,29 @@ function getIncompleteReservations() {
 }
 
 /**
- * Clears a saved incomplete reservation for a specific user
+ * Clears a saved incomplete reservation for a specific user and service
  * Called after user completes reservation or chooses to start fresh
  * @param {string} email - User's email address
+ * @param {string} uniqueId - Service ID to clear (optional, clears all if not provided)
  */
-function clearIncompleteReservation(email) {
+function clearIncompleteReservation(email, uniqueId = null) {
     let incompleteReservations = JSON.parse(localStorage.getItem('qreserve_incomplete_reservations')) || [];
     
-    // Remove reservation for this email
-    incompleteReservations = incompleteReservations.filter(r => r.email !== email);
+    // Remove specific reservation for this email and uniqueId, or all if uniqueId not provided
+    if (uniqueId) {
+        incompleteReservations = incompleteReservations.filter(r => !(r.email === email && r.uniqueId === uniqueId));
+    } else {
+        incompleteReservations = incompleteReservations.filter(r => r.email !== email);
+    }
     
-    localStorage.setItem('qreserve_incomplete_reservations', JSON.stringify(incompleteReservations));
+    // If no reservations left, completely remove the key from localStorage
+    if (incompleteReservations.length === 0) {
+        localStorage.removeItem('qreserve_incomplete_reservations');
+    } else {
+        localStorage.setItem('qreserve_incomplete_reservations', JSON.stringify(incompleteReservations));
+    }
     
-    console.log('Incomplete reservation cleared for:', email);
+    console.log('Incomplete reservation cleared for:', email, uniqueId);
 }
 
 /**
@@ -105,7 +149,7 @@ function resumeReservation(reservation) {
     if (data.gcashReference) sessionStorage.setItem('gcashReference', data.gcashReference);
     
     // Clear the incomplete reservation from localStorage
-    clearIncompleteReservation(reservation.email);
+    clearIncompleteReservation(reservation.email, reservation.uniqueId);
     
     // Redirect to the page where they left off
     if (reservation.page === 'services-list') {
@@ -237,11 +281,13 @@ function showResumeReservationModal() {
     
     // Create modal HTML dynamically
     const modalHTML = `
-        <div id="resumeReservationModal" class="modal" style="display: block;">
-            <div class="modal-content" style="max-width: 600px; max-height: 80vh; overflow-y: auto;">
-                <span class="close-button" onclick="closeResumeModal()" style="cursor: pointer;">&times;</span>
-                <h2 style="margin-top: 0; color: #333;">Resume Your Reservation?</h2>
-                <p style="color: #666;">You have ${incompleteReservations.length} incomplete reservation(s). Select one to continue:</p>
+        <div id="resumeReservationModal" style="display: flex; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); animation: fadeIn 0.3s ease-in; align-items: center; justify-content: center; font-family: Arial, sans-serif;">
+            <div style="background-color: #ffffff; margin: 5% auto; padding: 30px; border-radius: 12px; width: 90%; max-width: 900px; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15); animation: slideDown 0.3s ease-out; border-top: 5px solid #28a745;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+                    <h2 style="margin: 0; color: #333; font-size: 1.5rem;">Resume Your Reservation?</h2>
+                    <span onclick="closeResumeModal()" style="cursor: pointer; color: #999; font-size: 28px; font-weight: bold; line-height: 1; padding: 0; margin: 0;">&times;</span>
+                </div>
+                <p style="color: #666; margin: 0 0 20px 0; font-size: 1rem;">You have ${incompleteReservations.length} incomplete reservation(s). Select one to continue:</p>
                 
                 <div style="margin: 20px 0;">
                     ${reservationsHTML}
@@ -249,11 +295,11 @@ function showResumeReservationModal() {
                 
                 <div style="margin-top: 20px; border-top: 1px solid #ddd; padding-top: 15px;">
                     <button onclick="clearAllIncompleteReservations()" 
-                            style="width: 100%; padding: 12px; background-color: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem;">
+                            style="width: 100%; padding: 12px; background-color: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem; font-weight: bold; transition: background-color 0.3s;">
                         Clear All & Start Fresh
                     </button>
                 </div>
-                <p style="text-align: center; font-size: 0.85rem; color: #999; margin-top: 15px;">
+                <p style="text-align: center; font-size: 0.85rem; color: #999; margin-top: 15px; margin-bottom: 0;">
                     Or click the X to close this dialog.
                 </p>
             </div>
@@ -283,11 +329,44 @@ function resumeSpecificReservation(index) {
 
 /**
  * Clear all incomplete reservations for the current user
+ * Also clears all session storage data related to reservations
  */
 function clearAllIncompleteReservations() {
     const userEmail = localStorage.getItem('qreserve_logged_user_email');
     if (userEmail) {
+        // Clear localStorage incomplete reservations
         clearIncompleteReservation(userEmail);
+        
+        // Also clear all auto-saved sessionStorage data
+        const sessionStorageKeysToRemove = [
+            'selectedServiceId',
+            'selectedServiceName',
+            'selectedServicePrice',
+            'selectedServiceMaxGuests',
+            'selectedServiceType',
+            'selectedDuration',
+            'selectedDurationLabel',
+            'serviceInclusions',
+            'guests',
+            'checkinDate',
+            'checkoutDate',
+            'customerName',
+            'customerContact',
+            'customerEmail',
+            'customerAddress',
+            'customerNotes',
+            'finalTotal',
+            'discountValue',
+            'appliedPromoCode',
+            'promoCode',
+            'gcashReference',
+            'resuming_reservation'
+        ];
+        
+        sessionStorageKeysToRemove.forEach(key => {
+            sessionStorage.removeItem(key);
+        });
+        
         showToast('All incomplete reservations cleared. You can start fresh!', 'info');
         closeResumeModal();
         // Re-render navigation to remove resume button

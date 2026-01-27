@@ -55,40 +55,38 @@ function displayCustomerReservations(reservations) {
         return;
     }
 
-    // For admin, show all in a table with all fields
+    // For admin/manager, show all in a table with all fields
     const userRole = localStorage.getItem('qreserve_user_role');
     if (userRole === 'admin' || userRole === 'manager') {
         container.innerHTML = `
             <table class="data-table">
                 <thead>
-                    return `
-                        <div class="reservation-card mb-3 p-3 border rounded shadow-sm">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <div>
-                                    <strong>Reservation ID:</strong> ${reservation.reservationId || reservation._id}<br>
-                                    <strong>Name:</strong> ${reservation.full_name || ''}<br>
-                                    <strong>Email:</strong> ${reservation.email || ''}<br>
-                                    <strong>Service:</strong> ${reservation.serviceType || ''}<br>
-                                    <strong>Check-in:</strong> ${reservation.check_in ? new Date(reservation.check_in).toLocaleString() : ''}<br>
-                                    <strong>Check-out:</strong> ${reservation.check_out ? new Date(reservation.check_out).toLocaleString() : ''}<br>
-                                    <strong>Total:</strong> ₱${reservation.finalTotal ? parseFloat(reservation.finalTotal).toLocaleString() : ''}<br>
-                                    <strong>Status:</strong> ${reservation.status || ''}<br>
-                                    <strong>GCash Ref #:</strong> ${reservation.gcashReferenceNumber || ''}<br>
-                                </div>
-                                <div>
-                                    ${reservation.receiptFileName ? `<a href="/uploads/${reservation.receiptFileName}" target="_blank"><img src="/uploads/${reservation.receiptFileName}" alt="Payment Receipt" style="max-width:100px;max-height:100px;object-fit:contain;" /></a>` : ''}
-                                </div>
-                            </div>
-                        </div>
-                    `;
+                    <tr>
+                        <th>Reservation ID</th>
+                        <th>Guest Name</th>
+                        <th>Email</th>
+                        <th>Service Type</th>
+                        <th>Check-in</th>
+                        <th>Check-out</th>
+                        <th>Total Amount</th>
+                        <th>Status</th>
+                        <th>GCash Ref #</th>
+                        <th>Payment Image</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${reservations.map(r => `
+                        <tr>
+                            <td>${r.reservationId || r._id}</td>
+                            <td>${r.full_name || ''}</td>
                             <td>${r.email || ''}</td>
                             <td>${r.serviceType || ''}</td>
                             <td>${r.check_in ? new Date(r.check_in).toLocaleString() : ''}</td>
                             <td>${r.check_out ? new Date(r.check_out).toLocaleString() : ''}</td>
-                            <td>₱${r.finalTotal ? parseFloat(r.finalTotal).toLocaleString() : ''}</td>
+                            <td>₱${r.finalTotal ? parseFloat(r.finalTotal).toLocaleString() : '0.00'}</td>
                             <td>${r.status || ''}</td>
                             <td>${r.gcashReferenceNumber || ''}</td>
-                            <td>${r.receiptFileName ? `<a href="/uploads/${r.receiptFileName}" target="_blank">View Image</a>` : ''}</td>
+                            <td>${r.receiptFileName ? `<a href="/uploads/${r.receiptFileName}" target="_blank">View Image</a>` : 'N/A'}</td>
                         </tr>
                     `).join('')}
                 </tbody>
@@ -96,7 +94,40 @@ function displayCustomerReservations(reservations) {
         `;
         return;
     }
-    // ...existing code for customer view...
+
+    // For customers, show reservations as cards
+    container.innerHTML = reservations.map(reservation => `
+        <div class="reservation-card mb-3 p-3 border rounded shadow-sm">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div>
+                    <strong>Reservation ID:</strong> ${reservation.reservationId || reservation._id}<br>
+                    <strong>Name:</strong> ${reservation.full_name || ''}<br>
+                    <strong>Email:</strong> ${reservation.email || ''}<br>
+                    <strong>Service:</strong> ${reservation.serviceType || ''}<br>
+                    <strong>Check-in:</strong> ${reservation.check_in ? new Date(reservation.check_in).toLocaleString() : ''}<br>
+                    <strong>Check-out:</strong> ${reservation.check_out ? new Date(reservation.check_out).toLocaleString() : ''}<br>
+                    <strong>Total:</strong> ₱${reservation.finalTotal ? parseFloat(reservation.finalTotal).toLocaleString() : '0.00'}<br>
+                    <strong>Status:</strong> <span class="badge bg-${getStatusColor(reservation.status)}">${reservation.status || ''}</span><br>
+                    <strong>GCash Ref #:</strong> ${reservation.gcashReferenceNumber || 'N/A'}<br>
+                </div>
+                <div>
+                    ${reservation.receiptFileName ? `<a href="/uploads/${reservation.receiptFileName}" target="_blank"><img src="/uploads/${reservation.receiptFileName}" alt="Payment Receipt" style="max-width:100px;max-height:100px;object-fit:contain;" /></a>` : '<span style="color:#999;">No receipt</span>'}
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Helper function to get status color
+function getStatusColor(status) {
+    const colors = {
+        'Pending': 'warning',
+        'Confirmed': 'success',
+        'Checked-in': 'info',
+        'Completed': 'secondary',
+        'Cancelled': 'danger'
+    };
+    return colors[status] || 'secondary';
 }
 
 // Create a customer-friendly reservation card
