@@ -11,11 +11,59 @@ async function sendGenericEmail(email, subject, htmlBody) {
         subject,
         html: htmlBody
     };
-    return transporter.sendMail(mailOptions);
+    
+    try {
+        const result = await transporter.sendMail(mailOptions);
+        console.log(`✅ Email sent to ${email}: ${subject}`);
+        return result;
+    } catch (error) {
+        console.error(`❌ Failed to send email to ${email}:`, error.message);
+        
+        // Save to file as fallback
+        saveEmailToFile({
+            to: email,
+            subject,
+            body: htmlBody,
+            timestamp: new Date().toISOString(),
+            error: error.message
+        });
+        
+        throw error; // Re-throw to let caller handle
+    }
 }
 
-module.exports.sendGenericEmail = sendGenericEmail;
+/**
+ * Save email to file as fallback when sending fails
+ */
+function saveEmailToFile(emailData) {
+    try {
+        const uploadsDir = path.join(__dirname, '../uploads');
+        const emailsDir = path.join(uploadsDir, 'failed-emails');
+        
+        // Ensure directories exist
+        if (!fs.existsSync(uploadsDir)) {
+            fs.mkdirSync(uploadsDir, { recursive: true });
+        }
+        if (!fs.existsSync(emailsDir)) {
+            fs.mkdirSync(emailsDir, { recursive: true });
+        }
+
+        // Create filename with timestamp
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const filename = `email-${timestamp}.json`;
+        const filepath = path.join(emailsDir, filename);
+
+        // Save to file
+        fs.writeFileSync(filepath, JSON.stringify(emailData, null, 2));
+        console.log(`📝 Email saved to file: ${filename}`);
+    } catch (fileError) {
+        console.error('Error saving email to file:', fileError);
+    }
+}
+
 const nodemailer = require('nodemailer');
+const fs = require('fs');
+const path = require('path');
 
 // Email configuration using the provided SMTP credentials
 const transporter = nodemailer.createTransport({
@@ -32,12 +80,17 @@ const transporter = nodemailer.createTransport({
     }
 });
 
+// Track if email service is available
+let emailServiceAvailable = true;
+
 // Verify transporter configuration
 transporter.verify((error, success) => {
     if (error) {
-        console.error('Email transporter verification failed:', error);
+        console.error('⚠️ Email transporter verification failed:', error);
+        emailServiceAvailable = false;
     } else {
-        console.log('Email server is ready to send messages');
+        console.log('✅ Email server is ready to send messages');
+        emailServiceAvailable = true;
     }
 });
 
@@ -248,6 +301,7 @@ async function sendReservationConfirmation(email, reservationDetails) {
 }
 
 module.exports = {
+    sendGenericEmail,
     sendVerificationEmail,
     sendPasswordResetEmail,
     sendReservationConfirmation
