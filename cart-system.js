@@ -90,11 +90,19 @@ function updateCartBadge() {
 
 function calculateCartTotal() {
   const cart = getCart();
-  return cart.reduce((total, item) => total + parseFloat(item.price || 0), 0);
+  return cart.reduce((total, item) => {
+    const final = item.finalTotal != null ? item.finalTotal : item.price;
+    const val = parseFloat(final || 0);
+    return total + (isNaN(val) ? 0 : val);
+  }, 0);
 }
 
 function calculateCartTotalFromItems(cartItems) {
-  return cartItems.reduce((total, item) => total + parseFloat(item.price || 0), 0);
+  return cartItems.reduce((total, item) => {
+    const final = item.finalTotal != null ? item.finalTotal : item.price;
+    const val = parseFloat(final || 0);
+    return total + (isNaN(val) ? 0 : val);
+  }, 0);
 }
 
 // --- Cart UI Rendering ---
@@ -117,20 +125,45 @@ function renderCartItems() {
   if (emptyMsg) emptyMsg.style.display = 'none';
   if (summary) summary.style.display = '';
 
-  listElement.innerHTML = cart.map((item, idx) => `
-    <div class="cart-item" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding: 1rem 0;">
-      <div class="cart-item-details">
-        <h4 style="margin: 0 0 0.5rem 0;">${escapeHtml(item.serviceName)}</h4>
-        <p style="margin: 0;">Check-in: ${item.checkIn ? escapeHtml(item.checkIn) : ''}</p>
-        <p style="margin: 0;">Check-out: ${item.checkOut ? escapeHtml(item.checkOut) : ''}</p>
-        <p style="margin: 0;">Guests: ${item.guests}</p>
+  listElement.innerHTML = cart.map((item) => {
+    const base = parseFloat(item.basePrice != null && item.basePrice !== '' ? item.basePrice : (item.price || 0)) || 0;
+    const final = parseFloat(item.finalTotal != null && item.finalTotal !== '' ? item.finalTotal : (item.price || 0)) || 0;
+    const explicitDiscount = parseFloat(item.discountValue || 0) || 0;
+    const inferredDiscount = base > final ? (base - final) : 0;
+    const discount = explicitDiscount > 0 ? explicitDiscount : inferredDiscount;
+    const hasDiscount = discount > 0;
+    const promoLabel = item.appliedPromoCode || item.promoCode || item.discountCode || '';
+
+    const priceSection = hasDiscount
+      ? `
+        <div style="font-size: 0.95rem; color: #666;">Base: ₱${base.toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2})}</div>
+        <div style="font-size: 0.95rem; color: #d9534f;">Discount${promoLabel ? ` (${escapeHtml(promoLabel)})` : ''}: -₱${discount.toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2})}</div>
+        <div style="font-weight: 700; font-size: 1.1rem; color: var(--text-color);">Total: ₱${final.toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2})}</div>
+      `
+      : `
+        <span style="font-weight: bold; font-size: 1.1rem;">₱${final.toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2})}</span>
+      `;
+
+    const promoBadge = promoLabel
+      ? `<span style="display:inline-block;margin-top:0.25rem;padding:2px 8px;border-radius:12px;background:#eaf7ea;color:#2e7d32;font-size:0.8rem;">Promo: ${escapeHtml(promoLabel)}</span>`
+      : '';
+
+    return `
+      <div class="cart-item" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding: 1rem 0;">
+        <div class="cart-item-details">
+          <h4 style="margin: 0 0 0.25rem 0;">${escapeHtml(item.serviceName)}</h4>
+          ${promoBadge}
+          <p style="margin: 0;">Check-in: ${item.checkIn ? escapeHtml(item.checkIn) : ''}</p>
+          <p style="margin: 0;">Check-out: ${item.checkOut ? escapeHtml(item.checkOut) : ''}</p>
+          <p style="margin: 0;">Guests: ${item.guests}</p>
+        </div>
+        <div class="cart-item-price" style="text-align: right;">
+          ${priceSection}
+          <button onclick="removeFromCart(${item.cartItemId}); renderCartItems();" class="btn btn-danger btn-sm" style="margin-top: 0.5rem;">Remove</button>
+        </div>
       </div>
-      <div class="cart-item-price" style="text-align: right;">
-        <span style="font-weight: bold; font-size: 1.1rem;">₱${parseFloat(item.price).toLocaleString()}</span><br>
-        <button onclick="removeFromCart(${item.cartItemId}); renderCartItems();" class="btn btn-danger btn-sm" style="margin-top: 0.5rem;">Remove</button>
-      </div>
-    </div>
-  `).join("");
+    `;
+  }).join("");
 
   // Update summary totals
   const totalAmount = document.getElementById("cart-total-amount");
@@ -177,9 +210,13 @@ async function proceedToCartCheckout() {
       customer_contact: user.phone,
       customer_email: user.email,
       customer_address: user.address,
-      basePrice: item.price,
-      finalTotal: item.price,
-      selectedDuration: item.durationId || null
+      // Use explicit base and final totals when available
+      basePrice: item.basePrice != null ? item.basePrice : item.price,
+      finalTotal: item.finalTotal != null ? item.finalTotal : item.price,
+      selectedDuration: item.durationId || null,
+      // Include discount details if present
+      discountCode: item.promoCode || item.discountCode || null,
+      discountValue: item.discountValue != null ? item.discountValue : 0
     };
 
     try {

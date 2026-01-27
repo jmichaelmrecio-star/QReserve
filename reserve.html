@@ -104,8 +104,9 @@
 				    
 				    <div class="form-group">
 				        <label for="promoCodeInput" style="display: flex; gap: 10px;">Have a Promo Code?</label>
-				        <div class="promo-input-group">
+				        <div class="promo-input-group" style="display: flex; gap: 10px;">
 				            <input type="text" id="promoCodeInput" placeholder="Enter code" class="form-control" style="flex-grow: 1;">
+				            <button type="button" id="applyPromoBtn" class="button-secondary" style="white-space: nowrap;">Apply Code</button>
 				        </div>
 				        <p id="promoCodeMessage" style="margin-top: 5px; font-size: 0.9em;"></p>
 				    </div>
@@ -291,6 +292,9 @@
 	<script src="reservation.js"></script>
 
 		<script>
+		// --- Global variable to store applied promo code data ---
+		let appliedPromoData = null;
+		
 		// --- Ensure hidden fields are set before form submission ---
 		document.addEventListener('DOMContentLoaded', function() {
 			const form = document.getElementById('reservationForm');
@@ -333,6 +337,52 @@
 				params[decodeURIComponent(k)] = decodeURIComponent(v || '');
 			});
 			return params;
+		}
+
+		// --- Promo Code Reset Helpers ---
+		function clearPromoState() {
+			// Reset in-memory state
+			appliedPromoData = null;
+			// Reset UI
+			const promoInput = document.getElementById('promoCodeInput');
+			const promoMsg = document.getElementById('promoCodeMessage');
+			const applyBtn = document.getElementById('applyPromoBtn');
+			if (promoInput) { promoInput.value = ''; promoInput.disabled = false; }
+			if (promoMsg) { promoMsg.textContent = ''; }
+			if (applyBtn) { applyBtn.textContent = 'Apply Code'; applyBtn.disabled = false; applyBtn.onclick = applyPromoCode; }
+			// Reset pricing based on current base price
+			const basePriceText = document.getElementById('basePriceDisplay')?.textContent || '0';
+			const basePrice = parseFloat(String(basePriceText).replace(/,/g, '')) || 0;
+			const discountDisplay = document.getElementById('discountDisplay');
+			const finalTotalDisplay = document.getElementById('finalTotalDisplay');
+			if (discountDisplay) discountDisplay.textContent = '0.00';
+			if (finalTotalDisplay) finalTotalDisplay.textContent = basePrice.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+			// Reset hidden inputs
+			const discountValueInput = document.getElementById('discountValueInput');
+			const discountCodeInput = document.getElementById('discountCodeInput');
+			const finalTotalInput = document.getElementById('finalTotalInput');
+			if (discountValueInput) discountValueInput.value = '0';
+			if (discountCodeInput) discountCodeInput.value = '';
+			if (finalTotalInput) finalTotalInput.value = basePrice;
+			// Reset session storage
+			sessionStorage.removeItem('appliedPromoCode');
+			sessionStorage.removeItem('discountValue');
+			sessionStorage.setItem('finalTotal', String(basePrice));
+		}
+
+		function resetPromoOnNewReservation(params) {
+			const newServiceId = params.serviceId || '';
+			const previousServiceId = sessionStorage.getItem('selectedServiceId') || '';
+			const isResuming = sessionStorage.getItem('isResumingReservation') === 'true';
+			// If starting a new reservation (URL has serviceId) and it's different from previous, clear promo
+			if (newServiceId && previousServiceId && newServiceId !== previousServiceId) {
+				clearPromoState();
+				return;
+			}
+			// If explicitly starting fresh via URL, and not resuming, clear promo
+			if (newServiceId && !isResuming) {
+				clearPromoState();
+			}
 		}
 
 		function trySetDurationFromParams(params) {
@@ -382,6 +432,8 @@
 
 		document.addEventListener('DOMContentLoaded', function() {
 			const params = getQueryParams();
+			// Ensure any previous promo code doesn't bleed into a new reservation
+			resetPromoOnNewReservation(params);
 			// Check if we have service data from URL params OR from sessionStorage (resume flow)
 			const serviceId = params.serviceId || sessionStorage.getItem('selectedServiceId');
 			const serviceName = params.serviceName || sessionStorage.getItem('selectedServiceName');
@@ -402,12 +454,16 @@
 
 				// Wait for services to load before loading durations
 				fetchServices().then(() => {
-					// Set serviceType in sessionStorage and hidden input
+					// Set serviceType and inclusions in sessionStorage and hidden input
 					if (window.resortServices) {
 						const svc = window.resortServices.find(s => (s._id || s.id) === serviceId);
 						if (svc && svc.type) {
 							sessionStorage.setItem('selectedServiceType', svc.type);
 							document.getElementById('serviceTypeInput').value = svc.type;
+						}
+						// Store inclusions for summary modal
+						if (svc && Array.isArray(svc.inclusions)) {
+							sessionStorage.setItem('serviceInclusions', JSON.stringify(svc.inclusions));
 						}
 					}
 					loadDurationsFromServiceId(serviceId);
@@ -454,6 +510,46 @@
 					
 					// Flag to prevent auto-fill on initial load when data is already restored
 					sessionStorage.setItem('isResumingReservation', 'true');
+
+					// Restore promo codes and totals from sessionStorage ONLY when resuming
+					if (sessionStorage.getItem('isResumingReservation') === 'true') {
+						const promoCode = sessionStorage.getItem('promoCode') || sessionStorage.getItem('appliedPromoCode');
+						const discountValue = sessionStorage.getItem('discountValue');
+						const finalTotal = sessionStorage.getItem('finalTotal');
+						if (promoCode && document.getElementById('promoCodeInput')) {
+							document.getElementById('promoCodeInput').value = promoCode;
+							document.getElementById('promoCodeInput').disabled = true;
+							const applyBtn = document.getElementById('applyPromoBtn');
+							if (applyBtn) { applyBtn.textContent = 'Remove Code'; applyBtn.onclick = removePromoCode; }
+							if (discountValue) {
+								const basePriceVal = parseFloat(sessionStorage.getItem('selectedServicePrice') || price) || 0;
+								appliedPromoData = {
+									code: promoCode,
+									discountPercentage: basePriceVal ? (parseFloat(discountValue) / basePriceVal) : 0,
+									discountAmount: parseFloat(discountValue)
+								};
+								const promoMsg = document.getElementById('promoCodeMessage');
+								if (promoMsg) {
+									promoMsg.textContent = `✓ Promo code applied! You saved ₱${Number(discountValue).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`;
+									promoMsg.style.color = '#28a745';
+								}
+							}
+						}
+						if (discountValue && document.getElementById('discountValueInput')) {
+							document.getElementById('discountValueInput').value = discountValue;
+							const discountDisplay = document.getElementById('discountDisplay');
+							if (discountDisplay) {
+								discountDisplay.textContent = '₱' + Number(discountValue).toLocaleString('en-PH', { minimumFractionDigits: 2 });
+							}
+						}
+						if (finalTotal && document.getElementById('finalTotalInput')) {
+							document.getElementById('finalTotalInput').value = finalTotal;
+							const finalTotalDisplay = document.getElementById('finalTotalDisplay');
+							if (finalTotalDisplay) {
+								finalTotalDisplay.textContent = Number(finalTotal).toLocaleString('en-PH', { minimumFractionDigits: 2 });
+							}
+						}
+					}
 					
 					// Restore customer information from sessionStorage
 					const customerName = sessionStorage.getItem('customerName');
@@ -483,8 +579,35 @@
 					const discountValue = sessionStorage.getItem('discountValue');
 					const finalTotal = sessionStorage.getItem('finalTotal');
 					
-					if (promoCode && document.getElementById('promo-code-input')) {
-						document.getElementById('promo-code-input').value = promoCode;
+					if (promoCode && document.getElementById('promoCodeInput')) {
+						document.getElementById('promoCodeInput').value = promoCode;
+						document.getElementById('promoCodeInput').disabled = true;
+						
+						// Update promo message
+						const promoMessage = document.getElementById('promoCodeMessage');
+						if (promoMessage && discountValue) {
+							const basePrice = sessionStorage.getItem('selectedServicePrice') || price;
+							const discountPercent = (parseFloat(discountValue) / parseFloat(basePrice)) * 100;
+							promoMessage.textContent = `✓ Promo code applied! You saved ${discountPercent.toFixed(0)}% (₱${parseFloat(discountValue).toLocaleString('en-PH', {minimumFractionDigits:2})})`;
+							promoMessage.style.color = '#28a745';
+						}
+						
+						// Change button to "Remove"
+						const applyBtn = document.getElementById('applyPromoBtn');
+						if (applyBtn) {
+							applyBtn.textContent = 'Remove Code';
+							applyBtn.onclick = removePromoCode;
+						}
+						
+						// Store in appliedPromoData global
+						if (discountValue) {
+							const basePrice = parseFloat(sessionStorage.getItem('selectedServicePrice') || price);
+							appliedPromoData = {
+								code: promoCode,
+								discountPercentage: parseFloat(discountValue) / basePrice,
+								discountAmount: parseFloat(discountValue)
+							};
+						}
 					}
 					if (discountValue && document.getElementById('discountValueInput')) {
 						document.getElementById('discountValueInput').value = discountValue;
@@ -495,7 +618,10 @@
 					}
 					if (finalTotal && document.getElementById('finalTotalInput')) {
 						document.getElementById('finalTotalInput').value = finalTotal;
-						document.getElementById('finalTotalDisplay').textContent = '₱' + Number(finalTotal).toLocaleString('en-PH', {minimumFractionDigits: 2});
+						const finalTotalDisplay = document.getElementById('finalTotalDisplay');
+						if (finalTotalDisplay) {
+							finalTotalDisplay.textContent = Number(finalTotal).toLocaleString('en-PH', {minimumFractionDigits: 2});
+						}
 					}
 				});
 			}
@@ -717,10 +843,29 @@
 						if (selectedOption && selectedOption.price) {
 							const newPrice = selectedOption.price;
 							document.getElementById('basePriceDisplay').textContent = Number(newPrice).toLocaleString('en-PH', {minimumFractionDigits:2});
-							document.getElementById('finalTotalDisplay').textContent = Number(newPrice).toLocaleString('en-PH', {minimumFractionDigits:2});
 							sessionStorage.setItem('selectedServicePrice', newPrice);
 							if (document.getElementById('basePriceInput')) document.getElementById('basePriceInput').value = newPrice;
-							if (document.getElementById('finalTotalInput')) document.getElementById('finalTotalInput').value = newPrice;
+							
+							// Recalculate discount if promo code is applied
+							if (appliedPromoData && appliedPromoData.discountPercentage) {
+								const discountAmount = newPrice * appliedPromoData.discountPercentage;
+								const finalTotal = newPrice - discountAmount;
+								
+								appliedPromoData.discountAmount = discountAmount;
+								
+								document.getElementById('discountDisplay').textContent = `₱${discountAmount.toLocaleString('en-PH', {minimumFractionDigits:2})}`;
+								document.getElementById('finalTotalDisplay').textContent = finalTotal.toLocaleString('en-PH', {minimumFractionDigits:2});
+								document.getElementById('discountValueInput').value = discountAmount;
+								document.getElementById('finalTotalInput').value = finalTotal;
+								
+								sessionStorage.setItem('discountValue', discountAmount);
+								sessionStorage.setItem('finalTotal', finalTotal);
+							} else {
+								// No promo applied, just update final total to match base price
+								document.getElementById('finalTotalDisplay').textContent = Number(newPrice).toLocaleString('en-PH', {minimumFractionDigits:2});
+								if (document.getElementById('finalTotalInput')) document.getElementById('finalTotalInput').value = newPrice;
+								sessionStorage.setItem('finalTotal', newPrice);
+							}
 						}
 					}
 				});
@@ -756,6 +901,8 @@
 			const cancelBtn = document.getElementById('cancelReservationBtn');
 			if (cancelBtn) {
 				cancelBtn.addEventListener('click', function() {
+					// Also reset any applied promo code UI/state
+					clearPromoState();
 					// Clear all reservation data using unsaved-changes-modal.js
 					clearReservationData();
 					// Remove all relevant session/local storage keys
@@ -1097,6 +1244,178 @@
 
 	document.addEventListener('DOMContentLoaded', function() {
 	  prefillUserDataOrRedirectLogin();
+	});
+
+	// --- PROMO CODE APPLICATION LOGIC ---
+
+	async function applyPromoCode() {
+	    const promoInput = document.getElementById('promoCodeInput');
+	    const promoMessage = document.getElementById('promoCodeMessage');
+	    const applyBtn = document.getElementById('applyPromoBtn');
+	    
+	    if (!promoInput || !promoMessage) return;
+	    
+	    const promoCode = promoInput.value.trim().toUpperCase();
+	    
+	    if (!promoCode) {
+	        promoMessage.textContent = 'Please enter a promo code.';
+	        promoMessage.style.color = '#dc3545';
+	        return;
+	    }
+	    
+	    // Get current base price
+	    const basePriceText = document.getElementById('basePriceDisplay')?.textContent || '0';
+	    const basePrice = parseFloat(basePriceText.replace(/,/g, ''));
+	    
+	    if (!basePrice || basePrice <= 0) {
+	        promoMessage.textContent = 'Please select a service and duration first.';
+	        promoMessage.style.color = '#dc3545';
+	        return;
+	    }
+	    
+	    // Show loading state
+	    if (applyBtn) {
+	        applyBtn.disabled = true;
+	        applyBtn.textContent = 'Validating...';
+	    }
+	    
+	    try {
+	        // Call the backend API to validate the promo code
+	        const response = await fetch(`http://localhost:3000/api/promocodes/${promoCode}`);
+	        const data = await response.json();
+	        
+	        if (response.ok && data) {
+	            // Check minimum purchase amount
+	            if (data.minPurchaseAmount && basePrice < data.minPurchaseAmount) {
+	                promoMessage.textContent = `This promo code requires a minimum purchase of ₱${data.minPurchaseAmount.toLocaleString()}.`;
+	                promoMessage.style.color = '#dc3545';
+	                if (applyBtn) {
+	                    applyBtn.disabled = false;
+	                    applyBtn.textContent = 'Apply Code';
+	                }
+	                return;
+	            }
+	            
+	            // Calculate discount
+	            const discountPercentage = data.discountPercentage;
+	            const discountAmount = basePrice * discountPercentage;
+	            const finalTotal = basePrice - discountAmount;
+	            
+	            // Store promo data
+	            appliedPromoData = {
+	                code: promoCode,
+	                discountPercentage: discountPercentage,
+	                discountAmount: discountAmount
+	            };
+	            
+	            // Update UI
+	            document.getElementById('discountDisplay').textContent = `₱${discountAmount.toLocaleString('en-PH', {minimumFractionDigits:2})}`;
+	            document.getElementById('finalTotalDisplay').textContent = finalTotal.toLocaleString('en-PH', {minimumFractionDigits:2});
+	            
+	            // Update hidden inputs
+	            document.getElementById('discountValueInput').value = discountAmount;
+	            document.getElementById('discountCodeInput').value = promoCode;
+	            document.getElementById('finalTotalInput').value = finalTotal;
+	            
+	            // Store in sessionStorage
+	            sessionStorage.setItem('appliedPromoCode', promoCode);
+	            sessionStorage.setItem('discountValue', discountAmount);
+	            sessionStorage.setItem('finalTotal', finalTotal);
+	            
+	            // Show success message
+	            promoMessage.textContent = `✓ Promo code applied! You saved ${(discountPercentage * 100).toFixed(0)}% (₱${discountAmount.toLocaleString('en-PH', {minimumFractionDigits:2})})`;
+	            promoMessage.style.color = '#28a745';
+	            
+	            // Disable input and change button to "Remove"
+	            promoInput.disabled = true;
+	            if (applyBtn) {
+	                applyBtn.textContent = 'Remove Code';
+	                applyBtn.disabled = false;
+	                applyBtn.onclick = removePromoCode;
+	            }
+	            
+	            showToast('Promo code applied successfully!', 'success');
+	            
+	        } else {
+	            // Invalid or expired promo code
+	            promoMessage.textContent = data.message || 'Invalid or expired promo code.';
+	            promoMessage.style.color = '#dc3545';
+	            if (applyBtn) {
+	                applyBtn.disabled = false;
+	                applyBtn.textContent = 'Apply Code';
+	            }
+	        }
+	        
+	    } catch (error) {
+	        console.error('Error validating promo code:', error);
+	        promoMessage.textContent = 'Error validating promo code. Please try again.';
+	        promoMessage.style.color = '#dc3545';
+	        if (applyBtn) {
+	            applyBtn.disabled = false;
+	            applyBtn.textContent = 'Apply Code';
+	        }
+	    }
+	}
+
+	function removePromoCode() {
+	    const promoInput = document.getElementById('promoCodeInput');
+	    const promoMessage = document.getElementById('promoCodeMessage');
+	    const applyBtn = document.getElementById('applyPromoBtn');
+	    
+	    // Reset promo data
+	    appliedPromoData = null;
+	    
+	    // Get base price
+	    const basePriceText = document.getElementById('basePriceDisplay')?.textContent || '0';
+	    const basePrice = parseFloat(basePriceText.replace(/,/g, ''));
+	    
+	    // Reset UI
+	    document.getElementById('discountDisplay').textContent = '0.00';
+	    document.getElementById('finalTotalDisplay').textContent = basePrice.toLocaleString('en-PH', {minimumFractionDigits:2});
+	    
+	    // Reset hidden inputs
+	    document.getElementById('discountValueInput').value = '0';
+	    document.getElementById('discountCodeInput').value = '';
+	    document.getElementById('finalTotalInput').value = basePrice;
+	    
+	    // Clear sessionStorage
+	    sessionStorage.removeItem('appliedPromoCode');
+	    sessionStorage.removeItem('discountValue');
+	    sessionStorage.setItem('finalTotal', basePrice);
+	    
+	    // Reset input
+	    promoInput.value = '';
+	    promoInput.disabled = false;
+	    
+	    // Reset button
+	    if (applyBtn) {
+	        applyBtn.textContent = 'Apply Code';
+	        applyBtn.onclick = applyPromoCode;
+	    }
+	    
+	    // Clear message
+	    promoMessage.textContent = '';
+	    
+	    showToast('Promo code removed.', 'info');
+	}
+
+	// Attach event listener to Apply Promo button
+	document.addEventListener('DOMContentLoaded', function() {
+	    const applyPromoBtn = document.getElementById('applyPromoBtn');
+	    if (applyPromoBtn) {
+	        applyPromoBtn.addEventListener('click', applyPromoCode);
+	    }
+	    
+	    // Allow Enter key to apply promo code
+	    const promoInput = document.getElementById('promoCodeInput');
+	    if (promoInput) {
+	        promoInput.addEventListener('keypress', function(e) {
+	            if (e.key === 'Enter') {
+	                e.preventDefault();
+	                applyPromoCode();
+	            }
+	        });
+	    }
 	});
 	</script>
 </body>
