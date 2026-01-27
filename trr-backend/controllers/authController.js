@@ -114,12 +114,20 @@ exports.loginUser = async (req, res) => {
             return res.status(401).json({ message: 'Invalid credentials (User not found).' });
         }
 
-        // 2. Check if account is active
+        // 2. Check if email is verified - CRITICAL: Must verify email before login
+        if (!user.isEmailVerified) {
+            return res.status(403).json({ 
+                message: 'Your email has not been verified yet. Please check your email and click the verification link to activate your account.',
+                requiresEmailVerification: true 
+            });
+        }
+
+        // 3. Check if account is active
         if (user.isActive === false) {
             return res.status(403).json({ message: 'This account has been deactivated. Please contact an administrator.' });
         }
 
-        // 3. Check password using bcrypt.compare
+        // 4. Check password using bcrypt.compare
         const isMatch = await bcrypt.compare(password, user.password);
         
         if (!isMatch) { 
