@@ -6,6 +6,7 @@
 	<title></title>
 	<link rel="stylesheet" href="style.css">
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+	<script src="unsaved-changes-modal.js"></script>
 </head>
 <body>
 
@@ -287,7 +288,6 @@
 	<script src="auth-profile.js"></script>
 	<script src="cart-system.js"></script>
 	<script src="reservation.js"></script>
-	<script src="incomplete-reservation-tracker.js"></script>
 
 		<script>
 		// --- Ensure hidden fields are set before form submission ---
@@ -593,10 +593,8 @@
 			const cancelBtn = document.getElementById('cancelReservationBtn');
 			if (cancelBtn) {
 				cancelBtn.addEventListener('click', function() {
-					// Remove reservation progress from localStorage/sessionStorage
-					if (typeof saveReservationProgress === 'function') {
-						saveReservationProgress('reserve', {}); // Clear tracked progress
-					}
+					// Clear all reservation data using unsaved-changes-modal.js
+					clearReservationData();
 					// Remove all relevant session/local storage keys
 					const keys = [
 						'selectedServiceId', 'selectedServiceName', 'selectedServicePrice', 'selectedServiceMaxGuests',
@@ -646,60 +644,14 @@
 	        // Save on any form input change with debouncing
 	        let saveTimeout;
 	        
-	        // Comprehensive save function
-	        const saveFormData = function() {
-	            clearTimeout(saveTimeout);
-	            saveTimeout = setTimeout(function() {
-	                const data = {
-	                    selectedServiceId: sessionStorage.getItem('selectedServiceId') || document.getElementById('serviceIdInput')?.value,
-	                    selectedServiceName: sessionStorage.getItem('selectedServiceName'),
-	                    selectedServicePrice: sessionStorage.getItem('selectedServicePrice'),
-	                    selectedServiceMaxGuests: sessionStorage.getItem('selectedServiceMaxGuests'),
-	                    selectedServiceType: sessionStorage.getItem('selectedServiceType'),
-	                    selectedDuration: sessionStorage.getItem('selectedDuration'),
-	                    selectedDurationLabel: sessionStorage.getItem('selectedDurationLabel'),
-	                    serviceInclusions: sessionStorage.getItem('serviceInclusions'),
-	                    guests: document.getElementById('guests')?.value,
-	                    checkinDate: document.getElementById('checkin')?.value,
-	                    checkoutDate: document.getElementById('checkout')?.value,
-	                    customerName: document.getElementById('name')?.value,
-	                    customerContact: document.getElementById('contact')?.value,
-	                    customerEmail: document.getElementById('email')?.value,
-	                    customerAddress: document.getElementById('address')?.value,
-	                    customerNotes: document.getElementById('notes')?.value,
-	                    promoCode: document.getElementById('promo-code-input')?.value,
-	                    finalTotal: document.getElementById('finalTotalInput')?.value || sessionStorage.getItem('finalTotal'),
-	                    discountValue: document.getElementById('discountValueInput')?.value || sessionStorage.getItem('discountValue'),
-	                    appliedPromoCode: sessionStorage.getItem('appliedPromoCode') || document.getElementById('promoCodeInput')?.value,
-	                    termsAccepted: document.getElementById('termsCheckbox')?.checked || false
-	                };
-	                // Save to RESERVE page (current page, not services-list)
-	                saveReservationProgress('reserve', data);
-	                console.log('Reserve page auto-saved:', data);
-	            }, 1000); // Wait 1 second after last change before saving
+// Comprehensive change tracking function (no auto-save)
+        const saveFormData = function() {
+            // This triggers unsaved changes tracking from unsaved-changes-modal.js
+            markFormAsModified();
 	        };
 	        
-	        // NEW: Save immediately on page load to capture current state
-	        saveFormData();
 	        
-	        // PHASE 5: Also explicitly save with page='reserve' on load to ensure tracker knows we're on reserve page
-	        const pageLoadData = {
-	            selectedServiceId: sessionStorage.getItem('selectedServiceId') || '',
-	            selectedServiceName: sessionStorage.getItem('selectedServiceName') || '',
-	            selectedServicePrice: sessionStorage.getItem('selectedServicePrice') || '',
-	            selectedServiceMaxGuests: sessionStorage.getItem('selectedServiceMaxGuests') || '',
-	            selectedServiceType: sessionStorage.getItem('selectedServiceType') || '',
-	            selectedDuration: sessionStorage.getItem('selectedDuration') || '',
-	            selectedDurationLabel: sessionStorage.getItem('selectedDurationLabel') || '',
-	            serviceInclusions: sessionStorage.getItem('serviceInclusions') || '',
-	            pageLoadAuto: true
-	        };
-	        if (typeof saveReservationProgress === 'function') {
-	            saveReservationProgress('reserve', pageLoadData);
-	            console.log('Reserve page auto-saved on load:', pageLoadData);
-	        }
-	        
-	        // Listen to both change and input events
+	        // Listen to both change and input events for unsaved changes tracking
 	        form.addEventListener('change', saveFormData);
 	        form.addEventListener('input', saveFormData);
 	    }
@@ -707,6 +659,10 @@
 
 	// View Reservation Summary Modal Functionality
 	document.addEventListener('DOMContentLoaded', function() {
+	    // Initialize unsaved changes tracking
+	    initializeUnsavedChangesTracking('reservationForm');
+	    attachNavigationListeners();
+	    
 	    const viewSummaryBtn = document.getElementById('viewSummaryBtn');
 	    const addToCartBtn = document.getElementById('addToCartBtn');
 	    const summaryModal = document.getElementById('reservationSummaryModal');
@@ -721,7 +677,7 @@
 	    if (addToCartBtn) {
 	        addToCartBtn.addEventListener('click', function(e) {
 	            e.preventDefault();
-	            handleAddToCart();
+	            addToCartHandler();
 	        });
 	    }
 
@@ -734,7 +690,10 @@
 	});
 
 	// Handler for Add to Cart button
-	async function handleAddToCart() {
+	async function addToCartHandler() {
+		// Call prepareAddToCartData to mark data as added and prevent unsaved changes warning
+		prepareAddToCartData();
+		
 		// Try to get from sessionStorage, fallback to form fields if missing
 		// Always update hidden price fields from visible display before validation
 		const basePriceDisplay = document.getElementById('basePriceDisplay')?.textContent?.replace(/[^\d.]/g, '') || '';
@@ -773,31 +732,41 @@
 		}
 
 		// 1. Check for duplicate reservation/cart item before adding
-		try {
-			const token = localStorage.getItem('authToken'); // Or however you store JWT
-			const duplicateCheck = await fetch('http://localhost:3000/api/reservations/cart/check-duplicate', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					'Authorization': `Bearer ${token}`
-				},
-				body: JSON.stringify({
-					serviceId: serviceId,
-					checkin_date: checkIn,
-					checkout_date: checkOut
-				})
-			}).then(res => res.json());
+		const token = localStorage.getItem('token'); // Get JWT token stored during login
+		console.log('🔍 DEBUG: Token from localStorage:', token);
+		console.log('🔍 DEBUG: User email:', localStorage.getItem('qreserve_logged_user_email'));
+		console.log('🔍 DEBUG: All localStorage keys:', Object.keys(localStorage).filter(k => k.includes('qreserve')));
+		
+		// Only check for duplicates if user is logged in (has token)
+		if (token) {
+			try {
+				const duplicateCheck = await fetch('http://localhost:3000/api/reservations/cart/check-duplicate', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'Authorization': `Bearer ${token}`
+					},
+					body: JSON.stringify({
+						serviceId: serviceId,
+						checkin_date: checkIn,
+						checkout_date: checkOut
+					})
+				}).then(res => res.json());
 
-			if (duplicateCheck.success && duplicateCheck.duplicate) {
-				showModal('Duplicate Reservation', duplicateCheck.message || 'You already have a reservation or cart item for this service and date range.', 'error');
+				if (duplicateCheck.success && duplicateCheck.duplicate) {
+					showModal('Duplicate Reservation', duplicateCheck.message || 'You already have a reservation or cart item for this service and date range.', 'error');
+					return;
+				}
+			} catch (err) {
+				console.error('Duplicate check error:', err);
+				showModal('Error', 'Could not check for duplicate reservation. Please try again.', 'error');
 				return;
 			}
-		} catch (err) {
-			showModal('Error', 'Could not check for duplicate reservation. Please try again.', 'error');
-			return;
+		} else {
+			console.warn('⚠️ WARNING: No token found! User may not be logged in. Proceeding to add to cart as guest.');
 		}
 
-		// Add to cart
+		// Add to cart with ALL form data (so user can edit it later)
 		const cartItem = addToCart({
 			serviceId: serviceId,
 			serviceName: serviceName,
@@ -807,7 +776,18 @@
 			checkIn: checkIn,
 			checkOut: checkOut,
 			guests: guests,
-			price: price
+			price: price,
+			// Include all customer form data to preserve it in cart
+			customerName: document.getElementById('name')?.value || '',
+			customerContact: document.getElementById('contact')?.value || '',
+			customerEmail: document.getElementById('email')?.value || '',
+			customerAddress: document.getElementById('address')?.value || '',
+			customerNotes: document.getElementById('notes')?.value || '',
+			promoCode: document.getElementById('promoCodeInput')?.value || '',
+			discountValue: document.getElementById('discountValueInput')?.value || '0',
+			appliedPromoCode: sessionStorage.getItem('appliedPromoCode') || '',
+			basePrice: document.getElementById('basePriceInput')?.value || '',
+			finalTotal: document.getElementById('finalTotalInput')?.value || price
 		});
 
 		if (cartItem) {

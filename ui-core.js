@@ -581,8 +581,26 @@ function setRole(role) {
 }
 
 function logout() {
+  // IMPORTANT: Save the user's cart before clearing localStorage
+  // This allows cart persistence across logout/login cycles
+  const userEmail = localStorage.getItem('qreserve_logged_user_email');
+  const cartKey = userEmail ? `qreserve_cart_${userEmail}` : null;
+  let savedCart = null;
+  
+  if (cartKey) {
+    savedCart = localStorage.getItem(cartKey);
+    console.log(`💾 Preserving cart for ${userEmail} before logout`);
+  }
+  
   localStorage.clear();
   sessionStorage.clear();
+  
+  // Restore the cart after clearing
+  if (cartKey && savedCart) {
+    localStorage.setItem(cartKey, savedCart);
+    console.log(`✅ Cart restored after logout for ${userEmail}`);
+  }
+  
   if (typeof showToast === "function") {
     showToast("Logged out successfully!", "success");
   }
