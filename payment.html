@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Payment - QReserve Resort</title>
     <link rel="stylesheet" href="style.css"> 
+    <script src="unsaved-changes-modal.js"></script>
 </head>
 <body>
 
@@ -121,11 +122,14 @@
     <script src="auth-profile.js"></script>
     <script src="cart-system.js"></script>
     <script src="payment-system.js"></script>
-    <script src="incomplete-reservation-tracker.js"></script>
     
     <script>
     // Merge all DOMContentLoaded logic into a single handler to fix syntax error
     document.addEventListener('DOMContentLoaded', function() {
+        // Initialize unsaved changes tracking for payment page
+        initializeUnsavedChangesTracking('paymentForm');
+        attachNavigationListeners();
+        
         // Check if this is a cart checkout
         const checkoutCart = sessionStorage.getItem('checkoutCart');
         if (checkoutCart) {
@@ -134,25 +138,10 @@
             if (cartItemsSection) {
                 cartItemsSection.style.display = 'block';
             }
-            handleCartCheckout();
+            // handleCartCheckout is no longer needed - data already in sessionStorage
         } else {
             // ...existing code...
         }
-        // PHASE 5: Auto-save payment page on load to capture that user reached payment page
-        const pageLoadData = {
-            selectedServiceId: sessionStorage.getItem('selectedServiceId') || '',
-            selectedServiceName: sessionStorage.getItem('selectedServiceName') || document.getElementById('serviceNameDisplay')?.textContent || '',
-            selectedServicePrice: sessionStorage.getItem('selectedServicePrice') || '',
-            customerName: document.getElementById('summaryCustomerName')?.textContent || '',
-            finalTotal: document.getElementById('paymentAmount')?.textContent || '',
-            paymentPage: true,
-            pageLoadAuto: true
-        };
-        if (typeof saveReservationProgress === 'function') {
-            saveReservationProgress('payment', pageLoadData);
-            console.log('Payment page auto-saved on load:', pageLoadData);
-        }
-        // Auto-save payment page data when reference number is entered
         const refInput = document.getElementById('gcashReferenceNumber');
         if (refInput) {
             let saveTimeout;
@@ -168,8 +157,8 @@
                         gcashReference: refInput.value || '',
                         paymentPage: true
                     };
-                    saveReservationProgress('payment', data);
-                    console.log('Payment page data auto-saved:', data);
+                    // Data is now tracked by unsaved-changes-modal.js
+                    markFormAsModified();
                 }, 1000);
             });
         }

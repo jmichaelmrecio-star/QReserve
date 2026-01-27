@@ -16,7 +16,7 @@ const verifyToken = (req, res, next) => {
 
     try {
         // NOTE: Ensure this secret key matches the one used in authController.js
-        const SECRET_KEY = 'your_default_secret_key'; 
+        const SECRET_KEY = process.env.JWT_SECRET || 'your_default_secret_key'; 
         
         // Decodes the token. Now, req.user will contain { id: ..., role: 'Admin' }
         const decoded = jwt.verify(token, SECRET_KEY); 

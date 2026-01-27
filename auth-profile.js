@@ -97,6 +97,10 @@ async function loginUser(event) {
       localStorage.setItem("token", result.token);
       localStorage.setItem("loggedInUser", JSON.stringify(result.user));
       localStorage.setItem("qreserve_logged_user_email", result.user.email);
+      // Migrate any guest cart to user-specific cart
+      if (typeof migrateCartToUser === 'function') {
+        migrateCartToUser(result.user.email);
+      }
       // Set role for dashboard UI
       if (result.user.role) {
         localStorage.setItem("qreserve_user_role", result.user.role.toLowerCase());
@@ -107,7 +111,7 @@ async function loginUser(event) {
       setTimeout(() => {
         if (role === "admin") window.location.href = "admin-dashboard.html";
         else if (role === "manager") window.location.href = "manager-dashboard.html";
-        else window.location.href = "customer-dashboard.html";
+        else window.location.href = "index.html";
       }, 1000);
     } else {
       showAlert(result.message || "Login failed.", "error");
