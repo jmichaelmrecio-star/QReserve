@@ -994,7 +994,10 @@ function renderServicesListDataTable() {
   if (window.$ && window.$.fn && window.$.fn.DataTable) {
     setTimeout(() => {
       const table = $(tbody).closest('table');
-      if (table.length && !$.fn.dataTable.isDataTable(table[0])) {
+      if (table.length) {
+        if ($.fn.dataTable.isDataTable(table[0])) {
+          table.DataTable().clear().destroy();
+        }
         table.DataTable({
           order: [],
           pageLength: 10,
@@ -1157,12 +1160,23 @@ async function renderServiceTable() {
   if (data.success) {
     if (Array.isArray(data.services) && data.services.length > 0) {
       tbody.innerHTML = data.services.map(service => {
-        // Main image thumbnail
-        const mainImg = service.image ? `<a href="${service.image}" target="_blank"><img src="${service.image}" style="max-width:60px;max-height:60px;object-fit:cover;" /></a>` : '';
-        // Gallery thumbnails
-        const gallery = Array.isArray(service.gallery) && service.gallery.length > 0
-          ? service.gallery.map(img => `<a href="${img}" target="_blank"><img src="${img}" style="max-width:40px;max-height:40px;margin:2px;object-fit:cover;" /></a>`).join('')
-          : '';
+        // Main image thumbnail (fix for local dev)
+        let mainImgUrl = service.image;
+        if (mainImgUrl && mainImgUrl.startsWith('/uploads/')) {
+          mainImgUrl = mainImgUrl.replace(/^\//, '');
+        }
+        const mainImg = service.image ? `<a href="${mainImgUrl}" target="_blank"><img src="${mainImgUrl}" style="max-width:60px;max-height:60px;object-fit:cover;" /></a>` : '';
+        // Gallery thumbnails (fix for local dev)
+        let gallery = '';
+        if (Array.isArray(service.gallery) && service.gallery.length > 0) {
+          gallery = service.gallery.map(img => {
+            let imgUrl = img;
+            if (imgUrl && imgUrl.startsWith('/uploads/')) {
+              imgUrl = imgUrl.replace(/^\//, '');
+            }
+            return `<a href="${imgUrl}" target="_blank"><img src="${imgUrl}" style="max-width:40px;max-height:40px;margin:2px;object-fit:cover;" /></a>`;
+          }).join('');
+        }
         // Inclusions
         const inclusions = Array.isArray(service.inclusions) ? service.inclusions.filter(Boolean).join(', ') : '';
         // Durations/Time slots
