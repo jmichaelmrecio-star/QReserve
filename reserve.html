@@ -82,14 +82,12 @@
 					    <legend>3. Your Contact & Personal Details</legend>
 
 					    <label for="name">Full Name:</label>
-					    <input type="text" id="name" name="customer_name" required>
-
+					<input type="text" id="name" name="customer_name" required readonly>
 					    <label for="contact">Contact Number:</label>
 					    <input type="tel" id="contact" name="customer_contact" required>
 
 					    <label for="email">Email Address:</label>
-					    <input type="email" id="email" name="customer_email" required>
-					    
+					<input type="email" id="email" name="customer_email" required readonly>
 					    <label for="address">Residential Address (For Record):</label>
 					    <input type="text" id="address" name="customer_address" required>
 
@@ -116,21 +114,21 @@
 				    
 				    <hr>
 				    <h2>
-				    <div class="summary-total">
-						<p>Subtotal (Base Price):</p>
-				        <p>₱<span id="basePriceDisplay">0.00</span></p>
+				    <div class="summary-total" style="text-align: center; padding: 1rem; background: #f8f9fa; border-radius: 8px; margin-bottom: 1rem;">
+							<p style="margin: 0.5rem 0; font-size: 1.1rem;">Subtotal (Base Price):</p>
+				        <p style="margin: 0.5rem 0; font-size: 1.6rem; font-weight: 600;">₱<span id="basePriceDisplay">0.00</span></p>
 				    </div>
 
-				    <div id="discountRow">
-				        <p>Discount:</p>
-				        <p><span id="discountDisplay">0.00</span></p>
+				    <div id="discountRow" style="text-align: center; padding: 1rem; background: #fff3cd; border-radius: 8px; margin-bottom: 1rem;">
+				        <p style="margin: 0.5rem 0; font-size: 1.1rem;">Discount:</p>
+				        <p style="margin: 0.5rem 0; font-size: 1.6rem; color: #d9534f;"><span id="discountDisplay">0.00</span></p>
 				    </div>
 				    
 				    <hr>
 
-				    <div id="finalTotalRow">
-				        <p style="font-weight: bold;">Total Amount Due:</p>
-				        <p style="font-weight: bold;"><span id="finalTotalDisplay">0.00</span></p>
+				    <div id="finalTotalRow" style="text-align: center; padding: 1.5rem; background: #d4edda; border-radius: 8px; border: 2px solid #28a745;">
+				        <p style="margin: 0.5rem 0; font-size: 1.1rem; font-weight: bold;">Total Amount Due:</p>
+				        <p style="margin: 0.5rem 0; font-size: 1.8rem; font-weight: bold; color: #28a745;">₱<span id="finalTotalDisplay">0.00</span></p>
 				    </div>
 					</h2>
 				</div>

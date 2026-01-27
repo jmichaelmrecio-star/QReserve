@@ -134,52 +134,6 @@
                 cartItemsSection.style.display = 'block';
             }
             handleCartCheckout();
-
-            // --- PATCH: Cart summary breakdown ---
-            const cart = JSON.parse(checkoutCart);
-            // Calculate total
-            const totalAmount = cart.reduce((sum, item) => sum + parseFloat(item.price || 0), 0);
-            const downpaymentAmount = typeof calculateDownpayment === 'function' 
-                ? calculateDownpayment(totalAmount) 
-                : totalAmount * 0.5;
-            const remainingBalance = totalAmount - downpaymentAmount;
-            // Display total reservation cost
-            const totalCostEl = document.getElementById('totalReservationCost');
-            if (totalCostEl) {
-                totalCostEl.textContent = totalAmount.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
-            }
-            // Display downpayment amounts
-            const paymentAmountElements = document.querySelectorAll('#paymentAmount, #paymentAmountSmall');
-            paymentAmountElements.forEach(el => {
-                el.textContent = downpaymentAmount.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
-            });
-            // Display remaining balance
-            const remainingBalanceEl = document.getElementById('remainingBalance');
-            if (remainingBalanceEl) {
-                remainingBalanceEl.textContent = remainingBalance.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
-            }
-            // Display customer name
-            const loggedUser = localStorage.getItem('loggedInUser');
-            let customerName = 'Guest';
-            if (loggedUser) {
-                try {
-                    customerName = JSON.parse(loggedUser).full_name || 'Guest';
-                } catch(e) {}
-            }
-            const customerDisplay = document.getElementById('summaryCustomerName');
-            if (customerDisplay) {
-                customerDisplay.textContent = customerName;
-            }
-            // Display service breakdown
-            const serviceDisplay = document.getElementById('serviceNameDisplay');
-            if (serviceDisplay) {
-                if (cart.length === 1) {
-                    serviceDisplay.textContent = cart[0].serviceName;
-                } else {
-                    serviceDisplay.textContent = 'Multiple Services';
-                }
-            }
-            // Optionally, you could show a breakdown list elsewhere if needed
         } else {
             // ...existing code...
         }
