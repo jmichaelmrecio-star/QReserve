@@ -67,9 +67,18 @@ function renderServiceCards(servicesOverride = null) {
     return;
   }
 
-  container.innerHTML = services.map(service => `
+  container.innerHTML = services.map(service => {
+    // Determine correct image URL
+    // If image path contains uploads/ or doesn't start with images/, it's likely from backend storage
+    let imageUrl = service.image || 'images/placeholder.jpg';
+    if (imageUrl && !imageUrl.startsWith('http') && !imageUrl.startsWith('images/')) {
+      // Backend uploaded image - prefix with API URL
+      imageUrl = `http://localhost:3000/uploads/${imageUrl}`;
+    }
+    
+    return `
     <div class="service-card">
-      <img src="${service.image || 'images/placeholder.jpg'}" alt="${service.name}">
+      <img src="${imageUrl}" alt="${service.name}">
       <div class="card-content">
         <h3>${escapeHtml(service.name)}</h3>
         <p class="price">Starts at ₱${getStartingPrice(service).toLocaleString()}</p>
@@ -80,7 +89,7 @@ function renderServiceCards(servicesOverride = null) {
         </div>
       </div>
     </div>
-  `).join("");
+  `}).join("");
 }
 
 function showServiceModal(serviceId) {

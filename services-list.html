@@ -668,13 +668,26 @@
             // Check if service has the main image
             const serviceImage = service.image || null;
 
-            // Combine all images for display
+            // Combine all images for display with proper URL handling
             let allImages = [];
             if (serviceImage) {
-                allImages.push(serviceImage);
+                let imgUrl = serviceImage;
+                // If not a full URL and doesn't start with images/, it's from backend uploads
+                if (!imgUrl.startsWith('http') && !imgUrl.startsWith('images/')) {
+                    imgUrl = `http://localhost:3000/uploads/${imgUrl}`;
+                }
+                allImages.push(imgUrl);
             }
             if (Array.isArray(galleryImages)) {
-                allImages = allImages.concat(galleryImages);
+                const processedGallery = galleryImages.map(img => {
+                    let imgUrl = img;
+                    // If not a full URL and doesn't start with images/, it's from backend uploads
+                    if (!imgUrl.startsWith('http') && !imgUrl.startsWith('images/')) {
+                        imgUrl = `http://localhost:3000/uploads/${imgUrl}`;
+                    }
+                    return imgUrl;
+                });
+                allImages = allImages.concat(processedGallery);
             }
 
             // Remove duplicates

@@ -114,7 +114,13 @@ async function loginUser(event) {
         else window.location.href = "index.html";
       }, 1000);
     } else {
-      showAlert(result.message || "Login failed.", "error");
+      // Check if email verification is required
+      if (result.requiresEmailVerification) {
+        const userEmail = emailInput.value;
+        window.location.href = `verify-email.html?email=${encodeURIComponent(userEmail)}&unverified=true`;
+      } else {
+        showAlert(result.message || "Login failed.", "error");
+      }
     }
   } catch (error) {
     console.error("Login error:", error);

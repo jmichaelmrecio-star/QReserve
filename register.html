@@ -302,8 +302,8 @@
               const result = await response.json();
               console.log('Registration response:', result);
               if (response.ok && (result.success === true || (result.message && result.message.toLowerCase().includes('registration successful')))) {
-                showModal('Registration Successful', 'Your account has been created. Please log in.', 'success', {
-                  onClose: () => window.location.href = 'login.html'
+                showModal('Registration Successful', 'Your account has been created! We\'ve sent a verification email to your inbox. Please check your email and verify your account before logging in.', 'success', {
+                  onClose: () => window.location.href = 'https://mail.google.com/'
                 });
                 return;
               } else {

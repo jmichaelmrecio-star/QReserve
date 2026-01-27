@@ -70,12 +70,13 @@
 
 	                <label for="guests">Number of Guests:</label>
 	                <input type="number" id="guests" name="number_of_guests" min="1" required>
+	                <p id="maxGuestsInfo" style="font-size: 0.85rem; color: #666; margin-top: 0.3rem;"></p>
 
 	                <label for="checkin">Check-in Date & Time:</label>
 	                <input type="datetime-local" id="checkin" name="checkin_date" required>
 
-	                <label for="checkout">Check-out Date & Time:</label>
-	                <input type="datetime-local" id="checkout" name="checkout_date" required>
+	                <label for="checkout">Check-out Date & Time: <span style="color: #999; font-size: 0.85rem;"><em>(Auto-calculated)</em></span></label>
+	                <input type="datetime-local" id="checkout" name="checkout_date" required readonly style="cursor: not-allowed; background-color: #f5f5f5; opacity: 0.7;">
 	            </fieldset>
 
 	            <div id=guestDetailsForm>
@@ -295,6 +296,12 @@
 			const form = document.getElementById('reservationForm');
 			if (form) {
 				form.addEventListener('submit', function(e) {
+					// CRITICAL: Disable unsaved changes modal for form submission
+					// This allows the form to be submitted without triggering the "unsaved changes" warning
+					if (typeof clearReservationData === 'function') {
+						clearReservationData();
+					}
+					
 					// Get values from sessionStorage or visible fields
 					const serviceId = sessionStorage.getItem('selectedServiceId') || document.getElementById('serviceIdInput')?.value;
 					const serviceType = sessionStorage.getItem('selectedServiceType') || document.getElementById('serviceTypeInput')?.value;
@@ -413,6 +420,12 @@
 						if (selectedDurationInput) selectedDurationInput.value = params.duration;
 					}
 					
+					// ===== UPDATE MAX GUESTS CONSTRAINT =====
+					// Call this after service is loaded to set max guests limit
+					if (typeof updateMaxGuestsConstraint === 'function') {
+						updateMaxGuestsConstraint();
+					}
+					
 					// NEW: Restore form fields from sessionStorage (for resume flow)
 					const guestsFromStorage = sessionStorage.getItem('guests');
 					const checkinFromStorage = sessionStorage.getItem('checkinDate');
@@ -492,6 +505,156 @@
 			const selectedDurationInput = document.getElementById('selectedDurationInput');
 			const checkinInput = document.getElementById('checkin');
 			const checkoutInput = document.getElementById('checkout');
+			const guestsInput = document.getElementById('guests');
+			const maxGuestsInfo = document.getElementById('maxGuestsInfo');
+			const maxGuestsAllowed = document.getElementById('maxGuestsAllowed');
+			
+			// ===== SET MAX GUESTS CONSTRAINT =====
+			// Update max guests based on selected service
+			function updateMaxGuestsConstraint() {
+				if (!guestsInput || !window.resortServices) return;
+				
+				const serviceId = sessionStorage.getItem('selectedServiceId') || document.getElementById('serviceIdInput').value;
+				const service = window.resortServices.find(s => (s._id || s.id) === serviceId);
+				
+				if (!service || !service.max_guests) {
+					guestsInput.removeAttribute('max');
+					if (maxGuestsInfo) maxGuestsInfo.textContent = '';
+					if (maxGuestsAllowed) maxGuestsAllowed.value = '0';
+					return;
+				}
+				
+				const maxGuests = parseInt(service.max_guests);
+				
+				// Set the max attribute on the input
+				guestsInput.max = maxGuests;
+				
+				// Update hidden field
+				if (maxGuestsAllowed) maxGuestsAllowed.value = maxGuests;
+				
+				// Show info text
+				if (maxGuestsInfo) {
+					maxGuestsInfo.textContent = `Maximum ${maxGuests} guest${maxGuests > 1 ? 's' : ''} allowed for this service`;
+					maxGuestsInfo.style.color = '#666';
+				}
+				
+				// If current value exceeds max, reset to max
+				if (guestsInput.value && parseInt(guestsInput.value) > maxGuests) {
+					guestsInput.value = maxGuests;
+				}
+				
+				console.log(`✓ Max guests constraint set to: ${maxGuests}`);
+			}
+			
+			// Add validation listener to guests input
+			if (guestsInput) {
+				guestsInput.addEventListener('input', function() {
+					const maxGuests = parseInt(this.max) || 0;
+					const currentValue = parseInt(this.value) || 0;
+					
+					if (currentValue > maxGuests && maxGuests > 0) {
+						this.value = maxGuests;
+						if (maxGuestsInfo) {
+							maxGuestsInfo.textContent = `Maximum ${maxGuests} guest${maxGuests > 1 ? 's' : ''} allowed for this service`;
+							maxGuestsInfo.style.color = '#dc3545';
+						}
+					} else if (maxGuestsInfo) {
+						maxGuestsInfo.style.color = '#666';
+					}
+				});
+				
+				guestsInput.addEventListener('change', function() {
+					const maxGuests = parseInt(this.max) || 0;
+					const currentValue = parseInt(this.value) || 0;
+					
+					if (currentValue > maxGuests && maxGuests > 0) {
+						this.value = maxGuests;
+						showToast(`Adjusted to maximum ${maxGuests} guest${maxGuests > 1 ? 's' : ''} allowed`, 'info');
+					}
+				});
+			}
+			
+			// ===== PREVENT PAST DATES IN CHECK-IN =====
+			// Set minimum date to today/now to prevent selecting past dates
+			function setCheckInMinDate() {
+				if (!checkinInput) return;
+				
+				// Get current date/time
+				const now = new Date();
+				const year = now.getFullYear();
+				const month = String(now.getMonth() + 1).padStart(2, '0');
+				const day = String(now.getDate()).padStart(2, '0');
+				const hours = String(now.getHours()).padStart(2, '0');
+				const minutes = String(now.getMinutes()).padStart(2, '0');
+				
+				// Set min attribute to current date/time
+				const minDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+				checkinInput.min = minDateTime;
+				
+				console.log('Check-in minimum date set to:', minDateTime);
+			}
+			
+			// Call on page load
+			setCheckInMinDate();
+			
+			// ===== PREVENT INTERACTION WITH CHECK-OUT =====
+			// Make checkout field read-only and prevent any user interaction
+			function disableCheckoutInteraction() {
+				if (!checkoutInput) return;
+				
+				// Already added readonly in HTML, but ensure it's disabled here
+				checkoutInput.readOnly = true;
+				
+				// Prevent any click or focus events
+				checkoutInput.addEventListener('click', function(e) {
+					e.preventDefault();
+					return false;
+				});
+				
+				checkoutInput.addEventListener('focus', function(e) {
+					e.preventDefault();
+					e.target.blur();
+					return false;
+				});
+				
+				checkoutInput.addEventListener('keydown', function(e) {
+					e.preventDefault();
+					return false;
+				});
+				
+				checkoutInput.addEventListener('keypress', function(e) {
+					e.preventDefault();
+					return false;
+				});
+				
+				checkoutInput.addEventListener('mousedown', function(e) {
+					e.preventDefault();
+					return false;
+				});
+				
+				// Prevent dragging/selecting
+				checkoutInput.addEventListener('drag', function(e) {
+					e.preventDefault();
+					return false;
+				});
+				
+				console.log('Check-out field is now read-only and non-interactive');
+			}
+			
+			// Call on page load
+			disableCheckoutInteraction();
+			
+			// Also prevent any attempt to modify checkout through JavaScript
+			const originalSetAttribute = checkoutInput.setAttribute;
+			checkoutInput.setAttribute = function(name, value) {
+				if (name.toLowerCase() === 'readonly') {
+					return originalSetAttribute.call(this, name, value);
+				}
+				if (name.toLowerCase() === 'value' && this.id === 'checkout') {
+					return originalSetAttribute.call(this, name, value);
+				}
+				return originalSetAttribute.call(this, name, value);
+			};
 			
 			// Function to auto-fill checkout date based on duration and checkin
 			function autoFillCheckoutDate() {
