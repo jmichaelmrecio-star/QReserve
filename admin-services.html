@@ -101,6 +101,100 @@
 </div>
 
 <script>
+// Add Duration Row (correct version)
+function addDurationRow() {
+    const durationsContainer = document.getElementById('durationsContainer');
+    const row = document.createElement('div');
+    row.className = 'duration-row';
+    row.innerHTML = `
+        <input type="text" class="duration-id" placeholder="ID (e.g. daytour)" required>
+        <input type="text" class="duration-label" placeholder="Label (e.g. Day Tour)" required>
+        <input type="number" class="duration-hours" placeholder="Hours" min="1" required>
+        <input type="number" class="duration-price" placeholder="Price" min="0" required>
+        <button type="button" class="remove-duration-btn">Remove</button>
+    `;
+    durationsContainer.appendChild(row);
+    row.querySelector('.remove-duration-btn').addEventListener('click', function() {
+        row.remove();
+    });
+}
+
+// Handle Create Service Form Submission
+async function handleCreateServiceForm(e) {
+    e.preventDefault();
+    const form = e.target;
+    const messageDiv = document.getElementById('createServiceMessage');
+    messageDiv.textContent = '';
+
+    // Collect form data
+    const formData = new FormData();
+    formData.append('serviceId', document.getElementById('serviceIdInput').value.trim());
+    formData.append('name', document.getElementById('serviceNameInput').value.trim());
+    formData.append('type', document.getElementById('serviceTypeInput').value);
+    formData.append('category', document.getElementById('serviceCategoryInput').value);
+    formData.append('maxGuests', document.getElementById('serviceMaxGuestsInput').value);
+    formData.append('description', document.getElementById('serviceDescriptionInput').value.trim());
+
+    const imageInput = document.getElementById('serviceImageInput');
+    if (imageInput.files.length > 0) {
+        formData.append('image', imageInput.files[0]);
+    }
+    const galleryInput = document.getElementById('serviceGalleryInput');
+    for (let i = 0; i < galleryInput.files.length; i++) {
+        formData.append('gallery', galleryInput.files[i]);
+    }
+
+    // Inclusions (comma separated)
+    const inclusionsRaw = document.getElementById('serviceInclusionsInput').value.trim();
+    if (inclusionsRaw) {
+        const inclusionsArr = inclusionsRaw.split(',').map(x => x.trim()).filter(Boolean);
+        formData.append('inclusions', JSON.stringify(inclusionsArr));
+    }
+
+    // Notes
+    formData.append('notes', document.getElementById('serviceNotesInput').value.trim());
+
+    // Durations
+    const durationRows = document.querySelectorAll('#durationsContainer .duration-row');
+    const durations = [];
+    durationRows.forEach(row => {
+        const id = row.querySelector('.duration-id').value.trim();
+        const label = row.querySelector('.duration-label').value.trim();
+        const hours = row.querySelector('.duration-hours').value;
+        const price = row.querySelector('.duration-price').value;
+        if (id && label && hours && price) {
+            durations.push({ id, label, hours: Number(hours), price: Number(price) });
+        }
+    });
+    formData.append('durations', JSON.stringify(durations));
+
+    try {
+        const response = await fetch('/api/services/create', {
+            method: 'POST',
+            body: formData
+        });
+        const result = await response.json();
+        if (response.ok) {
+            messageDiv.textContent = 'Service created successfully!';
+            messageDiv.style.color = 'green';
+            form.reset();
+            document.getElementById('serviceImageName').textContent = 'None';
+            document.getElementById('serviceGalleryCount').textContent = '0';
+            document.getElementById('durationsContainer').innerHTML = '';
+            if (typeof fetchServices === 'function') {
+                await fetchServices();
+                if (typeof renderServiceTable === 'function') renderServiceTable();
+            }
+        } else {
+            messageDiv.textContent = result.message || 'Failed to create service.';
+            messageDiv.style.color = 'red';
+        }
+    } catch (err) {
+        messageDiv.textContent = 'Error: ' + err.message;
+        messageDiv.style.color = 'red';
+    }
+}
+
 // Initialize service management when component loads
 (function initServiceManagement() {
     const serviceCreateForm = document.getElementById('createServiceForm');
@@ -108,11 +202,11 @@
     const serviceImageInput = document.getElementById('serviceImageInput');
     const serviceGalleryInput = document.getElementById('serviceGalleryInput');
 
-    if (serviceCreateForm && typeof handleCreateServiceForm === 'function') {
+    if (serviceCreateForm) {
         serviceCreateForm.addEventListener('submit', handleCreateServiceForm);
     }
 
-    if (addDurationBtn && typeof addDurationRow === 'function') {
+    if (addDurationBtn) {
         addDurationBtn.addEventListener('click', (e) => {
             e.preventDefault();
             addDurationRow();
