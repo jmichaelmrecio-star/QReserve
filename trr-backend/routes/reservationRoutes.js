@@ -89,5 +89,29 @@ router.patch(
     reservationController.rejectPayment
 );
 
+// Admin cleanup endpoint - TEMPORARY (should be protected in production)
+router.delete('/admin/cleanup/today', async (req, res) => {
+    try {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        const datePrefix = `TRR-${year}${month}${day}`;
+
+        const Reservation = require('../models/Reservation');
+        const result = await Reservation.deleteMany({
+            reservationId: { $regex: `^${datePrefix}` }
+        });
+
+        res.json({
+            success: true,
+            message: `Deleted ${result.deletedCount} test reservations from today`,
+            deletedCount: result.deletedCount,
+            datePrefix: datePrefix
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
 
 module.exports = router;
