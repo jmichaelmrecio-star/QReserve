@@ -25,7 +25,7 @@ async function loadServicesForBlocking() {
             const label = document.createElement('label');
             label.className = 'form-check-label ms-2';
             label.htmlFor = checkbox.id;
-            label.textContent = `${service.type}: ${service.name}`;
+            label.textContent = service.name;
 
             const wrapper = document.createElement('div');
             wrapper.className = 'form-check mb-1';
