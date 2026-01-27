@@ -310,33 +310,54 @@ exports.updateService = async (req, res) => {
         const { id } = req.params;
         const updateData = req.body;
         
-        if (!updateData.id || !updateData.name) {
+        // Parse JSON fields from FormData
+        if (updateData.inclusions && typeof updateData.inclusions === 'string') {
+            try {
+                updateData.inclusions = JSON.parse(updateData.inclusions);
+            } catch (e) {
+                updateData.inclusions = [];
+            }
+        }
+        if (updateData.durations && typeof updateData.durations === 'string') {
+            try {
+                updateData.durations = JSON.parse(updateData.durations);
+            } catch (e) {
+                updateData.durations = [];
+            }
+        }
+        
+        if (!updateData.name) {
             return res.status(400).json({ 
-                message: 'Service ID and Name are required' 
+                message: 'Service Name is required' 
             });
+        }
+        
+        // Build update object
+        const updateFields = {
+            name: updateData.name,
+            type: updateData.type,
+            category: updateData.category,
+            max_guests: updateData.maxGuests || updateData.max_guests,
+            description: updateData.description,
+            durations: updateData.durations || [],
+            inclusions: updateData.inclusions || [],
+            notes: updateData.notes || '',
+            updatedAt: new Date()
+        };
+        
+        // Handle file uploads
+        if (req.files) {
+            if (req.files.image && req.files.image.length > 0) {
+                updateFields.image = '/uploads/' + req.files.image[0].filename;
+            }
+            if (req.files.gallery && req.files.gallery.length > 0) {
+                updateFields.gallery = req.files.gallery.map(f => '/uploads/' + f.filename);
+            }
         }
         
         const updated = await Service.findByIdAndUpdate(
             id,
-            {
-                $set: {
-                    id: updateData.id,
-                    name: updateData.name,
-                    type: updateData.type,
-                    category: updateData.category,
-                    max_guests: updateData.max_guests,
-                    description: updateData.description,
-                    image: updateData.image,
-                    gallery: updateData.gallery || [],
-                    durations: updateData.durations || [],
-                    timeSlots: updateData.timeSlots || [],
-                    inclusions: updateData.inclusions || [],
-                    notes: updateData.notes || '',
-                    defaultDuration: updateData.defaultDuration || null,
-                    isActive: updateData.isActive !== false,
-                    updatedAt: new Date()
-                }
-            },
+            { $set: updateFields },
             { new: true, runValidators: true }
         );
         

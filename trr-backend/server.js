@@ -67,7 +67,12 @@ const authRoutes = require('./routes/authRoutes');
 const serviceRoutes = require('./routes/serviceRoutes');
 const contactRoutes = require('./routes/contactRoutes');
 // Note the '..' path to go up one directory from trr-backend to new website
-app.use(express.static(path.join(__dirname, '..'))); // <--- CORRECTED PATH!
+app.use(express.static(path.join(__dirname, '..')));
+
+// Serve uploaded files from the uploads directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/trr-backend/uploads', express.static(path.join(__dirname, 'uploads')));
+
 require('./models/BlockedDate');
 app.use('/api/auth', authRoutes);
 
