@@ -288,8 +288,8 @@
 	<script src="ui-core.js"></script>
 	<script src="auth-profile.js"></script>
 	<script src="cart-system.js"></script>
-		<script src="reservation.js"></script>
-		<script src="incomplete-reservation-tracker.js"></script>
+	<script src="reservation.js"></script>
+	<script src="incomplete-reservation-tracker.js"></script>
 
 		<script>
 		// --- Ensure hidden fields are set before form submission ---
@@ -377,30 +377,35 @@
 
 		document.addEventListener('DOMContentLoaded', function() {
 			const params = getQueryParams();
-			if (params.serviceId) {
+			// Check if we have service data from URL params OR from sessionStorage (resume flow)
+			const serviceId = params.serviceId || sessionStorage.getItem('selectedServiceId');
+			const serviceName = params.serviceName || sessionStorage.getItem('selectedServiceName');
+			const price = params.price || sessionStorage.getItem('selectedServicePrice');
+			
+			if (serviceId) {
 				// Set hidden input fields
-				document.getElementById('serviceIdInput').value = params.serviceId;
-				document.getElementById('selectedServiceDisplay').textContent = params.serviceName || '(No Service Selected)';
-				if (params.price) {
-					document.getElementById('basePriceDisplay').textContent = Number(params.price).toLocaleString('en-PH', {minimumFractionDigits:2});
-					document.getElementById('finalTotalDisplay').textContent = Number(params.price).toLocaleString('en-PH', {minimumFractionDigits:2});
+				document.getElementById('serviceIdInput').value = serviceId;
+				document.getElementById('selectedServiceDisplay').textContent = serviceName || '(No Service Selected)';
+				if (price) {
+					document.getElementById('basePriceDisplay').textContent = Number(price).toLocaleString('en-PH', {minimumFractionDigits:2});
+					document.getElementById('finalTotalDisplay').textContent = Number(price).toLocaleString('en-PH', {minimumFractionDigits:2});
 				}
-				// Patch: Set sessionStorage values from query params
-				sessionStorage.setItem('selectedServiceId', params.serviceId);
-				if (params.serviceName) sessionStorage.setItem('selectedServiceName', params.serviceName);
-				if (params.price) sessionStorage.setItem('selectedServicePrice', params.price);
+				// Patch: Set sessionStorage values from query params OR preserve existing sessionStorage
+				sessionStorage.setItem('selectedServiceId', serviceId);
+				if (serviceName) sessionStorage.setItem('selectedServiceName', serviceName);
+				if (price) sessionStorage.setItem('selectedServicePrice', price);
 
 				// Wait for services to load before loading durations
 				fetchServices().then(() => {
 					// Set serviceType in sessionStorage and hidden input
 					if (window.resortServices) {
-						const svc = window.resortServices.find(s => (s._id || s.id) === params.serviceId);
+						const svc = window.resortServices.find(s => (s._id || s.id) === serviceId);
 						if (svc && svc.type) {
 							sessionStorage.setItem('selectedServiceType', svc.type);
 							document.getElementById('serviceTypeInput').value = svc.type;
 						}
 					}
-					loadDurationsFromServiceId(params.serviceId);
+					loadDurationsFromServiceId(serviceId);
 					trySetDurationFromParams(params);
 
 					// Patch: If duration is present in query params, set sessionStorage and hidden input
@@ -408,6 +413,78 @@
 						sessionStorage.setItem('selectedDuration', params.duration);
 						const selectedDurationInput = document.getElementById('selectedDurationInput');
 						if (selectedDurationInput) selectedDurationInput.value = params.duration;
+					}
+					
+					// NEW: Restore form fields from sessionStorage (for resume flow)
+					const guestsFromStorage = sessionStorage.getItem('guests');
+					const checkinFromStorage = sessionStorage.getItem('checkinDate');
+					const checkoutFromStorage = sessionStorage.getItem('checkoutDate');
+					const durationFromStorage = sessionStorage.getItem('selectedDuration');
+					const durationLabelFromStorage = sessionStorage.getItem('selectedDurationLabel');
+					
+					if (guestsFromStorage && document.getElementById('guests')) {
+						document.getElementById('guests').value = guestsFromStorage;
+					}
+					if (checkinFromStorage && document.getElementById('checkin')) {
+						document.getElementById('checkin').value = checkinFromStorage;
+					}
+					if (checkoutFromStorage && document.getElementById('checkout')) {
+						document.getElementById('checkout').value = checkoutFromStorage;
+					}
+					if (durationFromStorage && document.getElementById('duration-selector')) {
+						document.getElementById('duration-selector').value = durationFromStorage;
+						if (durationLabelFromStorage) {
+							const durationDisplay = document.getElementById('durationDisplay');
+							if (durationDisplay) {
+								durationDisplay.textContent = durationLabelFromStorage;
+							}
+						}
+					}
+					
+					// Flag to prevent auto-fill on initial load when data is already restored
+					sessionStorage.setItem('isResumingReservation', 'true');
+					
+					// Restore customer information from sessionStorage
+					const customerName = sessionStorage.getItem('customerName');
+					const customerContact = sessionStorage.getItem('customerContact');
+					const customerEmail = sessionStorage.getItem('customerEmail');
+					const customerAddress = sessionStorage.getItem('customerAddress');
+					const customerNotes = sessionStorage.getItem('customerNotes');
+					
+					if (customerName && document.getElementById('name')) {
+						document.getElementById('name').value = customerName;
+					}
+					if (customerContact && document.getElementById('contact')) {
+						document.getElementById('contact').value = customerContact;
+					}
+					if (customerEmail && document.getElementById('email')) {
+						document.getElementById('email').value = customerEmail;
+					}
+					if (customerAddress && document.getElementById('address')) {
+						document.getElementById('address').value = customerAddress;
+					}
+					if (customerNotes && document.getElementById('notes')) {
+						document.getElementById('notes').value = customerNotes;
+					}
+					
+					// Restore promo codes and totals from sessionStorage
+					const promoCode = sessionStorage.getItem('promoCode') || sessionStorage.getItem('appliedPromoCode');
+					const discountValue = sessionStorage.getItem('discountValue');
+					const finalTotal = sessionStorage.getItem('finalTotal');
+					
+					if (promoCode && document.getElementById('promo-code-input')) {
+						document.getElementById('promo-code-input').value = promoCode;
+					}
+					if (discountValue && document.getElementById('discountValueInput')) {
+						document.getElementById('discountValueInput').value = discountValue;
+						const discountDisplay = document.getElementById('discountDisplay');
+						if (discountDisplay) {
+							discountDisplay.textContent = '₱' + Number(discountValue).toLocaleString('en-PH', {minimumFractionDigits: 2});
+						}
+					}
+					if (finalTotal && document.getElementById('finalTotalInput')) {
+						document.getElementById('finalTotalInput').value = finalTotal;
+						document.getElementById('finalTotalDisplay').textContent = '₱' + Number(finalTotal).toLocaleString('en-PH', {minimumFractionDigits: 2});
 					}
 				});
 			}
@@ -477,9 +554,24 @@
 				}
 			}
 			
-			// Also auto-fill checkout when checkin date changes
+			// Also auto-fill checkout when checkin date changes (but not on initial load during resume)
 			if (checkinInput) {
-				checkinInput.addEventListener('change', autoFillCheckoutDate);
+				checkinInput.addEventListener('change', function() {
+					// Only auto-fill if NOT resuming from storage (i.e., user manually changed the checkin)
+					// or if there's already a checkout date, don't overwrite it
+					const checkoutVal = checkoutInput?.value;
+					const isResuming = sessionStorage.getItem('isResumingReservation') === 'true';
+					
+					// Clear the resuming flag after first interaction
+					if (isResuming) {
+						sessionStorage.removeItem('isResumingReservation');
+					}
+					
+					// Only auto-fill if user manually changed checkin (after initial resume)
+					if (!checkoutVal || !isResuming) {
+						autoFillCheckoutDate();
+					}
+				});
 			}
 		});
 		// Cancel Reservation button logic
@@ -821,7 +913,7 @@
 	function showTermsModal() {
 	  showModal(
 	    'Terms and Conditions',
-	    '<img src="images/terms.png" alt="Terms and Conditions" style="width:100%;max-width:400px;margin-bottom:15px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);">' +
+	    '<img src="images/terms.png" alt="Terms and Conditions" style="width:100%;margin-bottom:15px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);\">' +
 	    '<p>A comprehensive copy of our Terms and Conditions is available upon request by contacting our support team.</p>' +
 	    '<p><strong>Key Points:</strong></p>' +
 	    '<ul><li>Check-in/out times as specified</li><li>Cancellation policies apply</li><li>House rules must be followed</li><li>Full liability terms apply</li></ul>' +
