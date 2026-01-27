@@ -352,16 +352,60 @@ async function loadBlockedDates() {
   try {
     const response = await fetch("http://localhost:3000/api/blocked-dates");
     const data = await response.json();
-    if (data.success) {
-      list.innerHTML = data.blockedDates.map(bd => `
-        <div class="blocked-date-item">
-          <span>${formatDate(bd.startDate)} to ${formatDate(bd.endDate)}</span>
-          <button onclick="unblockDate('${bd._id}')">Remove</button>
-        </div>
-      `).join("");
+    
+    if (data.success && data.blockedDates.length > 0) {
+      // Fetch services to map IDs to names
+      const servicesResponse = await fetch('/api/services/admin/all');
+      const services = await servicesResponse.json();
+      const serviceMap = {};
+      if (Array.isArray(services)) {
+        services.forEach(s => {
+          serviceMap[s._id] = `${s.type}: ${s.name}`;
+        });
+      }
+      
+      // Create table format
+      let html = `
+        <table class="table table-bordered table-hover" style="width: 100%; margin-top: 1rem;">
+          <thead class="table-light">
+            <tr>
+              <th style="width: 25%;">Start Date</th>
+              <th style="width: 25%;">End Date</th>
+              <th style="width: 35%;">Services Blocked</th>
+              <th style="width: 15%;">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+      
+      data.blockedDates.forEach(bd => {
+        const servicesList = (bd.serviceIds && bd.serviceIds.length > 0 && !bd.appliesToAllServices) 
+          ? bd.serviceIds.map(sid => serviceMap[sid] || 'Unknown').join(', ')
+          : '<em>All Services</em>';
+        
+        html += `
+          <tr>
+            <td>${formatDate(bd.startDate)}</td>
+            <td>${formatDate(bd.endDate)}</td>
+            <td>${servicesList}</td>
+            <td>
+              <button class="btn btn-sm btn-danger" onclick="unblockDate('${bd._id}')">Remove</button>
+            </td>
+          </tr>
+        `;
+      });
+      
+      html += `
+          </tbody>
+        </table>
+      `;
+      
+      list.innerHTML = html;
+    } else {
+      list.innerHTML = '<div class="alert alert-info">No blocked dates yet.</div>';
     }
   } catch(e) {
-    list.innerHTML = '<div class="text-danger">Error loading blocked dates.</div>';
+    list.innerHTML = '<div class="alert alert-danger">Error loading blocked dates.</div>';
   }
 }
 

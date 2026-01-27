@@ -1,3 +1,102 @@
+// ============================================================
+// IMPORTS - All at the top of the file
+// ============================================================
+const Reservation = require('../models/Reservation');
+const BlockedDate = require('../models/BlockedDate');
+const PromoCode = require('../models/PromoCode');
+const Service = require('../models/Service');
+const crypto = require('crypto');
+const servicesData = require('../config/servicesData');
+const mongoose = require('mongoose');
+const emailService = require('../utils/emailService');
+
+// ============================================================
+// HELPER FUNCTIONS - Defined before any exports
+// ============================================================
+
+// Helper function to generate a unique QR code string (UUID)
+// NOTE: This function is not used since we use crypto.randomBytes(16).toString('hex') for reservationHash
+function generateQRCodeString() {
+    return crypto.randomUUID();
+}
+
+// Helper function to generate formal reservation ID (TRR-YYYYMMDD-###)
+async function generateFormalReservationId() {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const datePrefix = `TRR-${year}${month}${day}`;
+    
+    // Find the last reservation created today
+    const startOfDay = new Date(today.setHours(0, 0, 0, 0));
+    const endOfDay = new Date(today.setHours(23, 59, 59, 999));
+    
+    const todaysReservations = await Reservation.find({
+        dateCreated: { $gte: startOfDay, $lte: endOfDay }
+    }).sort({ dateCreated: -1 }).limit(1);
+    
+    let sequenceNumber = 1;
+    if (todaysReservations.length > 0 && todaysReservations[0].reservationId) {
+        // Extract the sequence number from the last reservation ID
+        const lastId = todaysReservations[0].reservationId;
+        const match = lastId.match(/-(\d{3})$/);
+        if (match) {
+            sequenceNumber = parseInt(match[1]) + 1;
+        }
+    }
+    
+    const formattedSequence = String(sequenceNumber).padStart(3, '0');
+    return `${datePrefix}-${formattedSequence}`;
+}
+
+// Helper function to calculate price from service data
+function calculateServicePrice(service, durationId, guestCount = 1) {
+    if (!service) return null;
+
+    // For services with timeSlots (like Private Pool Area)
+    if (service.timeSlots && service.timeSlots.length > 0) {
+        const slot = service.timeSlots.find(ts => ts.id === durationId);
+        if (!slot) return null;
+        
+        // Validate guest count is within the slot's range
+        if (slot.guestRange) {
+            if (guestCount < slot.guestRange.min || guestCount > slot.guestRange.max) {
+                return null; // Guest count out of range
+            }
+        }
+        return { price: slot.price, label: slot.label, inclusions: service.inclusions || [] };
+    }
+
+    // For services with durations (rooms and halls)
+    if (service.durations && service.durations.length > 0) {
+        const duration = service.durations.find(d => d.id === durationId);
+        if (!duration) return null;
+        return { price: duration.price, label: duration.label, inclusions: service.inclusions || [] };
+    }
+
+    return null;
+}
+
+// Helper: tolerant service lookup supporting custom string ids and MongoDB ObjectIds
+async function findServiceByAnyId(serviceId, { includeInactive = false } = {}) {
+    if (!serviceId) return null;
+
+    const or = [{ id: serviceId }]; // custom/legacy string IDs like "private_pool_area"
+    if (mongoose.isValidObjectId(serviceId)) {
+        or.push({ _id: serviceId });
+    }
+
+    const query = { $or: or };
+    if (!includeInactive) query.isActive = true;
+
+    return Service.findOne(query);
+}
+
+// ============================================================
+// EXPORTS - All controller functions
+// ============================================================
+
 // Check for duplicate reservation or cart item for the same user, service, and date range
 exports.checkCartDuplicate = async (req, res) => {
     try {
@@ -111,7 +210,7 @@ exports.removeCartItem = async (req, res) => {
         res.status(500).json({ success: false, message: 'Failed to remove cart item.' });
     }
 };
-const emailService = require('../utils/emailService');
+
 // Send custom email to customer for a reservation
 exports.sendCustomEmail = async (req, res) => {
     try {
@@ -131,14 +230,6 @@ exports.sendCustomEmail = async (req, res) => {
     }
 };
 
-const Reservation = require('../models/Reservation'); // Your Mongoose model
-const BlockedDate = require('../models/BlockedDate');
-const PromoCode = require('../models/PromoCode'); // Your Mongoose model
-const Service = require('../models/Service'); // Service model for database queries
-const crypto = require('crypto'); // Built-in Node.js module for unique IDs
-const servicesData = require('../config/servicesData'); // Load service definitions (fallback)
-const mongoose = require('mongoose');
-
 // Get all reservations (admin)
 exports.getAllReservations = async (req, res) => {
     try {
@@ -149,85 +240,6 @@ exports.getAllReservations = async (req, res) => {
         res.status(500).json({ success: false, message: 'Server error fetching all reservations.', error: error.message });
     }
 };
-
-// Helper function to generate a unique QR code string (UUID)
-// NOTE: This function is not used since we use crypto.randomBytes(16).toString('hex') for reservationHash
-function generateQRCodeString() {
-    return crypto.randomUUID();
-}
-
-// Helper function to generate formal reservation ID (TRR-YYYYMMDD-###)
-async function generateFormalReservationId() {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const day = String(today.getDate()).padStart(2, '0');
-    const datePrefix = `TRR-${year}${month}${day}`;
-    
-    // Find the last reservation created today
-    const startOfDay = new Date(today.setHours(0, 0, 0, 0));
-    const endOfDay = new Date(today.setHours(23, 59, 59, 999));
-    
-    const todaysReservations = await Reservation.find({
-        dateCreated: { $gte: startOfDay, $lte: endOfDay }
-    }).sort({ dateCreated: -1 }).limit(1);
-    
-    let sequenceNumber = 1;
-    if (todaysReservations.length > 0 && todaysReservations[0].reservationId) {
-        // Extract the sequence number from the last reservation ID
-        const lastId = todaysReservations[0].reservationId;
-        const match = lastId.match(/-(\d{3})$/);
-        if (match) {
-            sequenceNumber = parseInt(match[1]) + 1;
-        }
-    }
-    
-    const formattedSequence = String(sequenceNumber).padStart(3, '0');
-    return `${datePrefix}-${formattedSequence}`;
-}
-
-// Helper function to calculate price from service data
-function calculateServicePrice(service, durationId, guestCount = 1) {
-    if (!service) return null;
-
-    // For services with timeSlots (like Private Pool Area)
-    if (service.timeSlots && service.timeSlots.length > 0) {
-        const slot = service.timeSlots.find(ts => ts.id === durationId);
-        if (!slot) return null;
-        
-        // Validate guest count is within the slot's range
-        if (slot.guestRange) {
-            if (guestCount < slot.guestRange.min || guestCount > slot.guestRange.max) {
-                return null; // Guest count out of range
-            }
-        }
-        return { price: slot.price, label: slot.label, inclusions: service.inclusions || [] };
-    }
-
-    // For services with durations (rooms and halls)
-    if (service.durations && service.durations.length > 0) {
-        const duration = service.durations.find(d => d.id === durationId);
-        if (!duration) return null;
-        return { price: duration.price, label: duration.label, inclusions: service.inclusions || [] };
-    }
-
-    return null;
-}
-
-// Helper: tolerant service lookup supporting custom string ids and MongoDB ObjectIds
-async function findServiceByAnyId(serviceId, { includeInactive = false } = {}) {
-    if (!serviceId) return null;
-
-    const or = [{ id: serviceId }]; // custom/legacy string IDs like "private_pool_area"
-    if (mongoose.isValidObjectId(serviceId)) {
-        or.push({ _id: serviceId });
-    }
-
-    const query = { $or: or };
-    if (!includeInactive) query.isActive = true;
-
-    return Service.findOne(query);
-}
 
 exports.createReservation = async (req, res) => {
     try {
@@ -294,12 +306,21 @@ exports.createReservation = async (req, res) => {
         // --- C. Check for Blocked Dates (Server-Side Validation) ---
         const blockedDates = await BlockedDate.find();
         for (const block of blockedDates) {
+            // Normalize fields to avoid crashes from legacy data
+            const serviceIds = Array.isArray(block.serviceIds) ? block.serviceIds.map(id => id.toString()) : [];
+            const appliesToAll = typeof block.appliesToAllServices === 'boolean'
+                ? block.appliesToAllServices
+                : serviceIds.length === 0;
+
+            // Skip malformed records without usable dates
+            if (!block.startDate || !block.endDate) continue;
+
             const blockStart = new Date(block.startDate);
             const blockEnd = new Date(block.endDate);
-            
+
             // Check if service is affected (empty serviceIds means all services)
-            const isServiceBlocked = block.serviceIds.length === 0 || block.serviceIds.includes(serviceId);
-            
+            const isServiceBlocked = appliesToAll || serviceIds.includes(serviceId?.toString());
+
             // Check if dates overlap
             if (isServiceBlocked && checkIn <= blockEnd && checkOut >= blockStart) {
                 const blockStartStr = blockStart.toLocaleDateString();
@@ -1284,4 +1305,13 @@ exports.uploadReceipt = async (req, res) => {
         console.error("Error in uploadReceipt:", error);
         res.status(500).json({ success: false, message: "Internal server error during receipt upload." });
     }
+};
+
+// Log request bodies for debugging
+const originalCreateReservation = exports.createReservation;
+exports.createReservation = async (req, res) => {
+    console.log('=== CREATE RESERVATION REQUEST ===');
+    console.log('BODY:', JSON.stringify(req.body, null, 2));
+    console.log('=== END REQUEST ===');
+    return originalCreateReservation.call(this, req, res);
 };
