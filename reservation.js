@@ -185,6 +185,8 @@ async function reserveNow(event) {
   data.selectedDuration = sessionStorage.getItem("selectedDuration");
   data.basePrice = sessionStorage.getItem("selectedServicePrice");
 
+  console.log('📤 Sending reservation data to backend:', JSON.stringify(data, null, 2));
+
   reservationSubmissionInProgress = true;
   const btn = event.target.querySelector('button[type="submit"]');
   if (btn) {
@@ -203,6 +205,7 @@ async function reserveNow(event) {
     });
 
     const result = await response.json();
+    console.log('📥 Backend response:', result);
     if (response.ok) {
       sessionStorage.setItem("payment_reservation_id", result.reservationId);
       sessionStorage.setItem("payment_reservation_hash", result.reservationHash);
