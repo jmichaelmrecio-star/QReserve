@@ -1,3 +1,50 @@
+// --- Unified Alert Modal System ---
+function showUnifiedAlert(message, title = 'Alert', type = 'info') {
+  const modal = document.getElementById('unifiedAlertModal');
+  const header = document.getElementById('alertModalHeader');
+  const body = document.getElementById('alertModalBody');
+  const label = document.getElementById('unifiedAlertLabel');
+  
+  // Set title
+  label.textContent = title;
+  
+  // Set message
+  body.textContent = message;
+  
+  // Set header color based on type
+  let headerClass = 'bg-info text-white';
+  switch(type) {
+    case 'success':
+      headerClass = 'bg-success text-white';
+      break;
+    case 'error':
+    case 'danger':
+      headerClass = 'bg-danger text-white';
+      break;
+    case 'warning':
+      headerClass = 'bg-warning text-dark';
+      break;
+    case 'info':
+    default:
+      headerClass = 'bg-info text-white';
+  }
+  
+  // Clear previous classes and add new one
+  header.className = 'modal-header ' + headerClass;
+  
+  // Show modal using Bootstrap
+  if (modal && window.bootstrap && window.bootstrap.Modal) {
+    const bsModal = new window.bootstrap.Modal(modal);
+    bsModal.show();
+  }
+}
+window.showUnifiedAlert = showUnifiedAlert;
+
+// Override alert() with unified modal
+window.alert = function(message) {
+  showUnifiedAlert(message, 'Message', 'info');
+};
+
 // --- Account Edit Modal Logic ---
 // --- Account Create Modal Logic ---
 // --- Modal Close Logic ---
@@ -210,14 +257,23 @@ async function renderPromoCodeTable() {
       return;
     }
     tbody.innerHTML = codes.map(code => {
-      const status = (new Date(code.expirationDate) < new Date()) ? 'Expired' : (code.timesUsed >= code.usageLimit ? 'Used Up' : 'Active');
+      const isExpired = new Date(code.expirationDate) < new Date();
+      const isUsedUp = code.timesUsed >= code.usageLimit;
+      let statusBadge = '';
+      if (isExpired) {
+        statusBadge = '<span class="badge bg-danger">Expired</span>';
+      } else if (isUsedUp) {
+        statusBadge = '<span class="badge bg-warning">Used Up</span>';
+      } else {
+        statusBadge = '<span class="badge bg-success">Active</span>';
+      }
       return `<tr>
         <td>${escapeHtml(code.code)}</td>
         <td>${Math.round((code.discountPercentage || 0) * 100)}%</td>
         <td>${formatDate(code.expirationDate)}</td>
         <td>₱${parseFloat(code.minPurchaseAmount || 0).toLocaleString()}</td>
         <td>${code.timesUsed || 0} / ${code.usageLimit || 0}</td>
-        <td>${status}</td>
+        <td>${statusBadge}</td>
         <td><button class="btn btn-danger btn-sm" onclick="deletePromoCode('${code._id}')">Delete</button></td>
       </tr>`;
     }).join('');
@@ -360,7 +416,7 @@ async function loadBlockedDates() {
       const serviceMap = {};
       if (Array.isArray(services)) {
         services.forEach(s => {
-          serviceMap[s._id] = `${s.type}: ${s.name}`;
+          serviceMap[s._id] = s.name;
         });
       }
       
@@ -934,6 +990,14 @@ async function renderAdminReservations() {
          const reservations = allReservations.filter(res => 
              res.status && res.status.toUpperCase() !== 'CART'
          );
+         
+         // Sort by check_in date - most recent first
+         reservations.sort((a, b) => {
+           const dateA = a.check_in ? new Date(a.check_in).getTime() : 0;
+           const dateB = b.check_in ? new Date(b.check_in).getTime() : 0;
+           return dateB - dateA; // Descending order (most recent first)
+         });
+         
          if (reservations.length === 0) {
            tbody.innerHTML = '<tr><td colspan="12" class="text-center">No reservations found.</td></tr>';
            return;
@@ -943,6 +1007,29 @@ async function renderAdminReservations() {
            const receiptCell = r.receiptFileName
              ? `<a href="trr-backend/uploads/${r.receiptFileName}" target="_blank"><img src="trr-backend/uploads/${r.receiptFileName}" alt="Receipt" style="max-width:60px;max-height:60px;border-radius:4px;"></a>`
              : '<span class="text-muted">No receipt</span>';
+           
+           // Status badge styling
+           let statusBadge = '';
+           switch(r.status) {
+             case 'PAID':
+               statusBadge = '<span class="badge bg-warning">PAID</span>';
+               break;
+             case 'CONFIRMED':
+               statusBadge = '<span class="badge bg-info">CONFIRMED</span>';
+               break;
+             case 'CHECKED_IN':
+               statusBadge = '<span class="badge bg-primary">CHECKED IN</span>';
+               break;
+             case 'COMPLETED':
+               statusBadge = '<span class="badge bg-success">COMPLETED</span>';
+               break;
+             case 'CANCELLED':
+               statusBadge = '<span class="badge bg-danger">CANCELLED</span>';
+               break;
+             default:
+               statusBadge = `<span class="badge bg-secondary">${r.status}</span>`;
+           }
+           
            let actions = '';
            // Only show Accept if status is PAID and not already confirmed/completed/cancelled
            if (r.status === 'PAID') {
@@ -969,7 +1056,7 @@ async function renderAdminReservations() {
             <td>${r.check_in ? new Date(r.check_in).toLocaleString() : ''}</td>
             <td>${r.check_out ? new Date(r.check_out).toLocaleString() : ''}</td>
             <td>₱${parseFloat(r.finalTotal || 0).toLocaleString()}</td>
-            <td>${r.status}</td>
+            <td>${statusBadge}</td>
             <td>${r.gcashReferenceNumber || ''}<br>${receiptCell}</td>
             <td>${qrBtn}</td>
             <td>${actions}</td>
@@ -1228,7 +1315,7 @@ async function renderServiceTable() {
             <td>${inclusions}</td>
             <td>${escapeHtml(service.notes || '')}</td>
             <td>${durations}</td>
-            <td>${service.isActive ? 'Active' : 'Inactive'}</td>
+            <td>${service.isActive ? '<span class="badge bg-success">Active</span>' : '<span class="badge bg-secondary">Inactive</span>'}</td>
             <td>
               <button class="btn btn-sm btn-primary" onclick="editService('${service._id}')">Edit</button>
               <button class="btn btn-sm ${service.isActive ? 'btn-danger' : 'btn-success'}" 
