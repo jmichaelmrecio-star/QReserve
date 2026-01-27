@@ -702,7 +702,7 @@ function renderCompleteFooter() {
       <div class="footer-section contact-info">
         <h3>Tito Renz Resort</h3>
         <p>Your seamless booking experience starts here.</p>
-        <p>📍 Norzagaray, Bulacan, Philippines</p>
+        <p>📍 Sitio Bulalo, Norzagaray, Philippines</p>
         <p>📞 0977 246 8920 or 0916 640 3411</p>
         <p>📧 titorenznorzagaray@gmail.com</p>
       </div>
