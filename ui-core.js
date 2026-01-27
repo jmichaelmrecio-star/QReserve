@@ -403,11 +403,13 @@ const navLinks = {
   public: [
     { text: "Amenities", href: "services-list.html" },
     { text: "Reviews", href: "feedback.html" },
+    { text: "Contact Us", href: "contact.html" },
     { text: "🛒 Cart", href: "cart.html", id: "cart-link" },
   ],
   customer: [
     { text: "Amenities", href: "services-list.html" },
     { text: "Reviews", href: "feedback.html" },
+    { text: "Contact Us", href: "contact.html" },
     { text: "🛒 Cart", href: "cart.html", id: "cart-link" },
   ],
   admin: [
