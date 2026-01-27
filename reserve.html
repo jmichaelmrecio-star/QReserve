@@ -546,6 +546,22 @@
 					sessionStorage.setItem('selectedDuration', durationSelect.value);
 					selectedDurationInput.value = durationSelect.value;
 					autoFillCheckoutDate();
+					
+					// Update price when duration changes
+					const serviceId = sessionStorage.getItem('selectedServiceId') || document.getElementById('serviceIdInput').value;
+					const service = window.resortServices?.find(s => (s._id || s.id) === serviceId);
+					if (service && durationSelect.value) {
+						const allOptions = [...(service.timeSlots || []), ...(service.durations || [])];
+						const selectedOption = allOptions.find(opt => opt.id === durationSelect.value);
+						if (selectedOption && selectedOption.price) {
+							const newPrice = selectedOption.price;
+							document.getElementById('basePriceDisplay').textContent = Number(newPrice).toLocaleString('en-PH', {minimumFractionDigits:2});
+							document.getElementById('finalTotalDisplay').textContent = Number(newPrice).toLocaleString('en-PH', {minimumFractionDigits:2});
+							sessionStorage.setItem('selectedServicePrice', newPrice);
+							if (document.getElementById('basePriceInput')) document.getElementById('basePriceInput').value = newPrice;
+							if (document.getElementById('finalTotalInput')) document.getElementById('finalTotalInput').value = newPrice;
+						}
+					}
 				});
 				// Set initial value if already selected
 				if (durationSelect.value) {
