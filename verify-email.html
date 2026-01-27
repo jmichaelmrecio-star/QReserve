@@ -57,7 +57,7 @@
             </div>
         </section>
 
-        <div class="verification-container" style="margin: 0 auto; max-width: 600px;">
+        <div class="verification-container" style="text-align: center; margin: 0 auto; max-width: 600px;">
             <div id="verification-content">
                 <div class="verification-icon">⏳</div>
                 <h2>Verifying Your Email...</h2>
@@ -79,8 +79,7 @@
                 <h2 class="error-message">Verification Failed</h2>
                 <p id="error-message" style="color: #666; margin-top: 1rem;">The verification link is invalid or has expired.</p>
                 <div class="btn-container">
-                    <a href="login.html" class="btn btn-secondary" style="margin-right: 0.5rem;">Go to Login</a>
-                    <button onclick="resendVerificationEmail()" class="btn btn-primary">Resend Verification Email</button>
+                    <a href="https://mail.google.com/" class="btn btn-primary">Resend Verification Email</a>
                 </div>
             </div>
 
@@ -190,7 +189,21 @@
         }
 
         // Auto-verify on page load
-        document.addEventListener('DOMContentLoaded', verifyEmail);
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const unverified = urlParams.get('unverified');
+            const email = urlParams.get('email');
+            
+            // If coming from failed login attempt, show error content
+            if (unverified === 'true' && email) {
+                showError('Your email address (' + email + ') has not been verified yet. Please check your inbox for the verification email and click the link to verify your account.');
+                // Pre-fill email in resend form
+                document.getElementById('resend-email').value = email;
+            } else {
+                // Normal flow: auto-verify with token
+                verifyEmail();
+            }
+        });
     </script>
 </body>
 </html>
