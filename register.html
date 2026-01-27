@@ -31,7 +31,7 @@
       <div class="form-box form-box-hero">
         <div class="form-content">
           <h2>New User Registration</h2>
-          <p>Register to manage your reservations and profile.</p>
+          <p style="color: #4a5568;">Register to manage your reservations and profile.</p>
           <form id="registerForm">
           <div class="form-row">
             <div class="form-group">
@@ -93,7 +93,7 @@
           </div>
 
           <div class="form-group">
-            <label for="registerBirthday" style="font-size: 0.9rem; color: #666; margin-bottom: 0.5rem; display: block;">Birthday</label>
+            <label for="registerBirthday" style="font-size: 1rem; color: #666; margin-top: -1rem; margin-bottom: -0.5rem; display: block;">Birthday</label>
             <input
               type="date"
               id="registerBirthday"
@@ -123,7 +123,7 @@
               </button>
             </div>
             <!-- Password Strength Meter -->
-            <div id="passwordStrengthContainer" style="margin-top: 0.75rem;">
+            <div id="passwordStrengthContainer" style="margin-top: -1rem;">
               <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
                 <div id="strength-bar-1" class="strength-bar"></div>
                 <div id="strength-bar-2" class="strength-bar"></div>
@@ -166,16 +166,16 @@
               </button>
             </div>
             <!-- Password Match Indicator -->
-            <div id="passwordMatchContainer" style="margin-top: 0.5rem; font-size: 0.85rem;">
+            <div id="passwordMatchContainer" style="margin-top: -0.5rem; font-size: 0.85rem;">
               <span id="passwordMatchText" style="color: #999;">Passwords will be checked as you type</span>
             </div>
           </div>
 
-          <button type="submit" class="button-primary" id="registerSubmitBtn">Register Account</button>
-          <p class="form-footer" style="text-align: center">
+          <button type="submit" class="button-primary" style="margin-top: -0.5rem;" id="registerSubmitBtn">Register Account</button>
+          <p class="form-footer" style="text-align: center;  margin-top: -0.3rem; margin-bottom: -0.2rem;">
             Already have an account? <a href="login.html">Login Here</a>.
           </p>
-          <p style="text-align:center; margin-top:10px;">
+          <p style="text-align:center; margin-top: -5px;">
             <a href="#" id="termsLinkRegister" style="color:var(--primary-color);text-decoration:underline;">View Terms and Conditions</a>
           </p>
         </form>
