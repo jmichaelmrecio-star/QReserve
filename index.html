@@ -272,37 +272,73 @@
     <script src="mobile-responsive.js"></script>
 
     <script>
+    // Cached map of service IDs to names for blocked-date display
+    let serviceNameMap = null;
+    async function getServiceNameMap() {
+      if (serviceNameMap) return serviceNameMap;
+      try {
+        const res = await fetch('http://localhost:3000/api/services');
+        const data = await res.json();
+        const services = Array.isArray(data)
+          ? data
+          : (data.success && Array.isArray(data.services))
+            ? data.services
+            : [];
+        const map = {};
+        services.forEach(svc => {
+          const id = svc._id || svc.id;
+          const name = svc.name || svc.serviceName || svc.title || svc.serviceType || 'Service';
+          if (id) map[id] = name;
+        });
+        serviceNameMap = map;
+      } catch (_e) {
+        serviceNameMap = {};
+      }
+      return serviceNameMap;
+    }
+
     // --- Fetch and Render Promotions & Blocked Dates ---
     async function fetchAndRenderPromotions() {
       const container = document.getElementById('active-promotions-list');
       if (!container) return;
       try {
-        const res = await fetch('http://localhost:3000/api/promocodes/active');
+        // Use the public active promo list (non-expired, under usage limit)
+        const res = await fetch('http://localhost:3000/api/promocodes/active/list');
         const data = await res.json();
-        if (Array.isArray(data) && data.length === 0) {
+        const promos = Array.isArray(data)
+          ? data
+          : (data.success && Array.isArray(data.promos))
+            ? data.promos
+            : [];
+
+        if (!promos.length) {
           container.innerHTML = '<p>No active promotions at this time.</p>';
-        } else if (Array.isArray(data)) {
-          container.innerHTML = data.map(promo => `
-            <div class="promo-block" style="margin-bottom: 1rem; padding: 10px; border-radius: 6px; background: #f7f7f7; box-shadow: 0 2px 8px #0001;">
-              <strong style="color: var(--primary-color, #1f7ed0);">${promo.code}</strong>: ${promo.description ? promo.description : ''}<br>
-              <span style="color: #555; font-size: 0.95em;">Valid until: ${window.formatDate ? window.formatDate(promo.expiryDate) : promo.expiryDate}</span>
-            </div>
-          `).join('');
-        } else if (data.success && Array.isArray(data.promos)) {
-          // fallback for {success, promos:[]}
-          if (data.promos.length === 0) {
-            container.innerHTML = '<p>No active promotions at this time.</p>';
-          } else {
-            container.innerHTML = data.promos.map(promo => `
-              <div class="promo-block" style="margin-bottom: 1rem; padding: 10px; border-radius: 6px; background: #f7f7f7; box-shadow: 0 2px 8px #0001;">
-                <strong style="color: var(--primary-color, #1f7ed0);">${promo.code}</strong>: ${promo.description ? promo.description : ''}<br>
-                <span style="color: #555; font-size: 0.95em;">Valid until: ${window.formatDate ? window.formatDate(promo.expiryDate) : promo.expiryDate}</span>
-              </div>
-            `).join('');
-          }
-        } else {
-          container.innerHTML = '<p>No active promotions at this time.</p>';
+          return;
         }
+
+        container.innerHTML = promos.map(promo => {
+          const discountPct = promo.discountPercentage ? Math.round(promo.discountPercentage * 100) : 0;
+          const expiresRaw = promo.expirationDate || promo.expiryDate;
+          const expires = window.formatDate ? window.formatDate(expiresRaw) : expiresRaw;
+          const usageLeft = (typeof promo.usageLimit === 'number' && typeof promo.timesUsed === 'number')
+            ? Math.max(promo.usageLimit - promo.timesUsed, 0)
+            : null;
+          const usageLine = promo.usageLimit
+            ? `${usageLeft !== null ? usageLeft : promo.usageLimit} use(s) left of ${promo.usageLimit}`
+            : '';
+          const minPurchaseLine = promo.minPurchaseAmount
+            ? `Min purchase: ₱${parseFloat(promo.minPurchaseAmount).toLocaleString()}`
+            : '';
+          return `
+            <div class="promo-block" style="margin-bottom: 1rem; padding: 10px; border-radius: 6px; background: #f7f7f7; box-shadow: 0 2px 8px #0001;">
+              <div><strong style="color: var(--primary-color, #1f7ed0);">${promo.code}</strong> — ${discountPct}% off</div>
+              <div style="color: #555; font-size: 0.95em;">Valid until: ${expires || 'N/A'}</div>
+              ${usageLine ? `<div style="color:#666; font-size: 0.9em;">${usageLine}</div>` : ''}
+              ${minPurchaseLine ? `<div style="color:#666; font-size: 0.9em;">${minPurchaseLine}</div>` : ''}
+              ${promo.description ? `<div style="margin-top:4px; color:#555; font-size:0.95em;">${promo.description}</div>` : ''}
+            </div>
+          `;
+        }).join('');
       } catch (e) {
         container.innerHTML = '<p style="color: #c00;">Failed to load promotions.</p>';
       }
@@ -312,29 +348,33 @@
       const container = document.getElementById('public-blocked-dates');
       if (!container) return;
       try {
+        const serviceMap = await getServiceNameMap();
         const res = await fetch('http://localhost:3000/api/blocked-dates/active/list');
         const data = await res.json();
-        if (Array.isArray(data) && data.length === 0) {
+        const blocks = Array.isArray(data)
+          ? data
+          : (data.success && Array.isArray(data.blockedDates))
+            ? data.blockedDates
+            : (data.success && Array.isArray(data.blocks))
+              ? data.blocks
+              : [];
+
+        if (!blocks.length) {
           container.innerHTML = '<p>No blocked dates at this time.</p>';
-        } else if (Array.isArray(data)) {
-          container.innerHTML = '<ul style="padding-left: 1.2em;">' + data.map(block => {
-            const start = window.formatDate ? window.formatDate(block.startDate) : block.startDate;
-            const end = window.formatDate ? window.formatDate(block.endDate) : block.endDate;
-            return `<li><strong>${start}</strong> to <strong>${end}</strong>${block.reason ? ' — ' + block.reason : ''}</li>`;
-          }).join('') + '</ul>';
-        } else if (data.success && Array.isArray(data.blocks)) {
-          if (data.blocks.length === 0) {
-            container.innerHTML = '<p>No blocked dates at this time.</p>';
-          } else {
-            container.innerHTML = '<ul style="padding-left: 1.2em;">' + data.blocks.map(block => {
-              const start = window.formatDate ? window.formatDate(block.startDate) : block.startDate;
-              const end = window.formatDate ? window.formatDate(block.endDate) : block.endDate;
-              return `<li><strong>${start}</strong> to <strong>${end}</strong>${block.reason ? ' — ' + block.reason : ''}</li>`;
-            }).join('') + '</ul>';
-          }
-        } else {
-          container.innerHTML = '<p>No blocked dates at this time.</p>';
+          return;
         }
+
+        container.innerHTML = '<ul style="padding-left: 1.2em;">' + blocks.map(block => {
+          const start = window.formatDate ? window.formatDate(block.startDate) : block.startDate;
+          const end = window.formatDate ? window.formatDate(block.endDate) : block.endDate;
+          const servicesText = (block.appliesToAllServices !== false && (!block.serviceIds || block.serviceIds.length === 0))
+            ? 'All services'
+            : (Array.isArray(block.serviceIds) && block.serviceIds.length > 0)
+              ? block.serviceIds.map(id => serviceMap[id] || id).join(', ')
+              : 'All services';
+          const reasonText = block.reason ? ` — ${block.reason}` : '';
+          return `<li><strong>${start}</strong> to <strong>${end}</strong>${reasonText}<div style="color:#555; font-size:0.9em;">Services: ${servicesText}</div></li>`;
+        }).join('') + '</ul>';
       } catch (e) {
         container.innerHTML = '<p style="color: #c00;">Failed to load blocked dates.</p>';
       }

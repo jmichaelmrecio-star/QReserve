@@ -81,11 +81,18 @@ async function fetchAndDisplaySummary(reservationId, reservationHash) {
       const nameEl = document.getElementById("summary-customer-name") || document.getElementById("summaryCustomerName");
       const totalEl = document.getElementById("summary-total-cost") || document.getElementById("totalReservationCost");
       const payEl = document.getElementById("summary-downpayment") || document.getElementById("paymentAmount");
+      const paySmallEl = document.getElementById("paymentAmountSmall");
+      const remainingEl = document.getElementById("remainingBalance");
       
       if (serviceNameEl) serviceNameEl.textContent = res.serviceType;
-      if (nameEl) nameEl.textContent = res.customer_name;
-      if (totalEl) totalEl.textContent = parseFloat(res.finalTotal).toLocaleString(undefined, {minimumFractionDigits:2});
-      if (payEl) payEl.textContent = (parseFloat(res.finalTotal) * 0.5).toLocaleString(undefined, {minimumFractionDigits:2});
+      // Use correct field name from backend (full_name)
+      if (nameEl) nameEl.textContent = res.full_name || res.customer_name || '';
+      const finalTotal = parseFloat(res.finalTotal || 0);
+      if (totalEl) totalEl.textContent = finalTotal.toLocaleString(undefined, {minimumFractionDigits:2});
+      const downPayment = finalTotal * 0.5;
+      if (payEl) payEl.textContent = downPayment.toLocaleString(undefined, {minimumFractionDigits:2});
+      if (paySmallEl) paySmallEl.textContent = downPayment.toLocaleString(undefined, {minimumFractionDigits:2});
+      if (remainingEl) remainingEl.textContent = (finalTotal - downPayment).toLocaleString(undefined, {minimumFractionDigits:2});
     }
   } catch (error) {
     console.error("Summary fetch error:", error);
@@ -137,35 +144,33 @@ function handleCartCheckout() {
             serviceDisplay.textContent = serviceNames;
         }
         
-        // Display customer name (from logged-in user)
-        const loggedUser = localStorage.getItem('loggedInUser');
+        // Display customer name: prefer cart item customerName, fallback to getLoggedInUser
         const customerDisplay = document.getElementById('summaryCustomerName');
         if (customerDisplay) {
-            if (loggedUser) {
-                try {
-                    const user = JSON.parse(loggedUser);
-                    customerDisplay.textContent = user.full_name || 'Guest';
-                } catch (e) {
-                    customerDisplay.textContent = 'Guest';
-                }
-            } else {
-                customerDisplay.textContent = 'Guest';
-            }
+          let displayName = '';
+          if (cart && cart.length > 0) {
+            displayName = cart[0].customerName || '';
+          }
+          if (!displayName && typeof getLoggedInUser === 'function') {
+            const user = getLoggedInUser();
+            displayName = user?.full_name || '';
+          }
+          customerDisplay.textContent = displayName || 'Guest';
         }
         
-        // Display total reservation cost
+        // Display total reservation cost (sum of final totals)
         const totalCostEl = document.getElementById('totalReservationCost');
         if (totalCostEl) {
             totalCostEl.textContent = totalAmount.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
         }
         
-        // Display downpayment amount
+        // Display downpayment amount (50% of total)
         const paymentAmountElements = document.querySelectorAll('#paymentAmount, #paymentAmountSmall');
         paymentAmountElements.forEach(el => {
             el.textContent = downpaymentAmount.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
         });
         
-        // Display remaining balance
+        // Display remaining balance (total - downpayment)
         const remainingBalanceEl = document.getElementById('remainingBalance');
         if (remainingBalanceEl) {
             remainingBalanceEl.textContent = remainingBalance.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
