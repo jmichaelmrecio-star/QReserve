@@ -99,7 +99,7 @@ document.addEventListener("DOMContentLoaded", () => {
         let resHash = getUrlParameter("hash") || sessionStorage.getItem("payment_reservation_hash");
 
         const checkoutCart = sessionStorage.getItem("checkoutCart");
-        if (checkoutCart && typeof handleCartCheckout === "function") {
+        if (checkoutCart) {
             handleCartCheckout();
         } else if (resId && resHash) {
             fetchAndDisplaySummary(resId, resHash);
@@ -112,6 +112,71 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
+/**
+ * Handle cart checkout summary display
+ */
+function handleCartCheckout() {
+    const checkoutCart = sessionStorage.getItem("checkoutCart");
+    if (!checkoutCart) return;
+    
+    try {
+        const cart = JSON.parse(checkoutCart);
+        
+        // Calculate totals from cart items or use stored values
+        const totalAmount = parseFloat(sessionStorage.getItem('checkout_total_amount')) ||
+                           cart.reduce((sum, item) => sum + parseFloat(item.price || 0), 0);
+        const downpaymentAmount = parseFloat(sessionStorage.getItem('checkout_downpayment')) ||
+                                 (totalAmount * 0.5);
+        const remainingBalance = parseFloat(sessionStorage.getItem('checkout_remaining_balance')) ||
+                                (totalAmount - downpaymentAmount);
+        
+        // Display service names from cart items
+        const serviceDisplay = document.getElementById("serviceNameDisplay");
+        if (serviceDisplay && cart.length > 0) {
+            const serviceNames = cart.map(item => item.serviceName || 'Reserved Service').join(', ');
+            serviceDisplay.textContent = serviceNames;
+        }
+        
+        // Display customer name (from logged-in user)
+        const loggedUser = localStorage.getItem('loggedInUser');
+        const customerDisplay = document.getElementById('summaryCustomerName');
+        if (customerDisplay) {
+            if (loggedUser) {
+                try {
+                    const user = JSON.parse(loggedUser);
+                    customerDisplay.textContent = user.full_name || 'Guest';
+                } catch (e) {
+                    customerDisplay.textContent = 'Guest';
+                }
+            } else {
+                customerDisplay.textContent = 'Guest';
+            }
+        }
+        
+        // Display total reservation cost
+        const totalCostEl = document.getElementById('totalReservationCost');
+        if (totalCostEl) {
+            totalCostEl.textContent = totalAmount.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+        }
+        
+        // Display downpayment amount
+        const paymentAmountElements = document.querySelectorAll('#paymentAmount, #paymentAmountSmall');
+        paymentAmountElements.forEach(el => {
+            el.textContent = downpaymentAmount.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+        });
+        
+        // Display remaining balance
+        const remainingBalanceEl = document.getElementById('remainingBalance');
+        if (remainingBalanceEl) {
+            remainingBalanceEl.textContent = remainingBalance.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+        }
+        
+    } catch (error) {
+        console.error("Error handling cart checkout display:", error);
+    }
+}
+
 // Expose globals
 window.processGCashPayment = processGCashPayment;
 window.fetchAndDisplaySummary = fetchAndDisplaySummary;
+window.handleCartCheckout = handleCartCheckout;

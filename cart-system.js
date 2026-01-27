@@ -166,7 +166,20 @@ async function proceedToCartCheckout() {
   }
 
   if (checkoutReservations.length === cart.length) {
-    // No more sessionStorage: redirect to payment page directly
+    // Store checkout data in sessionStorage for payment page to display
+    sessionStorage.setItem('checkoutCart', JSON.stringify(checkoutReservations));
+    
+    // Calculate totals for payment summary
+    const totalAmount = checkoutReservations.reduce((sum, item) => sum + parseFloat(item.price || 0), 0);
+    const downpaymentAmount = totalAmount * 0.5;
+    const remainingBalance = totalAmount - downpaymentAmount;
+    
+    // Store summary data for payment page
+    sessionStorage.setItem('checkout_total_amount', totalAmount.toString());
+    sessionStorage.setItem('checkout_downpayment', downpaymentAmount.toString());
+    sessionStorage.setItem('checkout_remaining_balance', remainingBalance.toString());
+    
+    // Redirect to payment page
     window.location.href = 'payment.html';
   } else {
     showAlert("Some items failed to process. Please try again.", "error");
