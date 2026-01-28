@@ -773,10 +773,11 @@ form textarea:focus {
   box-shadow: 0 0 0 3px rgba(45, 143, 92, 0.1);
 }
 
-/* Make the submit button full width */
-#reservationForm button[type="submit"] {
-  width: 100%;
-  margin-top: 2rem;
+/* When buttons are in a flex container, they should honor flex properties */
+#reservationForm .button-primary,
+#reservationForm .button-secondary {
+  flex: 1;
+  min-width: 0; /* Prevents flex items from overflowing */
 }
 
 /* --- Footer --- */
@@ -1902,17 +1903,19 @@ footer {
 .button-secondary {
   background-color: #f5f4f1;
   color: var(--primary-color); /* Green text */
-  padding: 12px 30px;
+  padding: 0.75rem 1.5rem;
   text-decoration: none;
   border-radius: var(--border-radius);
   font-weight: bold;
   display: inline-block;
+  font-size: 1rem;
   transition: background-color var(--transition-base) var(--transition-easing),
     color var(--transition-base) var(--transition-easing),
     border-color var(--transition-base) var(--transition-easing),
     box-shadow var(--transition-base) var(--transition-easing);
   border: 2px solid white; /* Ensures button is visible */
   box-shadow: var(--shadow-sm);
+  cursor: pointer;
 }
 
 .button-secondary:hover {
