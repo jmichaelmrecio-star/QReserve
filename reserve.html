@@ -104,9 +104,9 @@
 				    
 				    <div class="form-group">
 				        <label for="promoCodeInput" style="display: flex; gap: 10px;">Have a Promo Code?</label>
-				        <div class="promo-input-group" style="display: flex; gap: 10px;">
-				            <input type="text" id="promoCodeInput" placeholder="Enter code" class="form-control" style="flex-grow: 1;">
-				            <button type="button" id="applyPromoBtn" class="button-secondary" style="white-space: nowrap;">Apply Code</button>
+				        <div class="promo-input-group" style="display: flex; gap: 10px; align-items: center;">
+				            <input type="text" id="promoCodeInput" placeholder="Enter code" class="form-control" style="flex: 1; min-width: 150px;">
+				            <button type="button" id="applyPromoBtn" class="button-secondary" style="white-space: nowrap; flex-shrink: 0;">Apply Code</button>
 				        </div>
 				        <p id="promoCodeMessage" style="margin-top: 5px; font-size: 0.9em;"></p>
 				    </div>
@@ -151,9 +151,9 @@
 				        <p style="margin-top: 10px; color: #dc3545; font-weight: bold;">*The full, comprehensive Terms and Conditions are available upon request.*</p>
 				    </div>-->
 			
-				    <div style="display: flex; align-items: center; gap: 8px; margin-top: 15px;">
+				    <div style="display: flex; align-items: center; gap: 8px; margin-top: -20px;">
 				        <input type="checkbox" id="termsCheck" name="terms_agreed" required style="width: auto;">
-				        <label for="termsCheck" style="font-weight: bold; margin: 0;">I have read and agree to the <a href="#" onclick="showTermsModal(); return false;">Terms and Conditions</a>.</label>
+				        <label for="termsCheck" style="font-weight: bold; margin-bottom: 0.7rem;">I have read and agree to the <a href="#" onclick="showTermsModal(); return false;">Terms and Conditions</a>.</label>
 				    </div>
 				</fieldset>
 				<br>
