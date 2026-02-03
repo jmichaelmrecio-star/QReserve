@@ -7,23 +7,23 @@
         <!-- Report Generation Modal -->
         <div class="modal fade" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="reportModalLabel">Generate Reservation Report</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <div class="modal-content" style="border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+                    <div class="modal-header" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; border-top-left-radius: 12px; border-top-right-radius: 12px;">
+                        <h5 class="modal-title w-100 text-center" id="reportModalLabel" style="font-weight: 600;">Generate Reservation Report</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <div class="modal-body">
+                    <div class="modal-body" style="padding: 2rem;">
                         <form id="reportForm">
-                            <div class="mb-3">
-                                <label for="reportStartDate" class="form-label">Start Date</label>
-                                <input type="date" class="form-control" id="reportStartDate" required>
+                            <div class="mb-4">
+                                <label for="reportStartDate" class="form-label" style="font-weight: 500; color: #495057;">Start Date</label>
+                                <input type="date" class="form-control" id="reportStartDate" required style="padding: 0.75rem; border-radius: 8px; border: 2px solid #e0e0e0; transition: all 0.3s;">
                             </div>
-                            <div class="mb-3">
-                                <label for="reportEndDate" class="form-label">End Date</label>
-                                <input type="date" class="form-control" id="reportEndDate" required>
+                            <div class="mb-4">
+                                <label for="reportEndDate" class="form-label" style="font-weight: 500; color: #495057;">End Date</label>
+                                <input type="date" class="form-control" id="reportEndDate" required style="padding: 0.75rem; border-radius: 8px; border: 2px solid #e0e0e0; transition: all 0.3s;">
                             </div>
-                            <div id="reportStatus" class="mb-2"></div>
-                            <button type="submit" class="btn btn-success w-100">Generate CSV</button>
+                            <div id="reportStatus" class="mb-3"></div>
+                            <button type="submit" class="btn btn-success w-100" style="padding: 0.75rem; font-weight: 600; border-radius: 8px; font-size: 1rem;">Generate CSV</button>
                         </form>
                     </div>
                 </div>

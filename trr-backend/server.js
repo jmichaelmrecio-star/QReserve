@@ -66,6 +66,10 @@ const blockedDateRoutes = require('./routes/blockedDateRoutes');
 const authRoutes = require('./routes/authRoutes');
 const serviceRoutes = require('./routes/serviceRoutes');
 const contactRoutes = require('./routes/contactRoutes');
+
+// Import and start the checkout scheduler
+const checkoutScheduler = require('./services/checkoutScheduler');
+checkoutScheduler.start();
 // Note the '..' path to go up one directory from trr-backend to new website
 app.use(express.static(path.join(__dirname, '..')));
 
