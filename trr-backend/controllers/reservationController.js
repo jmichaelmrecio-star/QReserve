@@ -1077,10 +1077,11 @@ exports.generateReports = async (req, res) => {
         console.log('   Parsed end Date object:', end);
 
         // Fetch detailed reservations for the report - Include both PAID and DOWNPAYMENT_PAID statuses
+        // FIXED: Filter by check_in date (actual reservation date) instead of dateCreated
         const reservations = await Reservation.find({
-            dateCreated: { $gte: start, $lte: end },
+            check_in: { $gte: start, $lte: end },
             paymentStatus: { $in: ['PAID', 'DOWNPAYMENT_PAID'] }
-        }).sort({ dateCreated: -1 });
+        }).sort({ check_in: -1 });
 
         console.log('   Found reservations:', reservations.length);
 

@@ -430,7 +430,7 @@ main.services-parallax {
   padding: 0.75rem 1.5rem;
   text-decoration: none;
   border-radius: var(--border-radius);
-  border: none;
+  border: 2px solid transparent;
   cursor: pointer;
   transition: background-color var(--transition-base) var(--transition-easing),
     transform var(--transition-base) var(--transition-easing),
@@ -1915,6 +1915,11 @@ footer {
     box-shadow var(--transition-base) var(--transition-easing);
   border: 2px solid white; /* Ensures button is visible */
   box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  user-select: none;
+  touch-action: manipulation;
   cursor: pointer;
 }
 
