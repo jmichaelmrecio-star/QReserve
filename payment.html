@@ -127,7 +127,7 @@
     // Merge all DOMContentLoaded logic into a single handler to fix syntax error
     document.addEventListener('DOMContentLoaded', function() {
         // Initialize unsaved changes tracking for payment page
-        initializeUnsavedChangesTracking('paymentForm');
+        initializeUnsavedChangesTracking('gcashPaymentForm');
         attachNavigationListeners();
         
         // Check if this is a cart checkout
