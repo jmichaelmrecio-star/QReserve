@@ -1,5 +1,6 @@
 // Load environment variables from .env file
 require('dotenv').config();
+console.log("DEBUG: URI is", process.env.MONGODB_URI);
 
 const express = require('express');
 const cors = require('cors');
