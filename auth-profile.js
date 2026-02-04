@@ -94,16 +94,16 @@ async function loginUser(event) {
 
     const result = await response.json();
     if (response.ok) {
-      localStorage.setItem("token", result.token);
-      localStorage.setItem("loggedInUser", JSON.stringify(result.user));
-      localStorage.setItem("qreserve_logged_user_email", result.user.email);
+      sessionStorage.setItem("token", result.token);
+      sessionStorage.setItem("loggedInUser", JSON.stringify(result.user));
+      sessionStorage.setItem("qreserve_logged_user_email", result.user.email);
       // Migrate any guest cart to user-specific cart
       if (typeof migrateCartToUser === 'function') {
         migrateCartToUser(result.user.email);
       }
       // Set role for dashboard UI
       if (result.user.role) {
-        localStorage.setItem("qreserve_user_role", result.user.role.toLowerCase());
+        sessionStorage.setItem("qreserve_user_role", result.user.role.toLowerCase());
       }
       showAlert("Login successful!", "success");
       // Role-based redirect
@@ -339,7 +339,7 @@ async function handleProfileEditSubmit(event) {
 
     if (response.ok) {
       const result = await response.json();
-      localStorage.setItem("loggedInUser", JSON.stringify(result.user));
+      sessionStorage.setItem("loggedInUser", JSON.stringify(result.user));
       showAlert("Profile updated successfully!", "success");
       closeProfileEditModal();
       renderProfileDetails();

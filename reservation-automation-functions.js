@@ -367,7 +367,9 @@ function cancelServiceEdit() {
  * Update service via API
  */
 async function updateService(serviceId, serviceData) {
-    const token = localStorage.getItem('authToken');
+    const token = typeof getAuthToken === 'function'
+        ? getAuthToken()
+        : (sessionStorage.getItem('token') || sessionStorage.getItem('authToken') || '');
     
     try {
         const response = await fetch(`http://localhost:3000/api/services/${serviceId}`, {

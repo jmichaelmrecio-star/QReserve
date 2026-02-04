@@ -15,8 +15,10 @@ function initCustomerDashboard() {
 // Load customer's reservations
 async function loadCustomerReservations() {
     // ADMIN: Show all reservations if admin, else show only user reservations
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    const userRole = localStorage.getItem('qreserve_user_role');
+    const user = (typeof getLoggedInUser === 'function' && getLoggedInUser()) || null;
+    const userRole = typeof getCurrentRole === 'function'
+        ? getCurrentRole()
+        : (user?.role ? user.role.toLowerCase() : null);
     let reservations = [];
     try {
         let response;
@@ -29,7 +31,7 @@ async function loadCustomerReservations() {
                 res.status && res.status.toUpperCase() !== 'CART'
             );
         } else {
-            if (!user.email) {
+            if (!user || !user.email) {
                 console.error('No user email found');
                 return;
             }
@@ -64,7 +66,7 @@ function displayCustomerReservations(reservations) {
     }
 
     // For admin/manager, show all in a table with all fields
-    const userRole = localStorage.getItem('qreserve_user_role');
+    const userRole = typeof getCurrentRole === 'function' ? getCurrentRole() : null;
     if (userRole === 'admin' || userRole === 'manager') {
         container.innerHTML = `
             <table class="data-table">
@@ -195,7 +197,7 @@ function createCustomerReservationCard(reservation) {
 
 // Load customer profile information
 async function loadCustomerProfile() {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const user = (typeof getLoggedInUser === 'function' && getLoggedInUser()) || {};
     const container = document.getElementById('customer-profile-info');
     
     if (!container) return;
@@ -230,7 +232,7 @@ async function cancelReservation(reservationId) {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                'Authorization': `Bearer ${typeof getAuthToken === 'function' ? getAuthToken() : (sessionStorage.getItem('token') || sessionStorage.getItem('authToken') || '')}`
             },
             body: JSON.stringify({ status: 'Cancelled' })
         });
@@ -248,12 +250,12 @@ async function cancelReservation(reservationId) {
 // View reservation QR code - CUSTOMER FRIENDLY (hides technical IDs)
 function viewReservationQR(reservationId) {
     // Get the reservation to display formal ID
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const user = (typeof getLoggedInUser === 'function' && getLoggedInUser()) || {};
     
     // Fetch reservation details to get formal ID
     fetch(`http://localhost:3000/api/reservations/user/${user.email}`, {
         headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${typeof getAuthToken === 'function' ? getAuthToken() : (sessionStorage.getItem('token') || sessionStorage.getItem('authToken') || '')}`
         }
     })
     .then(res => res.json())
