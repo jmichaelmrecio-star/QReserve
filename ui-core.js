@@ -609,17 +609,17 @@ async function fetchServices() {
 }
 
 function getAuthToken() {
-  return localStorage.getItem("token") || localStorage.getItem("authToken");
+  return sessionStorage.getItem("token") || sessionStorage.getItem("authToken") || "";
 }
 
 function getLoggedInUser() {
-  const userString = localStorage.getItem("loggedInUser");
-  const token = localStorage.getItem("token");
+  const userString = sessionStorage.getItem("loggedInUser");
+  const token = getAuthToken();
   if (!token || !userString) return null;
   try {
     return JSON.parse(userString);
   } catch (e) {
-    console.error("Error parsing loggedInUser from localStorage:", e);
+    console.error("Error parsing loggedInUser from sessionStorage:", e);
     return null;
   }
 }
@@ -633,30 +633,17 @@ function getCurrentRole() {
 }
 
 function setRole(role) {
-  localStorage.setItem("qreserve_user_role", role);
+  sessionStorage.setItem("qreserve_user_role", role);
 }
 
 function logout() {
-  // IMPORTANT: Save the user's cart before clearing localStorage
-  // This allows cart persistence across logout/login cycles
-  const userEmail = localStorage.getItem('qreserve_logged_user_email');
-  const cartKey = userEmail ? `qreserve_cart_${userEmail}` : null;
-  let savedCart = null;
-  
-  if (cartKey) {
-    savedCart = localStorage.getItem(cartKey);
-    console.log(`💾 Preserving cart for ${userEmail} before logout`);
-  }
-  
-  localStorage.clear();
-  sessionStorage.clear();
-  
-  // Restore the cart after clearing
-  if (cartKey && savedCart) {
-    localStorage.setItem(cartKey, savedCart);
-    console.log(`✅ Cart restored after logout for ${userEmail}`);
-  }
-  
+  sessionStorage.removeItem("token");
+  sessionStorage.removeItem("authToken");
+  sessionStorage.removeItem("loggedInUser");
+  sessionStorage.removeItem("qreserve_user_role");
+  sessionStorage.removeItem("qreserve_logged_user_email");
+  sessionStorage.removeItem("qreserve_token");
+
   if (typeof showToast === "function") {
     showToast("Logged out successfully!", "success");
   }
@@ -722,7 +709,7 @@ function renderNavigation() {
     profileLi.classList.add("profile-dropdown");
     
     // Get logged-in user's full name
-    const loggedInUserStr = localStorage.getItem('loggedInUser');
+    const loggedInUserStr = sessionStorage.getItem('loggedInUser');
     const userName = loggedInUserStr ? JSON.parse(loggedInUserStr).full_name || 'User' : 'User';
     
     profileLi.innerHTML = `
@@ -1443,7 +1430,7 @@ function escapeHtml(text) {
 
 // Utility: getAuthToken
 function getAuthToken() {
-  return localStorage.getItem('qreserve_token') || '';
+  return sessionStorage.getItem('token') || sessionStorage.getItem('authToken') || sessionStorage.getItem('qreserve_token') || '';
 }
 
 window.deleteUser = deleteUser;

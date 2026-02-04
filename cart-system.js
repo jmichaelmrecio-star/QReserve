@@ -11,7 +11,13 @@
  * @returns {string} User's email or null if not logged in
  */
 function getCurrentUserEmail() {
-  return localStorage.getItem('qreserve_logged_user_email') || null;
+  const sessionEmail = sessionStorage.getItem('qreserve_logged_user_email');
+  if (sessionEmail) return sessionEmail;
+  if (typeof getLoggedInUser === 'function') {
+    const user = getLoggedInUser();
+    return user?.email || null;
+  }
+  return null;
 }
 
 /**

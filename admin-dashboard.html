@@ -669,7 +669,7 @@
         // DEBUG: Show current role in debug-info
         const debugDiv = document.getElementById('debug-info');
         // Only declare userRole ONCE
-        var userRole = localStorage.getItem('qreserve_user_role');
+        var userRole = sessionStorage.getItem('qreserve_user_role');
       
         const adminOnlyElements = document.querySelectorAll('.admin-only');
         const managerOnlyElements = document.querySelectorAll('.admin-manager-only'); // NEW
