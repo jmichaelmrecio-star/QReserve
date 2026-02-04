@@ -272,6 +272,15 @@
     <script src="mobile-responsive.js"></script>
 
     <script>
+    // Redirect admin/manager users to their dashboard
+    (function redirectAdminUsers() {
+        const userRole = sessionStorage.getItem('qreserve_user_role');
+        if (userRole === 'admin' || userRole === 'manager') {
+            const dashboardPage = userRole === 'admin' ? 'admin-dashboard.html' : 'manager-dashboard.html';
+            window.location.href = dashboardPage;
+        }
+    })();
+
     // Cached map of service IDs to names for blocked-date display
     let serviceNameMap = null;
     async function getServiceNameMap() {
