@@ -241,14 +241,77 @@ async function reserveNow(event) {
 
 // --- Filters ---
 
+function isRoomCategory(service) {
+  const type = (service.type || '').toLowerCase();
+  const category = (service.category || '').toLowerCase();
+  return type === 'villa' || type === 'charm' || type === 'home' || category === 'accommodation';
+}
+
+function isVenueCategory(service) {
+  const type = (service.type || '').toLowerCase();
+  const category = (service.category || '').toLowerCase();
+  return type === 'venue' || category === 'event_space' || category === 'water_facility';
+}
+
+function updateTypeOptions(categoryValue, typeEl) {
+  if (!typeEl) return;
+
+  const currentValue = typeEl.value;
+  let options = [
+    { value: 'all', label: 'All' }
+  ];
+
+  if (categoryValue === 'room') {
+    options = options.concat([
+      { value: 'home', label: 'Home' },
+      { value: 'charm', label: 'Charm' },
+      { value: 'villa', label: 'Villa' }
+    ]);
+  } else if (categoryValue === 'venue') {
+    options = options.concat([
+      { value: 'hall', label: 'Hall' },
+      { value: 'pool', label: 'Pool' }
+    ]);
+  } else {
+    options = options.concat([
+      { value: 'home', label: 'Home' },
+      { value: 'charm', label: 'Charm' },
+      { value: 'villa', label: 'Villa' },
+      { value: 'hall', label: 'Hall' },
+      { value: 'pool', label: 'Pool' }
+    ]);
+  }
+
+  typeEl.innerHTML = options.map(opt => `<option value="${opt.value}">${opt.label}</option>`).join('');
+
+  const hasCurrent = options.some(opt => opt.value === currentValue);
+  typeEl.value = hasCurrent ? currentValue : 'all';
+}
+
 function filterServices() {
-    const typeFilter = (document.getElementById('services-type-filter') || document.getElementById('amenity-type-filter'))?.value || 'all';
+  const categoryFilter = (document.getElementById('services-category-filter') || document.getElementById('amenity-category-filter'))?.value || 'all';
+  const typeFilter = (document.getElementById('services-type-filter') || document.getElementById('amenity-type-filter'))?.value || 'all';
     const capacityFilter = parseInt((document.getElementById('services-capacity-filter') || document.getElementById('amenity-capacity-filter'))?.value || '0');
     
     let filtered = getActiveServices();
+
+  if (categoryFilter === 'room') {
+    filtered = filtered.filter(isRoomCategory);
+  } else if (categoryFilter === 'venue') {
+    filtered = filtered.filter(isVenueCategory);
+  }
     
     if (typeFilter !== 'all') {
-        filtered = filtered.filter(s => s.type?.toLowerCase() === typeFilter);
+    const normalizedType = typeFilter.toLowerCase();
+    if (normalizedType === 'home') {
+      filtered = filtered.filter(s => (s.type || '').toLowerCase() === 'home' || (s.name || '').toLowerCase().includes('home'));
+    } else if (normalizedType === 'hall') {
+      filtered = filtered.filter(s => (s.name || '').toLowerCase().includes('hall'));
+    } else if (normalizedType === 'pool') {
+      filtered = filtered.filter(s => (s.name || '').toLowerCase().includes('pool'));
+    } else {
+      filtered = filtered.filter(s => (s.type || '').toLowerCase() === normalizedType);
+    }
     }
     
     if (capacityFilter > 0) {
@@ -272,16 +335,64 @@ document.addEventListener("DOMContentLoaded", () => {
                           document.getElementById("amenities-grid");
                           
     if (gridContainer) {
-        renderServiceCards();
-        // If services haven't loaded yet, try again in a bit
-        setTimeout(renderServiceCards, 1000);
+    // Attach filter listeners
+    const categoryEl = document.getElementById('services-category-filter') || document.getElementById('amenity-category-filter');
+    const typeEl = document.getElementById('services-type-filter') || document.getElementById('amenity-type-filter');
+    const capEl = document.getElementById('services-capacity-filter') || document.getElementById('amenity-capacity-filter');
 
-        // Attach filter listeners
-        const typeEl = document.getElementById('services-type-filter') || document.getElementById('amenity-type-filter');
-        const capEl = document.getElementById('services-capacity-filter') || document.getElementById('amenity-capacity-filter');
-        
-        typeEl?.addEventListener('change', filterServices);
-        capEl?.addEventListener('change', filterServices);
+    let hasInitialFilter = false;
+    const params = new URLSearchParams(window.location.search);
+    const typeParam = params.get('type');
+    const categoryParam = params.get('category');
+    if (categoryEl && categoryParam) {
+      const normalizedCategory = categoryParam.toLowerCase();
+      if (normalizedCategory === 'room' || normalizedCategory === 'venue' || normalizedCategory === 'all') {
+        categoryEl.value = normalizedCategory;
+      }
+    }
+
+    let inferredCategory = categoryEl ? categoryEl.value : 'all';
+    if (typeParam) {
+      const normalizedType = typeParam.toLowerCase();
+      if (normalizedType === 'hall' || normalizedType === 'pool') {
+        inferredCategory = 'venue';
+      } else if (normalizedType === 'home' || normalizedType === 'charm' || normalizedType === 'villa') {
+        inferredCategory = 'room';
+      }
+    }
+
+    if (categoryEl) {
+      categoryEl.value = inferredCategory;
+    }
+
+    updateTypeOptions(inferredCategory, typeEl);
+
+    if (typeEl && typeParam) {
+      const normalizedType = typeParam.toLowerCase();
+      const hasOption = Array.from(typeEl.options).some(opt => opt.value === normalizedType);
+      if (hasOption) {
+        typeEl.value = normalizedType;
+        hasInitialFilter = true;
+      }
+    }
+
+    if (hasInitialFilter) {
+      filterServices();
+      // If services haven't loaded yet, try again in a bit
+      setTimeout(filterServices, 1000);
+    } else {
+      renderServiceCards();
+      // If services haven't loaded yet, try again in a bit
+      setTimeout(renderServiceCards, 1000);
+    }
+
+    categoryEl?.addEventListener('change', () => {
+      const categoryValue = categoryEl.value || 'all';
+      updateTypeOptions(categoryValue, typeEl);
+      filterServices();
+    });
+    typeEl?.addEventListener('change', filterServices);
+    capEl?.addEventListener('change', filterServices);
     }
 
     // Modal Close Logic

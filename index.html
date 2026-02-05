@@ -61,7 +61,7 @@
                         no-repeat;
                     "
                   ></div>
-                  <h4>Villa</h4>
+                  <h4 class="carousel-service-link" data-service-type="villa">Villa</h4>
                   <p>
                     Spacious villa accommodations with premium amenities and
                     privacy.
@@ -75,7 +75,7 @@
                         no-repeat;
                     "
                   ></div>
-                  <h4>Charm</h4>
+                  <h4 class="carousel-service-link" data-service-type="charm">Charm</h4>
                   <p>
                     Cozy and intimate rooms with all the comfort and character
                     you need.
@@ -89,7 +89,7 @@
                         no-repeat;
                     "
                   ></div>
-                  <h4>Home</h4>
+                  <h4 class="carousel-service-link" data-service-type="villa">Home</h4>
                   <p>
                     Full home experience with kitchen facilities and spacious
                     living areas.
@@ -116,7 +116,7 @@
                         no-repeat;
                     "
                   ></div>
-                  <h4>Clover Leaf Hall</h4>
+                  <h4 class="carousel-service-link" data-service-type="venue">Clover Leaf Hall</h4>
                   <p>
                     Large multi-purpose venue perfect for conferences, weddings,
                     and grand celebrations.
@@ -130,7 +130,7 @@
                         center/cover no-repeat;
                     "
                   ></div>
-                  <h4>Resto Hall</h4>
+                  <h4 class="carousel-service-link" data-service-type="venue">Resto Hall</h4>
                   <p>
                     Intimate dining space ideal for family gatherings, corporate
                     lunches, and small events.
@@ -152,7 +152,7 @@
                         no-repeat;
                     "
                   ></div>
-                  <h4>Adult Pool</h4>
+                  <h4 class="carousel-service-link" data-service-type="venue">Adult Pool</h4>
                   <p>
                     Olympic-sized main pool with diving areas and relaxing
                     shallow zones.
@@ -166,7 +166,7 @@
                         center/cover no-repeat;
                     "
                   ></div>
-                  <h4>Kiddie Pool</h4>
+                  <h4 class="carousel-service-link" data-service-type="venue">Kiddie Pool</h4>
                   <p>
                     Safe and shallow pool designed specifically for children's
                     enjoyment and safety.
@@ -180,7 +180,7 @@
                         center/cover no-repeat;
                     "
                   ></div>
-                  <h4>Pool Cottages</h4>
+                  <h4 class="carousel-service-link" data-service-type="venue">Pool Cottages</h4>
                   <p>
                     Exclusive cottages poolside with direct pool access and
                     private lounging areas.
@@ -392,6 +392,23 @@
     document.addEventListener('DOMContentLoaded', function() {
       fetchAndRenderPromotions();
       fetchAndRenderBlockedDates();
+
+      // Make carousel titles clickable to jump to filtered services
+      document.querySelectorAll('.carousel-service-link[data-service-type]').forEach((el) => {
+        const serviceType = el.getAttribute('data-service-type');
+        el.style.cursor = 'pointer';
+        el.setAttribute('role', 'link');
+        el.setAttribute('tabindex', '0');
+        el.addEventListener('click', () => {
+          window.location.href = `services-list.html?type=${encodeURIComponent(serviceType)}`;
+        });
+        el.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            window.location.href = `services-list.html?type=${encodeURIComponent(serviceType)}`;
+          }
+        });
+      });
 
       // Customer Reviews Carousel Logic
       const images = ['feedback/1.jpg', 'feedback/2.jpg', 'feedback/3.jpg', 'feedback/4.jpg', 'feedback/5.jpg', 'feedback/6.jpg'];
