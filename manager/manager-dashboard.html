@@ -129,6 +129,29 @@
     <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
     <script>
+    function getEffectiveRole() {
+        if (typeof getCurrentRole === 'function') {
+            const role = getCurrentRole();
+            if (role) return role.toLowerCase();
+        }
+        const storedRole = sessionStorage.getItem('qreserve_user_role');
+        if (storedRole) return storedRole.toLowerCase();
+        if (typeof getLoggedInUser === 'function') {
+            const user = getLoggedInUser();
+            if (user && user.role) return String(user.role).toLowerCase();
+        }
+        return null;
+    }
+
+    function guardCustomerAccess() {
+        const role = getEffectiveRole();
+        if (role === 'customer') {
+            window.location.replace('/index.html');
+            return true;
+        }
+        return false;
+    }
+
     // Tab switching for manager dashboard
     function showTab(targetId) {
         // Deactivate all tab buttons
@@ -175,6 +198,9 @@
     // Main initialization
     document.addEventListener('DOMContentLoaded', async () => {
         console.log('🚀 Initializing Manager Dashboard...');
+        if (guardCustomerAccess()) {
+            return;
+        }
         // Ensure account modal is hidden on load
         const accountModal = document.getElementById('accountModal');
         if (accountModal) {

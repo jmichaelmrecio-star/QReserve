@@ -29,7 +29,6 @@
         <div id="dashboard-area-container"></div>
         <div id="nav-promocodes-container"></div>
         <div id="service-management-container"></div>
-        <div id="customer-view-section-container"></div>
         <div id="payment-verifications-section-container"></div>
     </main>
 
@@ -145,11 +144,33 @@
     <script src="/ui-core.js"></script>
     <script src="/auth-profile.js"></script>
     <script src="/admin/admin-system.js"></script>
-    <script src="/customer-dashboard.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
     <script>
+    function getEffectiveRole() {
+        if (typeof getCurrentRole === 'function') {
+            const role = getCurrentRole();
+            if (role) return role.toLowerCase();
+        }
+        const storedRole = sessionStorage.getItem('qreserve_user_role');
+        if (storedRole) return storedRole.toLowerCase();
+        if (typeof getLoggedInUser === 'function') {
+            const user = getLoggedInUser();
+            if (user && user.role) return String(user.role).toLowerCase();
+        }
+        return null;
+    }
+
+    function guardCustomerAccess() {
+        const role = getEffectiveRole();
+        if (role === 'customer') {
+            window.location.replace('/index.html');
+            return true;
+        }
+        return false;
+    }
+
     // Tab switching for admin dashboard
     function showTab(targetId) {
         // Deactivate all tab buttons
@@ -179,7 +200,6 @@
       
         const adminOnlyElements = document.querySelectorAll('.admin-only');
         const managerOnlyElements = document.querySelectorAll('.admin-manager-only'); // NEW
-        const customerViewTab = document.querySelector('.customer-view-tab');
         const roleBadge = document.getElementById('roleBadge');
         const roleText = document.getElementById('roleText');
         const managerInfoBox = document.getElementById('managerInfoBox');
@@ -194,14 +214,6 @@
             managerOnlyElements.forEach(el => {
                 el.style.display = userRole === 'manager' || userRole === 'admin' ? '' : 'none';
             });
-            // Hide customer view tab and section for admin/manager
-            if (customerViewTab) {
-                customerViewTab.style.display = 'none';
-            }
-            var customerViewSection = document.getElementById('customer-view-section');
-            if (customerViewSection) {
-                customerViewSection.style.display = 'none';
-            }
           
             // Update role badge
             if (roleBadge && roleText) {
@@ -226,14 +238,6 @@
             managerOnlyElements.forEach(el => {
                 el.style.display = 'none';
             });
-            // Show customer view tab and section for customers
-            if (customerViewTab) {
-                customerViewTab.style.display = '';
-            }
-            var customerViewSection = document.getElementById('customer-view-section');
-            if (customerViewSection) {
-                customerViewSection.style.display = '';
-            }
             // Update role badge for customers
             if (roleBadge && roleText) {
                 roleText.textContent = '👤 Customer View';
@@ -253,6 +257,9 @@
     // Main initialization
     document.addEventListener('DOMContentLoaded', async () => {
         console.log('🚀 Initializing Admin Dashboard with Component Loader...');
+        if (guardCustomerAccess()) {
+            return;
+        }
         
         // Ensure account modal is hidden on load
         const accountModal = document.getElementById('accountModal');
@@ -290,7 +297,7 @@
             { path: '/admin/admin-reservations.html', target: 'dashboard-area-container' },
             { path: '/admin/admin-promo-codes.html', target: 'nav-promocodes-container' },
             { path: '/admin/admin-services.html', target: 'service-management-container' },
-            { path: '/admin/admin-customer-view.html', target: 'customer-view-section-container' }
+            
         ]);
         // DEBUG: Patch renderAdminReservations to show errors in debug-info
         window._origRenderAdminReservations = window.renderAdminReservations;
@@ -318,7 +325,7 @@
         // Wait a bit for components to render
         setTimeout(() => {
             // Ensure sections have .tab-pane class (removed Home, Checkin Demo, Dining, Promotions)
-            ['schedule-management','nav-promocodes','service-management','user-management','dashboard-area','customer-view-section'].forEach(id => {
+            ['schedule-management','nav-promocodes','service-management','user-management','dashboard-area'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.classList.add('tab-pane');
             });
@@ -336,11 +343,6 @@
             
             // Role-based UI: Show/hide tabs based on user role
             initializeRoleBasedUI();
-            
-            // Initialize customer dashboard if on customer view
-            if (typeof initCustomerDashboard === 'function') {
-                initCustomerDashboard();
-            }
             
             console.log('✅ Admin Dashboard initialized successfully');
         }, 100);
