@@ -7,7 +7,7 @@ module.exports = [
         id: 'villa_room_1',
         name: 'Villa #1',
         type: 'villa',
-        category: 'accommodation',
+        category: 'room',
         max_guests: 4,
         description: 'Comfortable villa room perfect for small families or groups. Good for 4 pax.',
         image: 'images/Villa_room.jpg',
@@ -29,7 +29,7 @@ module.exports = [
         id: 'villa_room_2',
         name: 'Villa #2',
         type: 'villa',
-        category: 'accommodation',
+        category: 'room',
         max_guests: 4,
         description: 'Comfortable villa room perfect for small families or groups. Good for 4 pax.',
         image: 'images/Villa_room.jpg',
@@ -51,7 +51,7 @@ module.exports = [
         id: 'villa_room_3',
         name: 'Villa #3',
         type: 'villa',
-        category: 'accommodation',
+        category: 'room',
         max_guests: 4,
         description: 'Comfortable villa room perfect for small families or groups. Good for 4 pax.',
         image: 'images/Villa_room.jpg',
@@ -73,7 +73,7 @@ module.exports = [
         id: 'villa_room_4',
         name: 'Villa #4',
         type: 'villa',
-        category: 'accommodation',
+        category: 'room',
         max_guests: 4,
         description: 'Comfortable villa room perfect for small families or groups. Good for 4 pax.',
         image: 'images/Villa_room.jpg',
@@ -97,7 +97,7 @@ module.exports = [
         id: 'charm_room_1',
         name: 'Charm #1',
         type: 'charm',
-        category: 'accommodation',
+        category: 'room',
         max_guests: 8,
         description: 'Spacious and charming room perfect for larger groups or families. Good for 8 pax.',
         image: 'images/Charm_room_1.jpg',
@@ -119,7 +119,7 @@ module.exports = [
         id: 'charm_room_2',
         name: 'Charm #2',
         type: 'charm',
-        category: 'accommodation',
+        category: 'room',
         max_guests: 4,
         description: 'Comfortable charm room perfect for small families or groups. Good for 4 pax.',
         image: 'images/Charm_room_2.jpg',
@@ -141,7 +141,7 @@ module.exports = [
         id: 'charm_room_3',
         name: 'Charm #3',
         type: 'charm',
-        category: 'accommodation',
+        category: 'room',
         max_guests: 4,
         description: 'Comfortable charm room perfect for small families or groups. Good for 4 pax.',
         image: 'images/Charm_room_3.jpg',
@@ -163,7 +163,7 @@ module.exports = [
         id: 'charm_room_4',
         name: 'Charm #4',
         type: 'charm',
-        category: 'accommodation',
+        category: 'room',
         max_guests: 4,
         description: 'Comfortable charm room perfect for small families or groups. Good for 4 pax.',
         image: 'images/Charm_room_4.jpg',
@@ -185,7 +185,7 @@ module.exports = [
         id: 'charm_room_5',
         name: 'Charm #5',
         type: 'charm',
-        category: 'accommodation',
+        category: 'room',
         max_guests: 4,
         description: 'Comfortable charm room perfect for small families or groups. Good for 4 pax.',
         image: 'images/Charm_room_5.jpg',
@@ -201,6 +201,92 @@ module.exports = [
             'CCTV Cameras', 'No corkage fee'
         ],
         notes: 'Charm guests are NOT allowed to use the private pool if it is reserved or exclusive to the other customer.',
+        extensionRate: { day: 200, night: 250 }
+    },
+    
+    // === HOME ROOMS ===
+    {
+        id: 'home_room_1',
+        name: 'Home #1',
+        type: 'home',
+        category: 'accommodation',
+        max_guests: 2,
+        description: 'Spacious and Charming. Good for 2 people',
+        image: 'images/home-room.jpg',
+        gallery: ['uploads/1769533347201-231306759.jpg', 'uploads/1769533347205-156379380.jpg'],
+        durations: [
+            { id: 'duration_12h', label: '12 Hours', hours: 12, price: 1000.00 },
+            { id: 'duration_22h', label: '22 Hours', hours: 22, price: 2000.00 }
+        ],
+        defaultDuration: 'duration_12h',
+        inclusions: [
+            'Double size bed', 'Guest kit', 'Comfort room w/Heater', 'Wifi',
+            'Free access to swimming pool'
+        ],
+        notes: 'Home guests are NOT allowed to use the private pool if it is reserved or exclusive to the other customer.',
+        extensionRate: { day: 200, night: 250 }
+    },
+    {
+        id: 'home_room_2',
+        name: 'Home #2',
+        type: 'home',
+        category: 'accommodation',
+        max_guests: 2,
+        description: 'Spacious and Charming. Good for 2 people',
+        image: 'images/home-room.jpg',
+        gallery: ['uploads/1769525268301-411676530.jpg'],
+        durations: [
+            { id: 'duration_12h', label: '12 Hours', hours: 12, price: 1000.00 },
+            { id: 'duration_22h', label: '22 Hours', hours: 22, price: 2000.00 }
+        ],
+        defaultDuration: 'duration_12h',
+        inclusions: [
+            'Double size bed', 'Guest kit', 'Comfort room w/Heater', 'Wifi',
+            'Free access to swimming pool'
+        ],
+        notes: 'Home guests are NOT allowed to use the private pool if it is reserved or exclusive to the other customer.',
+        extensionRate: { day: 200, night: 250 }
+    },
+    {
+        id: 'home_room_3',
+        name: 'Home #3',
+        type: 'home',
+        category: 'accommodation',
+        max_guests: 2,
+        description: 'Spacious and Charming. Good for 2 people',
+        image: 'images/home-room.jpg',
+        gallery: ['uploads/1769525555903-973496051.jpg'],
+        durations: [
+            { id: 'duration_12h', label: '12 Hours', hours: 12, price: 1000.00 },
+            { id: 'duration_22h', label: '22 Hours', hours: 22, price: 2000.00 }
+        ],
+        defaultDuration: 'duration_12h',
+        inclusions: [
+            'Double size bed', 'Guest kit', 'Comfort room w/Heater', 'Wifi',
+            'Free access to swimming pool'
+        ],
+        notes: 'Home guests are NOT allowed to use the private pool if it is reserved or exclusive to the other customer.',
+        extensionRate: { day: 200, night: 250 }
+    },
+    {
+        id: 'home_room_4',
+        name: 'Home #4',
+        type: 'home',
+        category: 'accommodation',
+        max_guests: 2,
+        description: 'Spacious and Charming. Good for 2 people',
+        image: 'images/home-room.jpg',
+        gallery: ['uploads/1769525680123-450256342.jpg'],
+        durations: [
+            { id: 'duration_12h', label: '12 Hours', hours: 12, price: 1000.00 },
+            { id: 'duration_22h', label: '22 Hours', hours: 22, price: 2000.00 }
+        ],
+        defaultDuration: 'duration_12h',
+        inclusions: [
+            'Double size bed', 'Guest kit', 'Comfort room w/Heater', 'Wifi',
+            'Free access to swimming pool'
+        ],
+        notes: 'Home guests are NOT allowed to use the private pool if it is reserved or exclusive to the other customer.',
         extensionRate: { day: 200, night: 250 }
     },
     
