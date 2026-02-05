@@ -300,21 +300,27 @@
                 body: JSON.stringify(data)
               });
               const result = await response.json();
-              console.log('Registration response:', result);
-              if (response.ok && (result.success === true || (result.message && result.message.toLowerCase().includes('registration successful')))) {
+              console.log('Registration response status:', response.status);
+              console.log('Registration response body:', result);
+              
+              // Check if registration was successful
+              if (response.ok && result.success === true) {
                 showModal('Registration Successful', 'Your account has been created! We\'ve sent a verification email to your inbox. Please check your email and verify your account before logging in.', 'success', {
                   onClose: () => window.location.href = 'https://mail.google.com/'
                 });
+                registrationInProgress = false;
                 return;
               } else {
-                showModal('Registration Error', result.message || 'Registration failed.', 'error');
+                // Show the actual error message from backend
+                const errorMsg = result.message || 'Registration failed. Please try again.';
+                showModal('Registration Error', errorMsg, 'error');
                 if (submitBtn) submitBtn.disabled = false;
                 registrationInProgress = false;
                 return;
               }
             } catch (err) {
               console.error('Registration fetch error:', err);
-              showModal('Registration Error', 'A server error occurred. Please try again later.', 'error');
+              showModal('Registration Error', 'A network error occurred. Please check your connection and try again.', 'error');
               if (submitBtn) submitBtn.disabled = false;
               registrationInProgress = false;
               return;

@@ -7,39 +7,12 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/admin/admin-dashboard.css">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <style>
-        /* Tab button active state */
-        .tab-button.active {
-            background-color: var(--primary-color) !important;
-            color: white !important;
-            border-color: var(--primary-color) !important;
-        }
-        .status-checked-in {
-            color: var(--primary-color);
-            font-weight: bold;
-        }
-        .status-pending {
-            color: orange;
-            font-weight: bold;
-        }
-        /* Ensure modals are hidden on load */
-        .modal:not(.show) {
-            display: none !important;
-        }
-        .modal-backdrop {
-            display: none;
-        }
         /* Enforce Admin-Only hiding */
         .admin-only {
-            display: none !important;
-        }
-        /* Hide Dining button/tab for manager */
-        .tab-button[data-target="dining-management"],
-        #dining-management,
-        .tab-button.dining-tab,
-        .dining-tab {
             display: none !important;
         }
     </style>
@@ -134,9 +107,9 @@
             <div class="footer-section about-contact">
                 <h3>About & Contact</h3>
                 <ul>
-                    <li><a href="about.html">Our Story</a></li>
-                    <li><a href="contact.html">Send Us a Message</a></li>
-                    <li><a href="help.html">Help / Guides</a></li>
+                    <li><a href="/about.html">Our Story</a></li>
+                    <li><a href="/contact.html">Send Us a Message</a></li>
+                    <li><a href="/help.html">Help / Guides</a></li>
                 </ul>
             </div>
         </div>
@@ -146,11 +119,11 @@
         </div>
     </footer>
 
-    <script src="admin-component-loader.js"></script>
-    <script src="notifications.js"></script>
-    <script src="ui-core.js"></script>
-    <script src="auth-profile.js"></script>
-    <script src="admin-system.js"></script>
+    <script src="/admin/admin-component-loader.js"></script>
+    <script src="/notifications.js"></script>
+    <script src="/ui-core.js"></script>
+    <script src="/auth-profile.js"></script>
+    <script src="/admin/admin-system.js"></script>
     <!-- customer-dashboard.js REMOVED for Manager view -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
@@ -210,9 +183,9 @@
             accountModal.classList.remove('show');
         }
         // Load shared admin actions component first
-        await adminComponentLoader.loadComponent('admin-actions.html', 'admin-actions');
+        await adminComponentLoader.loadComponent('/admin/admin-actions.html', 'admin-actions');
         // Load admin profile modal
-        await adminComponentLoader.loadComponent('admin-profile-modal.html', 'admin-profile-modal-container');
+        await adminComponentLoader.loadComponent('/admin/admin-profile-modal.html', 'admin-profile-modal-container');
         // Ensure profile modal is also hidden on load and function is available
         setTimeout(() => {
             const profileModal = document.getElementById('adminProfileModal');
@@ -229,9 +202,9 @@
         }, 100);
         // Load ONLY Manager-relevant sections
         await adminComponentLoader.loadComponents([
-            { path: 'manager-schedule.html', target: 'manager-schedule-management-container' },
-            { path: 'manager-reservations.html', target: 'dashboard-area-container' },
-            { path: 'manager-promo-codes.html', target: 'manager-promocodes-container' }
+            { path: '/manager/manager-schedule.html', target: 'manager-schedule-management-container' },
+            { path: '/manager/manager-reservations.html', target: 'dashboard-area-container' },
+            { path: '/manager/manager-promo-codes.html', target: 'manager-promocodes-container' }
         ]);
         // Wait a bit for components to render
         setTimeout(() => {
@@ -240,15 +213,12 @@
                 const el = document.getElementById(id);
                 if (el) el.classList.add('tab-pane');
             });
-            // Hide My Reservations tab and section for manager
-            const myReservationsTab = document.querySelector('.tab-button[data-target="dashboard-area"]');
-            if (myReservationsTab) {
-                myReservationsTab.style.display = 'none';
+            // Remap shared Schedule tab to manager schedule pane
+            const scheduleTab = document.querySelector('.tab-button[data-target="schedule-management"]');
+            if (scheduleTab) {
+                scheduleTab.setAttribute('data-target', 'manager-schedule-management');
             }
-            const myReservationsSection = document.getElementById('dashboard-area');
-            if (myReservationsSection) {
-                myReservationsSection.style.display = 'none';
-            }
+            // Keep Reservations tab visible for manager
             // Default show manager-schedule-management on load
             showTab('manager-schedule-management');
             // Wire up tab button clicks

@@ -30,7 +30,7 @@
     '/payment.html',
     '/feedback.html',
     '/contact.html',
-    '/admin-dashboard.html'
+    '/admin/admin-dashboard.html'
   ];
 
   /**
