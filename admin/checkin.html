@@ -28,7 +28,13 @@
 <body class="min-h-screen flex items-center justify-center p-4">
 
     <div id="app" class="w-full max-w-lg bg-white p-8 rounded-xl card">
-        <h1 class="text-3xl font-bold mb-6 text-center text-indigo-700">Guest Check-In Terminal</h1>
+        <div class="flex items-center justify-between mb-6">
+            <button onclick="goBack()" class="py-2 px-4 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition duration-150 flex items-center gap-2">
+                <span>←</span> Back
+            </button>
+            <h1 class="text-3xl font-bold text-center text-indigo-700 flex-1">Guest Check-In Terminal</h1>
+            <div style="width: 100px;"></div>
+        </div>
         
         <!-- QR Scanner Video Feed -->
         <div id="qr-reader-container" class="mb-6 w-full max-w-sm mx-auto hidden">
@@ -149,6 +155,12 @@
             // Hide the scanner divs when results are shown
             document.getElementById('qr-reader-container').classList.add('hidden');
             document.getElementById('qr-reader-results').classList.add('hidden');
+            // Stop the camera when showing results
+            scannerActive = false;
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+                videoStream = null;
+            }
             
             const resultContainer = document.getElementById('result-container');
             const statusIcon = document.getElementById('status-icon');
@@ -278,6 +290,21 @@
         let scannerActive = false;
         let videoStream = null;
 
+        function goBack() {
+            // Close the camera stream if active
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+                videoStream = null;
+            }
+            scannerActive = false;
+            // Use history.back() to go to the previous page, fallback to admin dashboard
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                window.location.href = '/admin/admin-dashboard.html';
+            }
+        }
+
         async function startQrScanner() {
             // Reset UI state for scanning
             document.getElementById('result-container').classList.add('hidden');
@@ -355,6 +382,7 @@
                         // Stop the video stream
                         if (videoStream) {
                             videoStream.getTracks().forEach(track => track.stop());
+                            videoStream = null;
                         }
                         
                         let reservationHash = code.data.trim();

@@ -964,10 +964,111 @@ window.resortServices = resortServices;
 // admin-reservations.js
 // Handles rendering of admin reservation table with receipt and actions
 
+// Store reservations data globally for expand functionality
+let reservationsData = [];
+
+function formatReservationDetails(r) {
+  // Fix receipt URL
+  const receiptCell = r.receiptFileName
+    ? `<a href="trr-backend/uploads/${r.receiptFileName}" target="_blank"><img src="trr-backend/uploads/${r.receiptFileName}" alt="Receipt" style="max-width:200px;max-height:200px;border-radius:4px;"></a>`
+    : '<span class="text-muted">No receipt uploaded</span>';
+  
+  // QR Code
+  const qrCodeHTML = `
+    <div style="text-align:center;">
+      <button class="btn btn-outline-primary btn-sm" onclick="showReservationQRModal('${r.reservationId || r._id}')">View QR Code</button>
+    </div>
+  `;
+  
+  // Financial breakdown
+  const basePrice = r.basePrice || r.finalTotal || 0;
+  const discount = r.discountValue || 0;
+  const downpayment = r.downpaymentAmount || 0;
+  const remainingBalance = r.remainingBalance || 0;
+  
+  return `
+    <div class="details-container">
+      <div class="detail-section">
+        <h6>👤 Guest Details</h6>
+        <p><strong>Name:</strong> ${escapeHtml(r.full_name || r.customer_name || 'N/A')}</p>
+        <p><strong>Email:</strong> ${escapeHtml(r.email || 'N/A')}</p>
+        <p><strong>Phone:</strong> ${escapeHtml(r.phone || r.phoneNumber || 'N/A')}</p>
+        <p><strong>Address:</strong> ${escapeHtml(r.address || 'N/A')}</p>
+      </div>
+      <div class="detail-section">
+        <h6>🏨 Service Details</h6>
+        <p><strong>Service Type:</strong> ${escapeHtml(r.serviceType || 'N/A')}</p>
+        <p><strong>Service Name:</strong> ${escapeHtml(r.serviceName || r.serviceId || 'N/A')}</p>
+        <p><strong>Duration:</strong> ${escapeHtml(r.durationLabel || r.timeSlotLabel || 'N/A')}</p>
+        <p><strong>Number of Guests:</strong> ${r.guests || r.numberOfGuests || 'N/A'}</p>
+      </div>
+      <div class="detail-section">
+        <h6>💰 Financial Breakdown</h6>
+        <p><strong>Base Price:</strong> ₱${parseFloat(basePrice).toLocaleString()}</p>
+        <p><strong>Discount Code:</strong> ${escapeHtml(r.discountCode || 'None')}</p>
+        <p><strong>Discount Value:</strong> -₱${parseFloat(discount).toLocaleString()}</p>
+        <p><strong>Final Total:</strong> <span style="font-size:1.2em;color:#28a745;">₱${parseFloat(r.finalTotal || 0).toLocaleString()}</span></p>
+        ${downpayment > 0 ? `<p><strong>Downpayment:</strong> ₱${parseFloat(downpayment).toLocaleString()}</p>` : ''}
+        ${remainingBalance > 0 ? `<p><strong>Remaining Balance:</strong> ₱${parseFloat(remainingBalance).toLocaleString()}</p>` : ''}
+        <p><strong>Payment Type:</strong> ${escapeHtml(r.paymentType || 'N/A')}</p>
+      </div>
+      <div class="detail-section">
+        <h6>💳 Payment Details</h6>
+        <p><strong>GCash Ref #:</strong> ${escapeHtml(r.gcashReferenceNumber || 'N/A')}</p>
+        <p><strong>Payment Status:</strong> ${escapeHtml(r.paymentStatus || r.status || 'N/A')}</p>
+        <div><strong>Receipt:</strong><br>${receiptCell}</div>
+      </div>
+      <div class="detail-section">
+        <h6>⏱️ Timeline</h6>
+        <p><strong>Date Booked:</strong> ${r.createdAt ? new Date(r.createdAt).toLocaleString() : 'N/A'}</p>
+        <p><strong>Check-in:</strong> ${r.check_in ? new Date(r.check_in).toLocaleString() : 'N/A'}</p>
+        <p><strong>Check-out:</strong> ${r.check_out ? new Date(r.check_out).toLocaleString() : 'N/A'}</p>
+        ${r.checkoutPerformedBy ? `<p><strong>Checked out by:</strong> ${escapeHtml(r.checkoutPerformedBy)}</p>` : ''}
+      </div>
+      <div class="detail-section">
+        <h6>🎁 Inclusions</h6>
+        ${Array.isArray(r.inclusions) && r.inclusions.length > 0 
+          ? '<ul class="mb-0">' + r.inclusions.map(inc => `<li>${escapeHtml(inc)}</li>`).join('') + '</ul>'
+          : '<p class="text-muted">No inclusions listed</p>'}
+      </div>
+      <div class="detail-section">
+        <h6>🔖 QR Code</h6>
+        ${qrCodeHTML}
+      </div>
+    </div>
+  `;
+}
+
+function toggleReservationDetails(btn, reservationId) {
+  const row = btn.closest('tr');
+  const nextRow = row.nextElementSibling;
+  
+  // If already expanded, collapse it
+  if (nextRow && nextRow.classList.contains('reservation-details-row')) {
+    nextRow.remove();
+    btn.textContent = '+';
+    btn.classList.remove('btn-danger');
+    btn.classList.add('btn-outline-primary');
+  } else {
+    // Expand: find reservation data and insert detail row
+    const reservation = reservationsData.find(res => (res._id || res.reservationId) === reservationId);
+    if (reservation) {
+      const detailHTML = formatReservationDetails(reservation);
+      const detailRow = document.createElement('tr');
+      detailRow.className = 'reservation-details-row';
+      detailRow.innerHTML = `<td colspan="7">${detailHTML}</td>`;
+      row.after(detailRow);
+      btn.textContent = '−';
+      btn.classList.remove('btn-outline-primary');
+      btn.classList.add('btn-danger');
+    }
+  }
+}
+
 async function renderAdminReservations() {
     const tbody = document.getElementById("admin-reservation-list");
     if (!tbody) return;
-    tbody.innerHTML = '<tr><td colspan="12" class="text-center">Loading reservations...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="text-center">Loading reservations...</td></tr>';
        try {
          // Fetch all reservations for admin
          const response = await fetch("http://localhost:3000/api/reservations/allreservation");
@@ -978,6 +1079,9 @@ async function renderAdminReservations() {
              res.status && res.status.toUpperCase() !== 'CART'
          );
          
+         // Store globally for expand functionality
+         reservationsData = reservations;
+         
          // Sort by check_in date - most recent first
          reservations.sort((a, b) => {
            const dateA = a.check_in ? new Date(a.check_in).getTime() : 0;
@@ -986,15 +1090,10 @@ async function renderAdminReservations() {
          });
          
          if (reservations.length === 0) {
-           tbody.innerHTML = '<tr><td colspan="12" class="text-center">No reservations found.</td></tr>';
+           tbody.innerHTML = '<tr><td colspan="7" class="text-center">No reservations found.</td></tr>';
            return;
          }
          tbody.innerHTML = reservations.map(r => {
-           // Map backend fields to table columns
-           const receiptCell = r.receiptFileName
-             ? `<a href="trr-backend/uploads/${r.receiptFileName}" target="_blank"><img src="trr-backend/uploads/${r.receiptFileName}" alt="Receipt" style="max-width:60px;max-height:60px;border-radius:4px;"></a>`
-             : '<span class="text-muted">No receipt</span>';
-           
            // Status badge styling
            let statusBadge = '';
            switch(r.status) {
@@ -1033,19 +1132,14 @@ async function renderAdminReservations() {
            }
           // Send Email button
           actions += `<button class="btn btn-info btn-sm me-1" onclick="openSendEmailModal('${r._id}', '${escapeHtml(r.email || '')}')">Send Email</button>`;
-          // QR code button
-          const qrBtn = `<button class="btn btn-outline-primary btn-sm" onclick="showReservationQRModal('${r.reservationId || r._id}')">QR Code</button>`;
+          
           return `<tr>
+            <td><button class="btn btn-sm btn-outline-primary expand-reservation-btn" onclick="toggleReservationDetails(this, '${r._id}')">+</button></td>
             <td>${r.reservationId || r._id}</td>
             <td>${escapeHtml(r.full_name || r.customer_name || '')}</td>
-            <td>${escapeHtml(r.email || '')}</td>
-            <td>${escapeHtml(r.serviceType || '')}</td>
             <td>${r.check_in ? new Date(r.check_in).toLocaleString() : ''}</td>
-            <td>${r.check_out ? new Date(r.check_out).toLocaleString() : ''}</td>
             <td>₱${parseFloat(r.finalTotal || 0).toLocaleString()}</td>
             <td>${statusBadge}</td>
-            <td>${r.gcashReferenceNumber || ''}<br>${receiptCell}</td>
-            <td>${qrBtn}</td>
             <td>${actions}</td>
           </tr>`;
         }).join("");
@@ -1063,7 +1157,7 @@ async function renderAdminReservations() {
         }, 100);
       }
     } catch (e) {
-      tbody.innerHTML = '<tr><td colspan="10" class="text-center text-danger">Error loading reservations.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Error loading reservations.</td></tr>';
     }
 // DataTable for users table
 function renderUsersListDataTable() {
@@ -1114,6 +1208,7 @@ window.renderServicesListDataTable = renderServicesListDataTable;
 
 // Expose globally
 window.renderAdminReservations = renderAdminReservations;
+window.toggleReservationDetails = toggleReservationDetails;
 
 /**
  * admin-system.js
@@ -1122,10 +1217,16 @@ window.renderAdminReservations = renderAdminReservations;
 
 // --- User Management ---
 
-async function renderUsersList() {
+// Store current view mode for users list
+let usersListViewMode = 'active'; // 'active' or 'archived'
+
+async function renderUsersList(viewMode = 'active') {
   const tbody = document.getElementById("users-table-body");
   if (!tbody) return;
 
+  // Update view mode
+  usersListViewMode = viewMode;
+  
   try {
     // Static role ID to name mapping
     const roleMap = {
@@ -1134,13 +1235,22 @@ async function renderUsersList() {
       '6911d7b841d151b05bf687c7': 'customer'
     };
 
-    const response = await fetch("http://localhost:3000/api/users", {
+    // Build query parameters based on view mode
+    const queryParam = viewMode === 'archived' ? '?archived=true' : '?archived=false';
+    
+    const response = await fetch(`http://localhost:3000/api/users${queryParam}`, {
       headers: { "Authorization": `Bearer ${getAuthToken()}` }
     });
     const users = await response.json();
     if (Array.isArray(users)) {
       // Build a map for quick lookup by ID for editing
       window._adminUsersById = {};
+      
+      if (users.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted">${viewMode === 'archived' ? 'No archived users.' : 'No active users.'}</td></tr>`;
+        return;
+      }
+      
       tbody.innerHTML = users.map(user => {
         window._adminUsersById[user._id] = user;
         // Compose full name
@@ -1149,6 +1259,21 @@ async function renderUsersList() {
         const status = user.isActive ? '<span class="badge bg-success">Active</span>' : '<span class="badge bg-secondary">Inactive</span>';
         // Role name
         const roleName = roleMap[user.role_id] || user.role_id || '';
+        
+        // Different buttons based on view mode
+        let actionButtons = '';
+        if (viewMode === 'archived') {
+          actionButtons = `<button class="btn btn-sm btn-primary" onclick="restoreUser('${user._id}', '${escapeHtml(name)}')">Restore</button>`;
+        } else {
+          actionButtons = `
+            ${user.isActive 
+              ? `<button class="btn btn-sm btn-warning" onclick="deactivateUser('${user._id}', '${escapeHtml(name)}')">Deactivate</button>`
+              : `<button class="btn btn-sm btn-success" onclick="reactivateUser('${user._id}', '${escapeHtml(name)}')">Reactivate</button>`
+            }
+            <button class="btn btn-sm btn-danger" onclick="archiveUser('${user._id}', '${escapeHtml(name)}')">Archive</button>
+          `;
+        }
+        
         return `
           <tr>
             <td>${escapeHtml(user._id)}</td>
@@ -1157,10 +1282,7 @@ async function renderUsersList() {
             <td>${escapeHtml(user.phone || '')}</td>
             <td>${escapeHtml(roleName)}</td>
             <td>${status}</td>
-            <td>
-              <button class="btn btn-sm btn-info" onclick="openEditAccountModal('${user._id}')">Edit</button>
-              <button class="btn btn-sm btn-danger" onclick="deleteUser('${user._id}')">Delete</button>
-            </td>
+            <td>${actionButtons}</td>
           </tr>
         `;
       }).join("");
@@ -1189,6 +1311,94 @@ async function deleteUser(userId) {
     }
   } catch (error) {
     showAlert("Error deleting user.", "error");
+  }
+}
+
+async function deactivateUser(userId, userName) {
+  if (!confirm(`Are you sure you want to deactivate ${userName}? They will no longer be able to log in.`)) return;
+  try {
+    const response = await fetch(`http://localhost:3000/api/auth/admin/accounts/${userId}/deactivate`, {
+      method: "PUT",
+      headers: { 
+        "Authorization": `Bearer ${getAuthToken()}`,
+        "Content-Type": "application/json"
+      }
+    });
+    if (response.ok) {
+      showAlert(`${userName} has been deactivated.`, "success");
+      renderUsersList(usersListViewMode);
+    } else {
+      showAlert("Failed to deactivate user.", "error");
+    }
+  } catch (error) {
+    showAlert("Error deactivating user.", "error");
+  }
+}
+
+async function reactivateUser(userId, userName) {
+  if (!confirm(`Are you sure you want to reactivate ${userName}?`)) return;
+  try {
+    const response = await fetch(`http://localhost:3000/api/auth/admin/accounts/${userId}/activate`, {
+      method: "PUT",
+      headers: { 
+        "Authorization": `Bearer ${getAuthToken()}`,
+        "Content-Type": "application/json"
+      }
+    });
+    if (response.ok) {
+      showAlert(`${userName} has been reactivated.`, "success");
+      renderUsersList(usersListViewMode);
+    } else {
+      showAlert("Failed to reactivate user.", "error");
+    }
+  } catch (error) {
+    showAlert("Error reactivating user.", "error");
+  }
+}
+
+async function archiveUser(userId, userName) {
+  if (!confirm(`Are you sure you want to archive ${userName}? Their data will be retained for historic records and can be restored later. They will be automatically deactivated and unable to login.`)) return;
+  try {
+    const response = await fetch(`http://localhost:3000/api/auth/admin/accounts/${userId}`, {
+      method: "PUT",
+      headers: { 
+        "Authorization": `Bearer ${getAuthToken()}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ isArchived: true, isActive: false })
+    });
+    if (response.ok) {
+      showAlert(`${userName} has been archived and moved to storage. They have been automatically deactivated and cannot login.`, "success");
+      renderUsersList(usersListViewMode);
+    } else {
+      const errorData = await response.json();
+      showAlert(errorData.message || "Failed to archive user.", "error");
+    }
+  } catch (error) {
+    showAlert("Error archiving user.", "error");
+  }
+}
+
+async function restoreUser(userId, userName) {
+  if (!confirm(`Are you sure you want to restore ${userName} from the archive?`)) return;
+  try {
+    const response = await fetch(`http://localhost:3000/api/auth/admin/accounts/${userId}`, {
+      method: "PUT",
+      headers: { 
+        "Authorization": `Bearer ${getAuthToken()}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ isArchived: false, isActive: true })
+    });
+    if (response.ok) {
+      showAlert(`${userName} has been restored from the archive and reactivated.`, "success");
+      renderUsersList(usersListViewMode);
+    } else {
+      const errorData = await response.json();
+      showAlert(errorData.message || "Failed to restore user.", "error");
+    }
+  } catch (error) {
+    showAlert("Error restoring user.", "error");
   }
 }
 
@@ -1252,6 +1462,112 @@ async function fetchAllServicesAdmin() {
   }
 }
 
+// Store services data globally for expand functionality
+let servicesData = [];
+
+function formatServiceDetails(service) {
+  // Fix image URLs
+  let mainImgUrl = service.image;
+  if (mainImgUrl && mainImgUrl.startsWith('/uploads/')) {
+    mainImgUrl = mainImgUrl.replace(/^\//, '');
+  }
+  
+  // Gallery images
+  let galleryHTML = '';
+  if (Array.isArray(service.gallery) && service.gallery.length > 0) {
+    galleryHTML = '<div class="gallery-grid">' + service.gallery.map(img => {
+      let imgUrl = img;
+      if (imgUrl && imgUrl.startsWith('/uploads/')) {
+        imgUrl = imgUrl.replace(/^\//, '');
+      }
+      return `<a href="${imgUrl}" target="_blank"><img src="${imgUrl}" alt="Gallery Image" /></a>`;
+    }).join('') + '</div>';
+  } else {
+    galleryHTML = '<p class="text-muted">No gallery images</p>';
+  }
+  
+  // Inclusions
+  let inclusionsHTML = '';
+  if (Array.isArray(service.inclusions) && service.inclusions.length > 0) {
+    inclusionsHTML = '<ul class="mb-0">' + service.inclusions.map(inc => `<li>${escapeHtml(inc)}</li>`).join('') + '</ul>';
+  } else {
+    inclusionsHTML = '<p class="text-muted">No inclusions listed</p>';
+  }
+  
+  // Durations table
+  let durationsHTML = '';
+  if (Array.isArray(service.durations) && service.durations.length > 0) {
+    durationsHTML = '<table class="table table-sm table-bordered"><thead><tr><th>Duration</th><th>Hours</th><th>Price</th></tr></thead><tbody>';
+    durationsHTML += service.durations.map(d => 
+      `<tr><td>${escapeHtml(d.label)}</td><td>${d.hours || ''}</td><td>₱${d.price ? parseFloat(d.price).toLocaleString() : ''}</td></tr>`
+    ).join('');
+    durationsHTML += '</tbody></table>';
+  } else if (Array.isArray(service.timeSlots) && service.timeSlots.length > 0) {
+    durationsHTML = '<table class="table table-sm table-bordered"><thead><tr><th>Time Slot</th><th>Price</th></tr></thead><tbody>';
+    durationsHTML += service.timeSlots.map(ts => 
+      `<tr><td>${escapeHtml(ts.label)}</td><td>₱${ts.price ? parseFloat(ts.price).toLocaleString() : ''}</td></tr>`
+    ).join('');
+    durationsHTML += '</tbody></table>';
+  } else {
+    durationsHTML = '<p class="text-muted">No durations/time slots defined</p>';
+  }
+  
+  return `
+    <div class="details-container">
+      <div class="detail-section">
+        <h6>📋 Description</h6>
+        <p>${escapeHtml(service.description || 'No description available')}</p>
+      </div>
+      <div class="detail-section">
+        <h6>🖼️ Main Image</h6>
+        ${service.image ? `<a href="${mainImgUrl}" target="_blank"><img src="${mainImgUrl}" style="max-width:100%;height:auto;border-radius:8px;" /></a>` : '<p class="text-muted">No main image</p>'}
+      </div>
+      <div class="detail-section">
+        <h6>🎨 Gallery Images</h6>
+        ${galleryHTML}
+      </div>
+      <div class="detail-section">
+        <h6>🎁 Inclusions</h6>
+        ${inclusionsHTML}
+      </div>
+      <div class="detail-section">
+        <h6>⏰ Durations & Pricing</h6>
+        ${durationsHTML}
+      </div>
+      <div class="detail-section">
+        <h6>📝 Notes</h6>
+        <p>${escapeHtml(service.notes || 'No additional notes')}</p>
+      </div>
+    </div>
+  `;
+}
+
+function toggleServiceDetails(btn, serviceId) {
+  const row = btn.closest('tr');
+  const nextRow = row.nextElementSibling;
+  
+  // If already expanded, collapse it
+  if (nextRow && nextRow.classList.contains('service-details-row')) {
+    nextRow.remove();
+    btn.textContent = '+';
+    btn.classList.remove('btn-danger');
+    btn.classList.add('btn-outline-primary');
+  } else {
+    // Expand: find service data and insert detail row
+    const service = servicesData.find(s => (s._id || s.id) === serviceId);
+    if (service) {
+      const detailHTML = formatServiceDetails(service);
+      const detailRow = document.createElement('tr');
+      detailRow.className = 'service-details-row';
+      detailRow.innerHTML = `<td colspan="8">${detailHTML}</td>`;
+      row.after(detailRow);
+      btn.textContent = '−';
+      btn.classList.remove('btn-outline-primary');
+      btn.classList.add('btn-danger');
+    }
+  }
+}
+
 async function renderServiceTable() {
   const tbody = document.getElementById("serviceTableBody");
   if (!tbody) return;
@@ -1260,48 +1576,19 @@ async function renderServiceTable() {
   // Handle both array response and {success: true, services: []} response
   const services = Array.isArray(data) ? data : (data.success && Array.isArray(data.services) ? data.services : []);
   
+  // Store globally for expand functionality
+  servicesData = services;
+  
   if (services.length > 0) {
     tbody.innerHTML = services.map(service => {
-        // Main image thumbnail (fix for local dev)
-        let mainImgUrl = service.image;
-        if (mainImgUrl && mainImgUrl.startsWith('/uploads/')) {
-          mainImgUrl = mainImgUrl.replace(/^\//, '');
-        }
-        const mainImg = service.image ? `<a href="${mainImgUrl}" target="_blank"><img src="${mainImgUrl}" style="max-width:60px;max-height:60px;object-fit:cover;" /></a>` : '';
-        // Gallery thumbnails (fix for local dev)
-        let gallery = '';
-        if (Array.isArray(service.gallery) && service.gallery.length > 0) {
-          gallery = service.gallery.map(img => {
-            let imgUrl = img;
-            if (imgUrl && imgUrl.startsWith('/uploads/')) {
-              imgUrl = imgUrl.replace(/^\//, '');
-            }
-            return `<a href="${imgUrl}" target="_blank"><img src="${imgUrl}" style="max-width:40px;max-height:40px;margin:2px;object-fit:cover;" /></a>`;
-          }).join('');
-        }
-        // Inclusions
-        const inclusions = Array.isArray(service.inclusions) ? service.inclusions.filter(Boolean).join(', ') : '';
-        // Durations/Time slots
-        let durations = '';
-        if (Array.isArray(service.durations) && service.durations.length > 0) {
-          durations = service.durations.map(d => `${escapeHtml(d.label)} (${d.hours || ''}h) ₱${d.price ? parseFloat(d.price).toLocaleString() : ''}`).join('<br>');
-        } else if (Array.isArray(service.timeSlots) && service.timeSlots.length > 0) {
-          durations = service.timeSlots.map(ts => `${escapeHtml(ts.label)} ₱${ts.price ? parseFloat(ts.price).toLocaleString() : ''}`).join('<br>');
-        }
-        // Ensure 13 columns for DataTables
         return `
           <tr>
+            <td><button class="btn btn-sm btn-outline-primary expand-service-btn" onclick="toggleServiceDetails(this, '${service._id || service.id}')">+</button></td>
             <td>${escapeHtml(service.id || service._id)}</td>
             <td>${escapeHtml(service.name)}</td>
             <td>${escapeHtml(service.type)}</td>
             <td>${escapeHtml(service.category)}</td>
             <td>${service.max_guests || ''}</td>
-            <td>${escapeHtml(service.description || '')}</td>
-            <td>${mainImg}</td>
-            <td>${gallery}</td>
-            <td>${inclusions}</td>
-            <td>${escapeHtml(service.notes || '')}</td>
-            <td>${durations}</td>
             <td>${service.isActive ? '<span class="badge bg-success">Active</span>' : '<span class="badge bg-secondary">Inactive</span>'}</td>
             <td>
               <button class="btn btn-sm btn-primary" onclick="editService('${service._id}')">Edit</button>
@@ -1314,9 +1601,12 @@ async function renderServiceTable() {
         `;
       }).join("");
     } else {
-      tbody.innerHTML = '<tr><td colspan="13" class="text-center">No services found.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" class="text-center">No services found.</td></tr>';
     }
 }
+
+// Expose functions globally
+window.toggleServiceDetails = toggleServiceDetails;
 
 
 // --- Reservation Actions ---
@@ -1434,8 +1724,13 @@ function getAuthToken() {
 }
 
 window.deleteUser = deleteUser;
+window.deactivateUser = deactivateUser;
+window.reactivateUser = reactivateUser;
+window.archiveUser = archiveUser;
+window.restoreUser = restoreUser;
 window.confirmReservation = confirmReservation;
 window.cancelReservation = cancelReservation;
 window.renderServiceTable = renderServiceTable;
+window.renderUsersList = renderUsersList;
 window.escapeHtml = escapeHtml;
 window.getAuthToken = getAuthToken;

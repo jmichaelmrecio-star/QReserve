@@ -32,6 +32,7 @@ const AccountSchema = new mongoose.Schema({
     passwordResetOTP: { type: String, select: false },
     
     isActive: { type: Boolean, default: true }, // For deactivation without deletion
+    isArchived: { type: Boolean, default: false }, // For archiving user data
     created_at: { type: Date, default: Date.now },
     updated_at: { type: Date, default: Date.now }
 });
