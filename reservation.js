@@ -81,7 +81,7 @@ function renderServiceCards(servicesOverride = null) {
     
     return `
     <div class="service-card">
-      <img src="${imageUrl}" alt="${service.name}">
+      <img src="${imageUrl}" alt="${service.name}" onclick="showGalleryModal('${service._id || service.id}')" style="cursor: pointer;">
       <div class="card-content">
         <h3>${escapeHtml(service.name)}</h3>
         <p class="price">Starts at ₱${getStartingPrice(service).toLocaleString()}</p>
@@ -243,8 +243,7 @@ async function reserveNow(event) {
 
 function isRoomCategory(service) {
   const type = (service.type || '').toLowerCase();
-  const category = (service.category || '').toLowerCase();
-  return type === 'villa' || type === 'charm' || type === 'home' || category === 'accommodation';
+  return type === 'villa' || type === 'charm' || type === 'home';
 }
 
 function isVenueCategory(service) {
@@ -302,25 +301,36 @@ function filterServices() {
   }
     
     if (typeFilter !== 'all') {
-    const normalizedType = typeFilter.toLowerCase();
-    if (normalizedType === 'home') {
-      filtered = filtered.filter(s => (s.type || '').toLowerCase() === 'home' || (s.name || '').toLowerCase().includes('home'));
-    } else if (normalizedType === 'hall') {
-      filtered = filtered.filter(s => (s.name || '').toLowerCase().includes('hall'));
-    } else if (normalizedType === 'pool') {
-      filtered = filtered.filter(s => (s.name || '').toLowerCase().includes('pool'));
-    } else {
-      filtered = filtered.filter(s => (s.type || '').toLowerCase() === normalizedType);
-    }
+        filtered = filtered.filter(s => {
+            const type = (s.type || '').toLowerCase();
+            const category = (s.category || '').toLowerCase();
+            
+            // For venue services, check category to distinguish hall vs pool
+            if (typeFilter === 'hall') {
+                return type === 'venue' && category === 'event_space';
+            }
+            if (typeFilter === 'pool') {
+                return type === 'venue' && category === 'water_facility';
+            }
+            
+            // For room types, check type directly
+            return type === typeFilter.toLowerCase();
+        });
     }
     
     if (capacityFilter > 0) {
         if (capacityFilter === 20) {
             // "20 and above" - filter for services with max_guests >= 20
-            filtered = filtered.filter(s => s.max_guests >= 20);
+            filtered = filtered.filter(s => {
+                const guests = parseInt(s.max_guests) || 0;
+                return guests >= 20;
+            });
         } else {
-            // "Up to X" - filter for services with max_guests <= capacity
-            filtered = filtered.filter(s => s.max_guests <= capacityFilter);
+            // "Up to X" - filter for services with max_guests == capacity (exact match)
+            filtered = filtered.filter(s => {
+                const guests = parseInt(s.max_guests) || 0;
+                return guests === capacityFilter;
+            });
         }
     }
     
