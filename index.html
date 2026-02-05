@@ -276,7 +276,7 @@
     (function redirectAdminUsers() {
         const userRole = sessionStorage.getItem('qreserve_user_role');
         if (userRole === 'admin' || userRole === 'manager') {
-            const dashboardPage = userRole === 'admin' ? 'admin-dashboard.html' : 'manager-dashboard.html';
+            const dashboardPage = userRole === 'admin' ? '/admin/admin-dashboard.html' : '/manager/manager-dashboard.html';
             window.location.href = dashboardPage;
         }
     })();
