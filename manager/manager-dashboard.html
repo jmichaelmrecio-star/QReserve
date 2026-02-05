@@ -18,11 +18,14 @@
     </style>
 </head>
 <body>
-    <main class="has-fixed-header-offset">
+    <header id="admin-header" style="position: sticky; top: 0; z-index: 1000; background-color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
         <!-- Shared Admin Actions Component (Navigation/Tabs) -->
-        <section id="admin-actions" class="container" style="margin-top: 20px;">
+        <section id="admin-actions" class="container" style="margin-top: 0; padding: 10px 0;">
             <!-- Component will be loaded here -->
         </section>
+    </header>
+
+    <main class="has-fixed-header-offset">
 
         <!-- Manager Sections - Loaded via Component Loader -->
         <div id="manager-schedule-management-container"></div>
