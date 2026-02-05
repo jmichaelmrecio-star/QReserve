@@ -513,10 +513,10 @@ const navLinks = {
     { text: "🛒 Cart", href: "cart.html", id: "cart-link" },
   ],
   admin: [
-    { text: "Admin Dashboard", href: "admin-dashboard.html" },
+    { text: "Admin Dashboard", href: "/admin/admin-dashboard.html" },
   ],
   manager: [
-    { text: "Manager Dashboard", href: "manager-dashboard.html" },
+    { text: "Manager Dashboard", href: "/manager/manager-dashboard.html" },
   ],
 };
 
@@ -534,11 +534,11 @@ const footerQuickLinks = {
   ],
   admin: [
     { text: "Check-in Demo", href: "checkin-demo.html" },
-    { text: "Admin Dashboard", href: "admin-dashboard.html" },
+    { text: "Admin Dashboard", href: "/admin/admin-dashboard.html" },
   ],
   manager: [
     { text: "Check-in Demo", href: "checkin-demo.html" },
-    { text: "Manager Dashboard", href: "manager-dashboard.html" },
+    { text: "Manager Dashboard", href: "/manager/manager-dashboard.html" },
   ],
 };
 
@@ -648,7 +648,7 @@ function logout() {
     showToast("Logged out successfully!", "success");
   }
   setTimeout(() => {
-    window.location.href = "index.html";
+    window.location.href = "/index.html";
   }, 1000);
 }
 

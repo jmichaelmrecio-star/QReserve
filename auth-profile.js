@@ -109,8 +109,8 @@ async function loginUser(event) {
       // Role-based redirect
       const role = result.user.role.toLowerCase();
       setTimeout(() => {
-        if (role === "admin") window.location.href = "admin-dashboard.html";
-        else if (role === "manager") window.location.href = "manager-dashboard.html";
+        if (role === "admin") window.location.href = "/admin/admin-dashboard.html";
+        else if (role === "manager") window.location.href = "/manager/manager-dashboard.html";
         else window.location.href = "index.html";
       }, 1000);
     } else {

@@ -148,9 +148,9 @@ exports.loginUser = async (req, res) => {
         
         let redirectPath = 'customer-dashboard.html';
         if (userRole === 'Admin') {
-            redirectPath = 'admin-dashboard.html';
+            redirectPath = 'admin/admin-dashboard.html';
         } else if (userRole === 'Manager') {
-            redirectPath = 'manager-dashboard.html';
+            redirectPath = 'manager/manager-dashboard.html';
         }
         // ----------------------------------------------------------------------
         
