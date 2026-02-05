@@ -3,10 +3,10 @@
     <div class="card p-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2 class="mb-0">Reservation Management</h2>
-            <button id="report-button" class="btn btn-primary btn-sm" style="min-width:110px;max-width:150px;">Report</button>
+            <button id="report-button" class="btn btn-primary btn-sm" style="min-width:110px;max-width:150px;">Generate Report</button>
         <!-- Report Generation Modal -->
         <div class="modal fade" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
                 <div class="modal-content" style="border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
                     <div class="modal-header" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; border-top-left-radius: 12px; border-top-right-radius: 12px;">
                         <h5 class="modal-title w-100 text-center" id="reportModalLabel" style="font-weight: 600;">Generate Reservation Report</h5>
@@ -22,8 +22,37 @@
                                 <label for="reportEndDate" class="form-label" style="font-weight: 500; color: #495057;">End Date</label>
                                 <input type="date" class="form-control" id="reportEndDate" required style="padding: 0.75rem; border-radius: 8px; border: 2px solid #e0e0e0; transition: all 0.3s;">
                             </div>
+                            <div class="mb-4">
+                                <label class="form-label" style="font-weight: 500; color: #495057; display: block; margin-bottom: 0.75rem;">Filter by Service Type (Optional)</label>
+                                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="serviceTypeFilter" id="filterAllServices" value="all" checked>
+                                        <label class="form-check-label" for="filterAllServices" style="font-size: 0.95rem;">All Services</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="serviceTypeFilter" id="filterCharm" value="charm">
+                                        <label class="form-check-label" for="filterCharm" style="font-size: 0.95rem;">Charm</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="serviceTypeFilter" id="filterVilla" value="villa">
+                                        <label class="form-check-label" for="filterVilla" style="font-size: 0.95rem;">Villa</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="serviceTypeFilter" id="filterHome" value="home">
+                                        <label class="form-check-label" for="filterHome" style="font-size: 0.95rem;">Home</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="serviceTypeFilter" id="filterVenue" value="venue">
+                                        <label class="form-check-label" for="filterVenue" style="font-size: 0.95rem;">Venue</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="serviceTypeFilter" id="filterPool" value="pool">
+                                        <label class="form-check-label" for="filterPool" style="font-size: 0.95rem;">Pool</label>
+                                    </div>
+                                </div>
+                            </div>
                             <div id="reportStatus" class="mb-3"></div>
-                            <button type="submit" class="btn btn-success w-100" style="padding: 0.75rem; font-weight: 600; border-radius: 8px; font-size: 1rem;">Generate CSV</button>
+                            <button type="submit" class="btn btn-success w-100" style="padding: 0.75rem; font-weight: 600; border-radius: 8px; font-size: 1rem;">Generate PDF Report</button>
                         </form>
                     </div>
                 </div>
@@ -32,24 +61,20 @@
         </div>
 
         <div class="table-responsive">
-            <table class="table table-striped table-hover">
+            <table id="admin-reservations-table" class="table table-striped table-hover">
                 <thead class="table-dark">
                     <tr>
+                        <th style="width:50px;"></th>
                         <th>ID</th>
                         <th>Customer</th>
-                        <th>Email</th>
-                        <th>Service-type</th>
                         <th>Check-in Date</th>
-                        <th>Check-out Date</th>
                         <th>Total Amount</th>
                         <th>Status</th>
-                        <th>GCash Ref #</th>
-                        <th>QR Code</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="admin-reservation-list">
-                    <tr><td colspan="12" class="text-center">Loading reservations...</td></tr>
+                    <tr><td colspan="7" class="text-center">Loading reservations...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -130,6 +155,7 @@
             e.preventDefault();
             let startDate = document.getElementById('reportStartDate').value.trim();
             let endDate = document.getElementById('reportEndDate').value.trim();
+            const serviceTypeFilter = document.querySelector('input[name="serviceTypeFilter"]:checked').value;
             const statusDiv = document.getElementById('reportStatus');
             statusDiv.innerHTML = '';
             
@@ -142,85 +168,74 @@
                 return;
             }
             
-            statusDiv.innerHTML = '<div class="alert alert-info">Generating report...</div>';
-            console.log('Report request - Start Date:', startDate, 'End Date:', endDate);
+            statusDiv.innerHTML = '<div class="alert alert-info">Generating PDF report...</div>';
+            console.log('Report request - Start Date:', startDate, 'End Date:', endDate, 'Service Type:', serviceTypeFilter);
             
             try {
-                const response = await fetch(`http://localhost:3000/api/reservations/admin/reports/generate?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`);
+                // Get user info from session storage
+                const loggedInUserStr = sessionStorage.getItem('loggedInUser');
+                let userName = 'Unknown User';
+                let userEmail = 'Unknown Email';
+                
+                if (loggedInUserStr) {
+                    try {
+                        const loggedInUser = JSON.parse(loggedInUserStr);
+                        const fullName = [loggedInUser.first_name, loggedInUser.middle_name, loggedInUser.last_name]
+                            .filter(Boolean)
+                            .join(' ')
+                            .trim();
+                        userName = fullName || loggedInUser.email || 'Unknown User';
+                        userEmail = loggedInUser.email || 'Unknown Email';
+                    } catch (e) {
+                        console.error('Error parsing loggedInUser:', e);
+                    }
+                }
+                
+                // Build query parameters
+                const params = new URLSearchParams({
+                    startDate: startDate,
+                    endDate: endDate,
+                    serviceType: serviceTypeFilter !== 'all' ? serviceTypeFilter : '',
+                    generatedBy: userName
+                });
+                
+                const response = await fetch(`http://localhost:3000/api/reservations/admin/reports/generate?${params.toString()}`, {
+                    headers: {
+                        'Authorization': `Bearer ${typeof getAuthToken === 'function' ? getAuthToken() : ''}`
+                    }
+                });
                 console.log('Report API Response Status:', response.status);
                 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 
-                const data = await response.json();
-                console.log('Report data received:', data);
+                // Get PDF as blob
+                const blob = await response.blob();
                 
-                if (data.success && data.report) {
-                    const report = data.report;
-                    
-                    // Build comprehensive CSV content
-                    let csvContent = '';
-                    
-                    // Header section
-                    csvContent += '=== TITO RENZ RESORT RESERVATION REPORT ===\n';
-                    csvContent += `Report Period,${startDate} to ${endDate}\n`;
-                    csvContent += `Generated On,${new Date().toLocaleString()}\n`;
-                    csvContent += '\n';
-                    
-                    // Summary section
-                    csvContent += '=== SUMMARY ===\n';
-                    csvContent += `Total Reservations,${report.totalReservations}\n`;
-                    csvContent += `Total Income,PHP ${report.totalIncome.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n`;
-                    csvContent += '\n';
-                    
-                    // Service breakdown section
-                    if (report.serviceBreakdown && Object.keys(report.serviceBreakdown).length > 0) {
-                        csvContent += '=== BREAKDOWN BY SERVICE TYPE ===\n';
-                        csvContent += 'Service Type,Reservations,Revenue\n';
-                        for (const [serviceType, data] of Object.entries(report.serviceBreakdown)) {
-                            csvContent += `${serviceType},${data.count},PHP ${data.revenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n`;
-                        }
-                        csvContent += '\n';
-                    }
-                    
-                    // Detailed reservations section
-                    if (report.detailedReservations && report.detailedReservations.length > 0) {
-                        csvContent += '=== DETAILED RESERVATION LIST ===\n';
-                        csvContent += 'Reservation ID,Customer Name,Email,Service Type,Check-in,Check-out,Guests,Base Price,Discount,Final Total,Status,GCash Ref,Date Created\n';
-                        
-                        report.detailedReservations.forEach(res => {
-                            csvContent += `${res.reservationId},"${res.customerName}",${res.email},${res.serviceType},${res.checkIn},${res.checkOut},${res.guests},PHP ${res.basePrice.toLocaleString('en-US')},PHP ${res.discount.toLocaleString('en-US')},PHP ${res.finalTotal.toLocaleString('en-US')},${res.status},${res.gcashRef},${res.dateCreated}\n`;
-                        });
-                    }
-                    
-                    // Create and download CSV
-                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `tito_renz_reservation_report_${startDate}_to_${endDate}.csv`;
-                    a.style.display = 'none';
-                    document.body.appendChild(a);
-                    a.click();
-                    
-                    // Cleanup
-                    setTimeout(() => {
-                        document.body.removeChild(a);
-                        URL.revokeObjectURL(url);
-                    }, 100);
-                    
-                    statusDiv.innerHTML = `<div class="alert alert-success"><strong>Success!</strong> Report generated with ${report.totalReservations} reservation(s) and downloaded.</div>`;
-                    
-                    // Auto-close modal after 2 seconds
-                    setTimeout(() => {
-                        const reportModal = bootstrap.Modal.getInstance(document.getElementById('reportModal'));
-                        if (reportModal) reportModal.hide();
-                    }, 2000);
-                    
-                } else {
-                    statusDiv.innerHTML = `<div class="alert alert-danger">${data.message || 'Failed to generate report.'}</div>`;
-                }
+                // Create download link and trigger download
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `tito_renz_reservation_report_${startDate}_to_${endDate}.pdf`;
+                a.style.display = 'none';
+                document.body.appendChild(a);
+                a.click();
+                
+                // Cleanup
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }, 100);
+                
+                statusDiv.innerHTML = `<div class="alert alert-success"><strong>Success!</strong> PDF report generated and downloaded.</div>`;
+                
+                // Auto-close modal after 2 seconds
+                setTimeout(() => {
+                    const reportModal = bootstrap.Modal.getInstance(document.getElementById('reportModal'));
+                    if (reportModal) reportModal.hide();
+                }, 2000);
+                
             } catch (err) {
                 console.error('Report generation error:', err);
                 statusDiv.innerHTML = `<div class="alert alert-danger"><strong>Error:</strong> ${err.message || 'Failed to generate report. Please try again.'}</div>`;

@@ -127,9 +127,26 @@ app.get('/api/users', async (req, res) => {
     // to verify the user making this request is authenticated and has an 'Admin' or 'Manager' role.
 
     try {
-        // Find ALL users, but explicitly exclude the sensitive 'password' field.
+        // Support filtering by archived status via query parameter
+        // ?archived=true returns only archived users
+        // ?archived=false returns only non-archived users (including old records without isArchived field)
+        // no parameter returns all users
+        const { archived } = req.query;
+        
+        let query = {};
+        if (archived === 'true') {
+            query.isArchived = true;
+        } else if (archived === 'false') {
+            // Match records where isArchived is false OR the field doesn't exist (legacy records)
+            query.$or = [
+                { isArchived: false },
+                { isArchived: { $exists: false } }
+            ];
+        }
+        
+        // Find users matching the query, but explicitly exclude the sensitive 'password' field.
         // We also want to select the role_id, which we will use to find the role name on the frontend
-        const users = await Account.find().select('-password'); 
+        const users = await Account.find(query).select('-password'); 
         
         res.status(200).json(users);
         
