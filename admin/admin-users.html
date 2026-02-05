@@ -5,6 +5,18 @@
             <h2 class="mb-2">Admin: User Accounts Management</h2>
             <p class="text-muted mb-3">List of all accounts registered in the database. Use this section to manage roles and accounts.</p>
             
+            <!-- View Mode Toggle -->
+            <div class="mb-3">
+                <div class="btn-group" role="group" aria-label="User view mode">
+                    <button type="button" class="btn btn-outline-primary active" id="view-active-users" onclick="renderUsersList('active')">
+                        👤 Active Users
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" id="view-archived-users" onclick="renderUsersList('archived')">
+                        📦 Archived Users
+                    </button>
+                </div>
+            </div>
+            
             <!-- Role Capabilities Reference -->
             <details class="mt-3">
                 <summary class="fw-semibold text-primary" style="cursor: pointer;">
@@ -68,7 +80,7 @@
 // Initialize user management when component loads
 (function initUserManagement() {
     if (typeof renderUsersList === 'function') {
-        renderUsersList();
+        renderUsersList('active');
         if (typeof renderUsersListDataTable === 'function') {
             setTimeout(() => renderUsersListDataTable(), 200);
         }
@@ -82,6 +94,34 @@
     const accountForm = document.getElementById('accountForm');
     if (accountForm && typeof handleAccountFormSubmit === 'function') {
         accountForm.addEventListener('submit', handleAccountFormSubmit);
+    }
+    
+    // Add click handlers for view mode toggle
+    const viewActiveBtn = document.getElementById('view-active-users');
+    const viewArchivedBtn = document.getElementById('view-archived-users');
+    
+    if (viewActiveBtn) {
+        viewActiveBtn.addEventListener('click', function() {
+            viewActiveBtn.classList.add('active');
+            viewActiveBtn.classList.remove('btn-outline-primary');
+            viewActiveBtn.classList.add('btn-primary');
+            viewArchivedBtn.classList.remove('active');
+            viewArchivedBtn.classList.remove('btn-secondary');
+            viewArchivedBtn.classList.add('btn-outline-secondary');
+            renderUsersList('active');
+        });
+    }
+    
+    if (viewArchivedBtn) {
+        viewArchivedBtn.addEventListener('click', function() {
+            viewArchivedBtn.classList.add('active');
+            viewArchivedBtn.classList.remove('btn-outline-secondary');
+            viewArchivedBtn.classList.add('btn-secondary');
+            viewActiveBtn.classList.remove('active');
+            viewActiveBtn.classList.remove('btn-primary');
+            viewActiveBtn.classList.add('btn-outline-primary');
+            renderUsersList('archived');
+        });
     }
 })();
 </script>

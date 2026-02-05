@@ -270,7 +270,7 @@ exports.createAccountAsAdmin = async (req, res) => {
 exports.updateAccountAsAdmin = async (req, res) => {
     try {
         const { userId } = req.params;
-        const { first_name, middle_name, last_name, email, phone, role_id, password } = req.body;
+        const { first_name, middle_name, last_name, email, phone, role_id, password, isActive, isArchived } = req.body;
 
         // Find the account
         const user = await Account.findById(userId);
@@ -286,6 +286,8 @@ exports.updateAccountAsAdmin = async (req, res) => {
         if (phone) user.phone = phone;
         if (role_id) user.role_id = role_id;
         if (password) user.password = password; // Will be hashed by pre-save hook
+        if (isActive !== undefined) user.isActive = isActive;
+        if (isArchived !== undefined) user.isArchived = isArchived;
 
         await user.save();
 
@@ -300,7 +302,8 @@ exports.updateAccountAsAdmin = async (req, res) => {
                 email: user.email,
                 phone: user.phone,
                 role_id: user.role_id,
-                isActive: user.isActive
+                isActive: user.isActive,
+                isArchived: user.isArchived
             }
         });
 
