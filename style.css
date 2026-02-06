@@ -400,8 +400,6 @@ main.services-parallax {
   max-width: none;
   width: 100vw;
   margin: 0;
-  margin-left: calc(50% - 50vw);
-  margin-right: calc(50% - 50vw);
   padding-top: var(--header-offset);
   padding-bottom: 0;
   padding-left: 0;
@@ -415,7 +413,7 @@ main.services-parallax {
 }
 
 .services-parallax-inner {
-  max-width: 1100px;
+  max-width: 1500px;
   margin: 0 auto;
   padding: 0 var(--spacing);
   position: relative;
