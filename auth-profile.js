@@ -36,6 +36,33 @@ function updatePasswordStrength() {
   strengthMeter.value = metCount;
   strengthText.textContent = `Strength: ${strength}`;
 
+  // Set color based on password strength
+  let strengthColor = "#999"; // Default gray
+  if (strength === "Very Weak") strengthColor = "#dc3545"; // Red
+  else if (strength === "Weak") strengthColor = "#fd7e14"; // Orange
+  else if (strength === "Medium") strengthColor = "#ffc107"; // Yellow
+  else if (strength === "Strong") strengthColor = "#28a745"; // Green
+  
+  strengthText.style.color = strengthColor;
+
+  // Color the strength bars based on strength level
+  const bars = document.querySelectorAll(".strength-bar");
+  let barColor = "#999"; // Default gray for empty bars
+  if (metCount > 0) {
+    if (strength === "Very Weak") barColor = "#dc3545"; // Red
+    else if (strength === "Weak") barColor = "#fd7e14"; // Orange
+    else if (strength === "Medium") barColor = "#ffc107"; // Yellow
+    else if (strength === "Strong") barColor = "#28a745"; // Green
+  }
+  
+  bars.forEach((bar, index) => {
+    if (index < metCount) {
+      bar.style.backgroundColor = barColor;
+    } else {
+      bar.style.backgroundColor = "#e0e0e0"; // Light gray for unfilled bars
+    }
+  });
+
   // Update requirement color indicators if they exist
   Object.keys(requirements).forEach(req => {
     const el = document.getElementById(`req-${req}`);
@@ -43,6 +70,19 @@ function updatePasswordStrength() {
       el.style.color = requirements[req] ? "var(--success-color)" : "var(--danger-color)";
     }
   });
+
+  const registerForm = document.getElementById("registerForm");
+  if (registerForm && passwordInput.id === "registerPassword") {
+    const message = "Password Requirements:\nAt least 8 characters\nAn uppercase letter\nA lowercase letter\nA number\nA special character";
+    if (strength !== "Strong") {
+      passwordInput.setCustomValidity(message);
+    } else {
+      passwordInput.setCustomValidity("");
+    }
+    if (password.length > 0) {
+      passwordInput.reportValidity();
+    }
+  }
 }
 
 function checkPasswordMatch() {
@@ -54,12 +94,19 @@ function checkPasswordMatch() {
 
   if (confirm.value === "") {
     matchMsg.textContent = "";
+    confirm.setCustomValidity("");
   } else if (password.value === confirm.value) {
     matchMsg.textContent = "✓ Passwords match";
     matchMsg.style.color = "var(--success-color)";
+    confirm.setCustomValidity("");
   } else {
     matchMsg.textContent = "✗ Passwords do not match";
     matchMsg.style.color = "var(--danger-color)";
+    confirm.setCustomValidity("Passwords do not match");
+  }
+
+  if (confirm.value !== "") {
+    confirm.reportValidity();
   }
 }
 
