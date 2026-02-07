@@ -31,6 +31,11 @@
 		<div class="reserve-parallax-inner">
 				<form id="reservationForm">
 
+				<!-- MODE DETECTION FOR DUAL-FLOW SUPPORT (OPTION A) -->
+				<input type="hidden" id="reservationMode" value="single-service">
+
+				<!-- SINGLE-SERVICE FLOW SECTION -->
+				<div id="singleServiceSection">
 	        	<input type="hidden" id="serviceIdInput" name="serviceId" value="">
 				<input type="hidden" id="serviceTypeInput" name="serviceType" value="">
 	        	<fieldset>
@@ -97,6 +102,52 @@
 					    <textarea id="notes" name="customer_notes" rows="3"></textarea>
 					</fieldset>
 				</div>
+				</div>
+				<!-- END SINGLE-SERVICE FLOW SECTION -->
+
+				<!-- MULTI-AMENITY FLOW SECTION -->
+				<div id="multiAmenitySection" style="display: none;">
+					<fieldset style="margin-bottom: 2rem;">
+						<legend>1. Selected Amenities</legend>
+						<p style="margin-bottom: 1rem; color: #666;">You have selected <span id="amenityCountDisplay">0</span> item(s):</p>
+						
+						<div style="overflow-x: auto;">
+							<table style="width: 100%; border-collapse: collapse; font-size: 0.95rem;">
+								<thead>
+									<tr style="background-color: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+										<th style="padding: 12px; text-align: left; font-weight: 600;">Service Name</th>
+										<th style="padding: 12px; text-align: left; font-weight: 600;">Duration</th>
+										<th style="padding: 12px; text-align: center; font-weight: 600;">Check-In</th>
+										<th style="padding: 12px; text-align: center; font-weight: 600;">Check-Out</th>
+										<th style="padding: 12px; text-align: right; font-weight: 600;">Price</th>
+									</tr>
+								</thead>
+								<tbody id="multiAmenityTableBody">
+									<!-- Populated by JavaScript -->
+								</tbody>
+							</table>
+						</div>
+					</fieldset>
+
+					<!-- Multi-Amenity Guest Details -->
+					<fieldset>
+						<legend>2. Your Contact & Personal Details</legend>
+
+						<label for="nameMulti">Full Name:</label>
+						<input type="text" id="nameMulti" name="customer_name" required readonly>
+						<label for="contactMulti">Contact Number:</label>
+						<input type="tel" id="contactMulti" name="customer_contact" required>
+
+						<label for="emailMulti">Email Address:</label>
+						<input type="email" id="emailMulti" name="customer_email" required readonly>
+						<label for="addressMulti">Residential Address (For Record):</label>
+						<input type="text" id="addressMulti" name="customer_address" required>
+
+						<label for="notesMulti">Special Requests / Notes (Optional):</label>
+						<textarea id="notesMulti" name="customer_notes" rows="3"></textarea>
+					</fieldset>
+				</div>
+				<!-- END MULTI-AMENITY FLOW SECTION -->
 
 	            <!-- Price Summary & Promo Code Area -->
 	            <div id="price-summary" class="summary-box">
@@ -113,6 +164,15 @@
 				    <hr>
 
 				    <div id="summary-details">
+						<div id="singleServiceSummary">
+							<!-- Single-service pricing shows here -->
+						</div>
+						<div id="multiAmenitySummary" style="display: none;">
+							<div class="summary-detail-row">
+								<span class="summary-detail-label">Number of Items:</span>
+								<span class="summary-detail-value" id="summaryAmenityCount">0</span>
+							</div>
+						</div>
 				        </div>
 				    
 				    <hr>
@@ -168,8 +228,7 @@
 				<input type="hidden" id="discountValueInput" name="discountValue" value="0" />
 				<div style="display: flex; gap: 1rem; flex-wrap: wrap;">
 					<button type="button" class="button-secondary" id="viewSummaryBtn" style="flex: 1;">View Reservation Summary</button>
-					<button type="button" class="button-primary" id="addToCartBtn" style="flex: 1;">🛒 Add to Cart</button>
-					<button type="submit" class="button-primary" >Confirm & Submit Reservation</button>
+					<button type="button" class="button-primary" id="submitReservationBtn" style="flex: 1;">Submit Reservation & Pay</button>
 				</div>
 				</form>
 			</section>
@@ -288,7 +347,7 @@
 	<script src="notifications.js"></script>
 	<script src="ui-core.js"></script>
 	<script src="auth-profile.js"></script>
-	<script src="cart-system.js"></script>
+	<!-- cart-system.js removed - functionality integrated into other files -->
 	<script src="reservation.js"></script>
 
 		<script>
@@ -428,6 +487,149 @@
 				option.textContent = `${opt.label} - ₱${opt.price.toLocaleString()}`;
 				durationSelect.appendChild(option);
 			});
+		}
+
+		// --- MODE DETECTION FOR DUAL-FLOW SUPPORT (OPTION A) ---
+
+		function detectReservationMode() {
+		    const urlParams = new URLSearchParams(window.location.search);
+		    const mode = urlParams.get('mode') || 'single-service';
+		    document.getElementById('reservationMode').value = mode;
+		    return mode;
+		}
+
+		function initializeReservationMode(mode) {
+		    const singleServiceSection = document.getElementById('singleServiceSection');
+		    const multiAmenitySection = document.getElementById('multiAmenitySection');
+		    
+		    if (mode === 'multi-amenity') {
+		        // MULTI-AMENITY MODE
+		        singleServiceSection.style.display = 'none';
+		        multiAmenitySection.style.display = 'block';
+		        
+		        // Load multi-amenity data from sessionStorage
+		        const multiAmenityReservation = JSON.parse(
+		            sessionStorage.getItem('multiAmenityReservation') || 'null'
+		        );
+		        
+		        if (multiAmenityReservation && multiAmenityReservation.amenities) {
+		            populateMultiAmenityTable(multiAmenityReservation.amenities);
+		            populateMultiAmenityPricing(multiAmenityReservation);
+		            prefillMultiAmenityUserData();
+		        }
+		    } else {
+		        // SINGLE-SERVICE MODE (DEFAULT/FALLBACK)
+		        singleServiceSection.style.display = 'block';
+		        multiAmenitySection.style.display = 'none';
+		    }
+		}
+
+		function populateMultiAmenityTable(amenities) {
+		    const tbody = document.getElementById('multiAmenityTableBody');
+		    tbody.innerHTML = ''; // Clear existing rows
+		    
+		    amenities.forEach((amenity, index) => {
+		        const row = document.createElement('tr');
+		        row.style.borderBottom = '1px solid #dee2e6';
+		        
+		        // Format check-in/out times
+		        const checkInTime = amenity.checkInTime ? 
+		            formatTime24To12(parseInt(amenity.checkInTime)) : 'N/A';
+		        const checkOutTime = amenity.checkOutTime || 'N/A';
+		        
+		        // Format dates
+		        const checkInDate = amenity.checkIn ? new Date(amenity.checkIn).toLocaleDateString('en-US', {
+		            month: 'short', day: 'numeric', year: 'numeric'
+		        }) : 'N/A';
+		        const checkOutDate = amenity.checkOut ? new Date(amenity.checkOut).toLocaleDateString('en-US', {
+		            month: 'short', day: 'numeric', year: 'numeric'
+		        }) : 'N/A';
+		        
+		        row.innerHTML = `
+		            <td style="padding: 12px; vertical-align: middle;">${amenity.serviceName || 'Unknown'}</td>
+		            <td style="padding: 12px; vertical-align: middle;">${amenity.durationLabel || 'N/A'}</td>
+		            <td style="padding: 12px; text-align: center; vertical-align: middle;">
+		                <div style="font-size: 0.85rem; color: #666;">${checkInDate}</div>
+		                <div style="font-weight: 500;">${checkInTime}</div>
+		            </td>
+		            <td style="padding: 12px; text-align: center; vertical-align: middle;">
+		                <div style="font-size: 0.85rem; color: #666;">${checkOutDate}</div>
+		                <div style="font-weight: 500;">${checkOutTime}</div>
+		            </td>
+		            <td style="padding: 12px; text-align: right; vertical-align: middle; font-weight: 600;">
+		                ₱${(amenity.price || 0).toLocaleString('en-PH', {minimumFractionDigits: 2})}
+		            </td>
+		        `;
+		        
+		        tbody.appendChild(row);
+		    });
+		    
+		    // Update amenity count
+		    document.getElementById('amenityCountDisplay').textContent = amenities.length;
+		    document.getElementById('summaryAmenityCount').textContent = amenities.length;
+		}
+
+		function populateMultiAmenityPricing(multiAmenityReservation) {
+		    // Calculate and display pricing
+		    const originalTotal = multiAmenityReservation.originalTotal || 0;
+		    const appliedPromo = multiAmenityReservation.appliedPromo;
+		    let finalTotal = originalTotal;
+		    let discountAmount = 0;
+		    
+		    if (appliedPromo && appliedPromo.discountAmount) {
+		        discountAmount = appliedPromo.discountAmount;
+		        finalTotal = originalTotal - discountAmount;
+		    }
+		    
+		    // Update price display
+		    document.getElementById('basePriceDisplay').textContent = 
+		        originalTotal.toLocaleString('en-PH', {minimumFractionDigits: 2});
+		    document.getElementById('discountDisplay').textContent = 
+		        discountAmount.toLocaleString('en-PH', {minimumFractionDigits: 2});
+		    document.getElementById('finalTotalDisplay').textContent = 
+		        finalTotal.toLocaleString('en-PH', {minimumFractionDigits: 2});
+		    
+		    // Show/hide discount row
+		    const discountRow = document.getElementById('discountRow');
+		    if (discountAmount > 0) {
+		        discountRow.style.display = 'block';
+		    } else {
+		        discountRow.style.display = 'none';
+		    }
+		    
+		    // Update hidden inputs
+		    document.getElementById('basePriceInput').value = originalTotal;
+		    document.getElementById('finalTotalInput').value = finalTotal;
+		    document.getElementById('discountValueInput').value = discountAmount;
+		    
+		    if (appliedPromo) {
+		        document.getElementById('discountCodeInput').value = appliedPromo.code || '';
+		    }
+		}
+
+		function formatTime24To12(hour24) {
+		    const hour = parseInt(hour24);
+		    const ampm = hour >= 12 ? 'PM' : 'AM';
+		    const hour12 = hour % 12 || 12;
+		    return `${hour12}:00 ${ampm}`;
+		}
+
+		function prefillMultiAmenityUserData() {
+		    const user = (typeof getLoggedInUser === 'function') ? getLoggedInUser() : null;
+		    if (user) {
+		        if (user.full_name) {
+		            document.getElementById('nameMulti').value = user.full_name;
+		        }
+		        if (user.phone) {
+		            document.getElementById('contactMulti').value = user.phone;
+		        }
+		        if (user.email) {
+		            document.getElementById('emailMulti').value = user.email;
+		        }
+		        if (user.address) {
+		            document.getElementById('addressMulti').value = user.address;
+		        }
+		    }
 		}
 
 		document.addEventListener('DOMContentLoaded', function() {
@@ -973,8 +1175,12 @@
 	    initializeUnsavedChangesTracking('reservationForm');
 	    attachNavigationListeners();
 	    
+	    // MODE DETECTION FOR DUAL-FLOW SUPPORT
+	    const mode = detectReservationMode();
+	    initializeReservationMode(mode);
+	    
 	    const viewSummaryBtn = document.getElementById('viewSummaryBtn');
-	    const addToCartBtn = document.getElementById('addToCartBtn');
+	    const submitReservationBtn = document.getElementById('submitReservationBtn');
 	    const summaryModal = document.getElementById('reservationSummaryModal');
 
 	    viewSummaryBtn.addEventListener('click', function(e) {
@@ -983,11 +1189,11 @@
 	        summaryModal.style.display = 'flex';
 	    });
 
-	    // Add to Cart button handler
-	    if (addToCartBtn) {
-	        addToCartBtn.addEventListener('click', function(e) {
+	    // Submit Reservation button handler
+	    if (submitReservationBtn) {
+	        submitReservationBtn.addEventListener('click', function(e) {
 	            e.preventDefault();
-	            addToCartHandler();
+	            submitReservationHandler();
 	        });
 	    }
 
@@ -999,28 +1205,22 @@
 	    });
 	});
 
-	// Handler for Add to Cart button
-	async function addToCartHandler() {
-		// Call prepareAddToCartData to mark data as added and prevent unsaved changes warning
-		prepareAddToCartData();
+	// Handler for Submit Reservation button - DUAL-MODE SUPPORT (OPTION A)
+	async function submitReservationHandler() {
+		const currentMode = document.getElementById('reservationMode').value;
 		
-		// Try to get from sessionStorage, fallback to form fields if missing
-		// Always update hidden price fields from visible display before validation
-		const basePriceDisplay = document.getElementById('basePriceDisplay')?.textContent?.replace(/[^\d.]/g, '') || '';
-		const finalTotalDisplay = document.getElementById('finalTotalDisplay')?.textContent?.replace(/[^\d.]/g, '') || '';
-		if (document.getElementById('basePriceInput')) document.getElementById('basePriceInput').value = basePriceDisplay;
-		if (document.getElementById('finalTotalInput')) document.getElementById('finalTotalInput').value = finalTotalDisplay;
-
-		let serviceId = sessionStorage.getItem('selectedServiceId') || document.getElementById('serviceIdInput')?.value;
-		let serviceName = sessionStorage.getItem('selectedServiceName') || document.getElementById('selectedServiceDisplay')?.textContent;
-		let serviceType = sessionStorage.getItem('selectedServiceType') || document.getElementById('serviceTypeInput')?.value;
-		let durationId = sessionStorage.getItem('selectedDuration') || document.getElementById('duration-selector')?.value;
-		let durationLabel = sessionStorage.getItem('selectedDurationLabel');
-		let price = parseFloat(finalTotalDisplay);
-		if (!price || price <= 0) {
-			// Try to get from hidden input as fallback
-			price = parseFloat(document.getElementById('finalTotalInput')?.value) || 0;
+		if (currentMode === 'multi-amenity') {
+			await submitMultiAmenityReservation();
+		} else {
+			await submitSingleServiceReservation();
 		}
+	}
+
+	// Single-Service Reservation Submission
+	async function submitSingleServiceReservation() {
+		// Validate all form fields
+		const serviceId = sessionStorage.getItem('selectedServiceId') || document.getElementById('serviceIdInput')?.value;
+		const serviceName = sessionStorage.getItem('selectedServiceName') || document.getElementById('selectedServiceDisplay')?.textContent;
 		const checkIn = document.getElementById('checkin')?.value;
 		const checkOut = document.getElementById('checkout')?.value;
 		const guests = document.getElementById('guests')?.value;
@@ -1031,94 +1231,185 @@
 		if (!checkIn) missingFields.push('Check-in date');
 		if (!checkOut) missingFields.push('Check-out date');
 		if (!guests) missingFields.push('Number of guests');
-		if (!price || price <= 0) missingFields.push('Valid price/total');
 
 		if (missingFields.length > 0) {
 			const list = missingFields.map(f => `<li>${f}</li>`).join('');
 			showModal('Incomplete Details', 
-				`<p>Please complete the following required field(s) before adding to cart:</p><ul>${list}</ul>`, 
+				`<p>Please complete the following required field(s) before submitting:</p><ul>${list}</ul>`, 
 				'warning');
 			return;
 		}
 
-		// 1. Check for duplicate reservation/cart item before adding
-		const token = localStorage.getItem('token'); // Get JWT token stored during login
-		console.log('🔍 DEBUG: Token from localStorage:', token);
-		console.log('🔍 DEBUG: User email:', localStorage.getItem('qreserve_logged_user_email'));
-		console.log('🔍 DEBUG: All localStorage keys:', Object.keys(localStorage).filter(k => k.includes('qreserve')));
-		
-		// Only check for duplicates if user is logged in (has token)
-		if (token) {
-			try {
-				const duplicateCheck = await fetch('http://localhost:3000/api/reservations/cart/check-duplicate', {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						'Authorization': `Bearer ${token}`
-					},
-					body: JSON.stringify({
-						serviceId: serviceId,
-						checkin_date: checkIn,
-						checkout_date: checkOut
-					})
-				}).then(res => res.json());
+		// TODO: This will be updated to handle multipleAmenities when that feature is implemented
+		// For now, submit single service reservation
+		const finalTotalDisplay = document.getElementById('finalTotalDisplay')?.textContent?.replace(/[^\d.]/g, '') || '';
+		const price = parseFloat(finalTotalDisplay) || parseFloat(document.getElementById('finalTotalInput')?.value) || 0;
 
-				if (duplicateCheck.success && duplicateCheck.duplicate) {
-					showModal('Duplicate Reservation', duplicateCheck.message || 'You already have a reservation or cart item for this service and date range.', 'error');
-					return;
-				}
-			} catch (err) {
-				console.error('Duplicate check error:', err);
-				showModal('Error', 'Could not check for duplicate reservation. Please try again.', 'error');
-				return;
+		if (!price || price <= 0) {
+			showModal('Invalid Price', 'Total amount must be greater than 0', 'error');
+			return;
+		}
+
+		const btn = document.getElementById('submitReservationBtn');
+		if (btn) {
+			btn.disabled = true;
+			btn.textContent = 'Submitting...';
+		}
+
+		try {
+			// Build reservation data
+			const reservationData = {
+				serviceId: serviceId,
+				serviceType: sessionStorage.getItem('selectedServiceType') || '',
+				number_of_guests: guests,
+				checkin_date: checkIn,
+				checkout_date: checkOut,
+				customer_name: document.getElementById('name')?.value || '',
+				customer_contact: document.getElementById('contact')?.value || '',
+				customer_email: document.getElementById('email')?.value || '',
+				customer_address: document.getElementById('address')?.value || '',
+				customer_notes: document.getElementById('notes')?.value || '',
+				basePrice: parseFloat(document.getElementById('basePriceInput')?.value) || price,
+				finalTotal: price,
+				selectedDuration: sessionStorage.getItem('selectedDuration') || '',
+				discountCode: document.getElementById('discountCodeInput')?.value || '',
+				discountValue: parseFloat(document.getElementById('discountValueInput')?.value) || 0
+			};
+
+			// Submit to backend
+			const response = await fetch('http://localhost:3000/api/reservations/create-reservation', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+				},
+				body: JSON.stringify(reservationData)
+			});
+
+			const result = await response.json();
+
+			if (!response.ok) {
+				throw new Error(result.message || 'Failed to create reservation');
 			}
-		} else {
-			console.warn('⚠️ WARNING: No token found! User may not be logged in. Proceeding to add to cart as guest.');
-		}
 
-		// Add to cart with ALL form data (so user can edit it later)
-		const cartItem = addToCart({
-			serviceId: serviceId,
-			serviceName: serviceName,
-			serviceType: serviceType,
-			durationId: durationId,
-			durationLabel: durationLabel,
-			checkIn: checkIn,
-			checkOut: checkOut,
-			guests: guests,
-			price: price,
-			// Include all customer form data to preserve it in cart
-			customerName: document.getElementById('name')?.value || '',
-			customerContact: document.getElementById('contact')?.value || '',
-			customerEmail: document.getElementById('email')?.value || '',
-			customerAddress: document.getElementById('address')?.value || '',
-			customerNotes: document.getElementById('notes')?.value || '',
-			promoCode: document.getElementById('promoCodeInput')?.value || '',
-			discountValue: document.getElementById('discountValueInput')?.value || '0',
-			appliedPromoCode: sessionStorage.getItem('appliedPromoCode') || '',
-			basePrice: document.getElementById('basePriceInput')?.value || '',
-			finalTotal: document.getElementById('finalTotalInput')?.value || price
-		});
+			if (!result.success) {
+				throw new Error(result.message || 'Reservation creation failed');
+			}
 
-		if (cartItem) {
-			// Ask user if they want to continue shopping or go to cart
-			showConfirm(
-				'Added to Cart!',
-				`<p><strong>${serviceName}</strong> has been added to your cart.</p><p>What would you like to do next?</p>`,
-				() => {
-					window.location.href = 'cart.html';
-				},
-				() => {
-					// Continue shopping - go back to services list
-					window.location.href = 'services-list.html';
-				},
-				{
-					confirmText: 'View Cart',
-					cancelText: 'Continue Shopping',
-					type: 'success'
-				}
-			);
+			// Store reservation hash for payment
+			sessionStorage.setItem('payment_reservation_hash', result.reservationHash);
+			sessionStorage.setItem('selectedReservationId', result.reservationId);
+
+			showToast('✅ Reservation created successfully! Redirecting to payment...', 'success');
+
+			// Redirect to payment page
+			setTimeout(() => {
+				window.location.href = 'payment.html';
+			}, 1500);
+
+		} catch (error) {
+			console.error('Reservation submission error:', error);
+			showToast('❌ ' + error.message, 'error');
+		} finally {
+			if (btn) {
+				btn.disabled = false;
+				btn.textContent = 'Submit Reservation & Pay';
+			}
 		}
+	}
+
+	// Multi-Amenity Reservation Submission
+	async function submitMultiAmenityReservation() {
+	    // Validation
+	    const name = document.getElementById('nameMulti')?.value?.trim();
+	    const contact = document.getElementById('contactMulti')?.value?.trim();
+	    const email = document.getElementById('emailMulti')?.value?.trim();
+	    const address = document.getElementById('addressMulti')?.value?.trim();
+	    const termsCheck = document.getElementById('termsCheck')?.checked;
+	    
+	    if (!name || !contact || !email || !address) {
+	        showToast('Please fill in all required fields.', 'error');
+	        return;
+	    }
+	    
+	    if (!termsCheck) {
+	        showToast('Please agree to Terms and Conditions.', 'error');
+	        return;
+	    }
+	    
+	    // Get multi-amenity data
+	    const multiAmenityReservation = JSON.parse(
+	        sessionStorage.getItem('multiAmenityReservation') || 'null'
+	    );
+	    
+	    if (!multiAmenityReservation || !multiAmenityReservation.amenities) {
+	        showToast('No amenities selected. Please go back and select items.', 'error');
+	        return;
+	    }
+	    
+	    // Prepare submission payload
+	    const payload = {
+	        customer: {
+	            name: name,
+	            email: email,
+	            contact: contact,
+	            address: address,
+	            notes: document.getElementById('notesMulti')?.value || ''
+	        },
+	        amenities: multiAmenityReservation.amenities,
+	        appliedPromo: multiAmenityReservation.appliedPromo || null,
+	        pricing: {
+	            originalTotal: multiAmenityReservation.originalTotal,
+	            discountAmount: multiAmenityReservation.appliedPromo?.discountAmount || 0,
+	            finalTotal: parseFloat(
+	                document.getElementById('finalTotalDisplay').textContent.replace(/,/g, '')
+	            )
+	        }
+	    };
+	    
+	    // Show loading
+	    const submitBtn = document.getElementById('submitReservationBtn');
+	    const originalText = submitBtn.textContent;
+	    submitBtn.disabled = true;
+	    submitBtn.textContent = 'Processing...';
+	    
+	    try {
+	        // Submit to backend
+	        const response = await fetch('http://localhost:3000/api/reservations/create-multi-amenity', {
+	            method: 'POST',
+	            headers: {
+	                'Content-Type': 'application/json',
+	                'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+	            },
+	            body: JSON.stringify(payload)
+	        });
+	        
+	        const data = await response.json();
+	        
+	        if (response.ok && (data.success || data.reservationHash)) {
+	            // Store reservation data
+	            sessionStorage.setItem('lastReservation', JSON.stringify(data));
+	            sessionStorage.setItem('payment_reservation_hash', data.reservationHash);
+	            sessionStorage.setItem('selectedReservationId', data.reservationId);
+	            
+	            showToast('✅ Multi-amenity reservation created! Redirecting to payment...', 'success');
+	            
+	            // Redirect to payment
+	            const amount = data.finalTotal || payload.pricing.finalTotal;
+	            setTimeout(() => {
+	                window.location.href = `payment.html?reservation_hash=${data.reservationHash}&amount=${amount}&mode=multi-amenity`;
+	            }, 1500);
+	        } else {
+	            showToast(`Error: ${data.message || 'Failed to create reservation'}`, 'error');
+	            submitBtn.disabled = false;
+	            submitBtn.textContent = originalText;
+	        }
+	    } catch (error) {
+	        console.error('Multi-amenity submission error:', error);
+	        showToast('An error occurred: ' + error.message, 'error');
+	        submitBtn.disabled = false;
+	        submitBtn.textContent = originalText;
+	    }
 	}
 
 	// View Reservation Summary Modal Functionality
@@ -1126,27 +1417,75 @@
 
 	// Function to populate the reservation summary modal with current form data
 	function populateReservationSummary() {
-	    // Get service information
+	    const mode = document.getElementById('reservationMode')?.value || 'single-service';
+	    const inclusionsList = document.getElementById('summaryInclusions');
+	
+	    if (mode === 'multi-amenity') {
+	        const multiAmenityReservation = JSON.parse(
+	            sessionStorage.getItem('multiAmenityReservation') || 'null'
+	        );
+	
+	        const amenities = multiAmenityReservation?.amenities || [];
+	        const originalTotal = multiAmenityReservation?.originalTotal || 0;
+	        const discountValue = multiAmenityReservation?.appliedPromo?.discountAmount || 0;
+	        const finalTotal = (multiAmenityReservation?.finalTotal || (originalTotal - discountValue)) || 0;
+
+	        const customerName = document.getElementById('nameMulti')?.value || document.getElementById('name')?.value || 'Not Entered';
+
+	        document.getElementById('summaryServiceName').textContent = amenities.length > 1
+	            ? `Multiple Amenities (${amenities.length})`
+	            : (amenities[0]?.serviceName || 'Not Selected');
+	        document.getElementById('summaryServiceType').textContent = 'Multi-Amenity';
+	        document.getElementById('summaryCustomerName').textContent = customerName;
+	        document.getElementById('summaryGuests').textContent = 'Varies by item';
+	        document.getElementById('summaryCheckin').textContent = 'See item list';
+	        document.getElementById('summaryCheckout').textContent = 'See item list';
+	        document.getElementById('summaryBasePrice').textContent = '₱' + Number(originalTotal).toFixed(2);
+	        document.getElementById('summaryTotalAmount').textContent = '₱' + Number(finalTotal).toFixed(2);
+
+	        const discountRow = document.getElementById('summaryDiscountRow');
+	        if (discountValue > 0) {
+	            discountRow.style.display = 'flex';
+	            document.getElementById('summaryDiscountValue').textContent = '-₱' + Number(discountValue).toFixed(2);
+	        } else {
+	            discountRow.style.display = 'none';
+	        }
+
+	        if (inclusionsList) {
+	            inclusionsList.innerHTML = '';
+	            if (amenities.length === 0) {
+	                inclusionsList.innerHTML = '<li>No amenities selected</li>';
+	            } else {
+	                amenities.forEach(item => {
+	                    const li = document.createElement('li');
+	                    const checkInText = formatAmenityDateTime(item.checkIn, item.checkInTime);
+	                    const checkOutText = formatAmenityDateTime(item.checkOut, item.checkOutTime);
+	                    li.textContent = `${item.serviceName || 'Service'} • ${item.durationLabel || 'N/A'} • ${checkInText} → ${checkOutText}`;
+	                    inclusionsList.appendChild(li);
+	                });
+	            }
+	        }
+
+	        return;
+	    }
+
+	    // Single-service summary
 	    const serviceName = sessionStorage.getItem('selectedServiceName') || 'Not Selected';
 	    const serviceType = sessionStorage.getItem('selectedServiceType') || 'Not Specified';
 	    const serviceInclusions = sessionStorage.getItem('serviceInclusions') || '[]';
 	    const basePrice = parseFloat(sessionStorage.getItem('selectedServicePrice')) || 0;
 	    
-	    // Get form values
 	    const customerName = document.getElementById('name')?.value || 'Not Entered';
 	    const guests = document.getElementById('guests')?.value || 'Not Specified';
 	    const checkinDateTime = document.getElementById('checkin')?.value || 'Not Selected';
 	    const checkoutDateTime = document.getElementById('checkout')?.value || 'Not Selected';
 	    
-	    // Get pricing information
 	    const finalTotal = parseFloat(document.getElementById('finalTotalInput')?.value) || basePrice;
 	    const discountValue = parseFloat(document.getElementById('discountValueInput')?.value) || 0;
 	    
-	    // Format dates and times
 	    const checkinFormatted = formatDateTimeForDisplay(checkinDateTime);
 	    const checkoutFormatted = formatDateTimeForDisplay(checkoutDateTime);
 	    
-	    // Parse inclusions
 	    let inclusionsArray = [];
 	    try {
 	        inclusionsArray = JSON.parse(serviceInclusions);
@@ -1154,7 +1493,6 @@
 	        inclusionsArray = [];
 	    }
 	    
-	    // Populate modal fields
 	    document.getElementById('summaryServiceName').textContent = serviceName;
 	    document.getElementById('summaryServiceType').textContent = capitalizeString(serviceType);
 	    document.getElementById('summaryCustomerName').textContent = customerName;
@@ -1164,7 +1502,6 @@
 	    document.getElementById('summaryBasePrice').textContent = '₱' + basePrice.toFixed(2);
 	    document.getElementById('summaryTotalAmount').textContent = '₱' + finalTotal.toFixed(2);
 	    
-	    // Show/hide discount row if applicable
 	    const discountRow = document.getElementById('summaryDiscountRow');
 	    if (discountValue > 0) {
 	        discountRow.style.display = 'flex';
@@ -1173,8 +1510,6 @@
 	        discountRow.style.display = 'none';
 	    }
 	    
-	    // Populate inclusions
-	    const inclusionsList = document.getElementById('summaryInclusions');
 	    if (inclusionsArray.length > 0) {
 	        inclusionsList.innerHTML = '';
 	        inclusionsArray.forEach(inclusion => {
@@ -1208,6 +1543,24 @@
 	    }
 	}
 
+	// Helper function to format amenity date + time strings
+	function formatAmenityDateTime(dateStr, timeStr) {
+	    if (!dateStr) return 'Not Selected';
+	    let displayDate = dateStr;
+	    try {
+	        displayDate = new Date(dateStr).toLocaleDateString('en-US', {
+	            month: 'short', day: 'numeric', year: 'numeric'
+	        });
+	    } catch (e) {
+	        displayDate = dateStr;
+	    }
+	
+	    if (!timeStr) return displayDate;
+	
+	    const normalizedTime = String(timeStr).includes(':') ? timeStr : formatTime24To12(parseInt(timeStr));
+	    return `${displayDate} ${normalizedTime}`;
+	}
+
 	// Helper function to capitalize strings
 	function capitalizeString(str) {
 	    return str.replace(/\b\w/g, char => char.toUpperCase());
@@ -1230,10 +1583,17 @@
 	function prefillUserDataOrRedirectLogin() {
 	  const user = (typeof getLoggedInUser === 'function') ? getLoggedInUser() : null;
 	  if (user) {
+	    // Prefill single-service fields
 	    if (user.full_name) document.getElementById('name').value = user.full_name;
 	    if (user.phone) document.getElementById('contact').value = user.phone;
 	    if (user.email) document.getElementById('email').value = user.email;
 	    if (user.address) document.getElementById('address').value = user.address;
+	    
+	    // Prefill multi-amenity fields
+	    if (user.full_name) document.getElementById('nameMulti').value = user.full_name;
+	    if (user.phone) document.getElementById('contactMulti').value = user.phone;
+	    if (user.email) document.getElementById('emailMulti').value = user.email;
+	    if (user.address) document.getElementById('addressMulti').value = user.address;
 	  } else {
 	    showModal('Login Required', '<p>Redirecting to login...</p>', 'warning');
 	    setTimeout(function() {

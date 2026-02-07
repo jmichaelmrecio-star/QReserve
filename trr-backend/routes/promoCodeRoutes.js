@@ -73,6 +73,60 @@ router.get('/active/list', async (_req, res) => {
     }
 });
 
+// GET /api/promocodes/validate/:code - Validate a promo code (Customer action for cart/checkout)
+router.get('/validate/:code', async (req, res) => {
+    try {
+        const code = req.params.code.toUpperCase();
+        
+        // Find the promo code
+        const promoCode = await PromoCode.findOne({ code: code });
+        
+        if (!promoCode) {
+            return res.status(404).json({ 
+                valid: false, 
+                message: 'Promo code not found or invalid.' 
+            });
+        }
+        
+        // Check if expired
+        const now = new Date();
+        if (new Date(promoCode.expirationDate) < now) {
+            return res.status(400).json({ 
+                valid: false, 
+                message: 'Promo code has expired.' 
+            });
+        }
+        
+        // Check if usage limit reached
+        if (promoCode.timesUsed >= promoCode.usageLimit) {
+            return res.status(400).json({ 
+                valid: false, 
+                message: 'Promo code has reached its usage limit.' 
+            });
+        }
+        
+        // Return valid promo with normalized format
+        res.status(200).json({
+            valid: true,
+            promoCode: {
+                code: promoCode.code,
+                discountType: 'percentage', // Always percentage in current schema
+                discountValue: promoCode.discountPercentage * 100, // Convert 0.15 to 15
+                description: `${Math.round(promoCode.discountPercentage * 100)}% off`,
+                minPurchaseAmount: promoCode.minPurchaseAmount,
+                expirationDate: promoCode.expirationDate
+            }
+        });
+        
+    } catch (error) {
+        console.error('Error validating promo code:', error);
+        res.status(500).json({ 
+            valid: false, 
+            message: 'Internal server error.' 
+        });
+    }
+});
+
 // DELETE /api/promocodes/:id - Delete a promo code
 router.delete('/:id', async (req, res) => {
     try {

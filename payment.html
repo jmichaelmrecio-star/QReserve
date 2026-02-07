@@ -58,11 +58,11 @@
                     <span class="summary-value total-amount">₱<span id="paymentAmount">0.00</span></span>
                 </div>
                 <div class="summary-row" style="color: #6c757d; font-size: 0.9rem;">
-                    <span class="summary-label">Remaining Balance:</span>
+                    <span class="summary-label">Remaining 50%:</span>
                     <span class="summary-value">₱<span id="remainingBalance">0.00</span></span>
                 </div>
                 <small style="display: block; margin-top: 0.5rem; color: #6c757d;">
-                    <i>Note: You only need to pay 50% now. The remaining balance will be paid upon check-in.</i>
+                    <i>Note: You only need to pay 50% now. The remaining 50% will be paid upon check-in.</i>
                 </small>
             </div>
             
@@ -111,7 +111,7 @@
 
             <!-- Action Buttons -->
             <div class="button-group">
-                <button type="submit" class="btn btn-primary" id="submit-payment-btn">Submit Payment & Confirm Booking</button>
+                <button type="submit" class="btn btn-primary" id="submit-payment-btn">Submit Payment for Verification</button>
                 <!-- <a href="reserve.html" class="btn btn-secondary">Go Back to Reservation Details</a> -->
             </div>
         </form>
@@ -120,28 +120,15 @@
     <script src="notifications.js"></script>
     <script src="ui-core.js"></script>
     <script src="auth-profile.js"></script>
-    <script src="cart-system.js"></script>
     <script src="payment-system.js"></script>
     
     <script>
-    // Merge all DOMContentLoaded logic into a single handler to fix syntax error
+    // Payment form handler
     document.addEventListener('DOMContentLoaded', function() {
         // Initialize unsaved changes tracking for payment page
         initializeUnsavedChangesTracking('gcashPaymentForm');
         attachNavigationListeners();
         
-        // Check if this is a cart checkout
-        const checkoutCart = sessionStorage.getItem('checkoutCart');
-        if (checkoutCart) {
-            // Handle cart checkout
-            const cartItemsSection = document.getElementById('cart-items-section');
-            if (cartItemsSection) {
-                cartItemsSection.style.display = 'block';
-            }
-            // handleCartCheckout is no longer needed - data already in sessionStorage
-        } else {
-            // ...existing code...
-        }
         const refInput = document.getElementById('gcashReferenceNumber');
         if (refInput) {
             let saveTimeout;
@@ -259,91 +246,7 @@
                 }
             });
         }
-        // Form submit handler: validate receipt image and send as FormData
-        const paymentForm = document.getElementById('gcashPaymentForm');
-        const submitBtn = document.getElementById('submit-payment-btn');
-        if (paymentForm) {
-            paymentForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                // Check if receipt image is uploaded
-                if (!window.gcashReceiptFile) {
-                    showToast('Please upload your GCash payment receipt before submitting.', 'warning');
-                    if (receiptUploadArea) {
-                        receiptUploadArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }
-                    return false;
-                }
-                // Disable button and show loading
-                if (submitBtn) {
-                    submitBtn.disabled = true;
-                    submitBtn.textContent = 'Submitting...';
-                }
-                // Gather payment data
-                const gcashReferenceNumber = document.getElementById('gcashReferenceNumber')?.value || '';
-                
-                // --- PATCH: Support multiple hashes for Cart Checkout ---
-                let reservationHash = sessionStorage.getItem('payment_reservation_hash') || '';
-                const checkoutCartJson = sessionStorage.getItem('checkoutCart');
-                if (checkoutCartJson) {
-                    try {
-                        const cart = JSON.parse(checkoutCartJson);
-                        if (Array.isArray(cart) && cart.length > 0) {
-                            reservationHash = cart.map(item => item.reservationHash).filter(h => h).join(',');
-                            console.log('Sending multiple hashes for cart checkout:', reservationHash);
-                        }
-                    } catch (err) {
-                        console.error('Error parsing cart items for hashes:', err);
-                    }
-                }
-
-                if (!reservationHash) {
-                    showToast('❌ Reservation reference missing. Please try again from the reservation page.', 'error');
-                    if (submitBtn) {
-                        submitBtn.disabled = false;
-                        submitBtn.textContent = 'Submit Payment & Confirm Booking';
-                    }
-                    return;
-                }
-
-                // Build FormData
-                const formData = new FormData();
-                formData.append('downpaymentAmount', downpaymentAmount);
-                formData.append('remainingBalance', remainingBalance);
-                formData.append('totalAmount', totalAmount);
-                formData.append('gcashReferenceNumber', gcashReferenceNumber);
-                formData.append('paymentType', 'downpayment');
-                formData.append('reservationHash', reservationHash);
-                formData.append('receiptImage', window.gcashReceiptFile);
-                // Send to backend
-                fetch('http://localhost:3000/api/payment/upload', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(async response => {
-                    if (!response.ok) {
-                        const err = await response.json();
-                        throw new Error(err.error || 'Network error');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    showToast('✅ Payment submitted successfully!', 'success');
-                    // Optionally redirect or show confirmation
-                    setTimeout(() => {
-                        window.location.href = 'confirmation.html?hash=' + reservationHash;
-                    }, 1500);
-                })
-                .catch(err => {
-                    showToast('❌ ' + err.message, 'error');
-                })
-                .finally(() => {
-                    if (submitBtn) {
-                        submitBtn.disabled = false;
-                        submitBtn.textContent = 'Submit Payment & Confirm Booking';
-                    }
-                });
-            });
-        }
+        // Submission is handled by payment-system.js
     });
     </script>
 </body>

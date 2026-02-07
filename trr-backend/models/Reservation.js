@@ -18,6 +18,7 @@ const ReservationSchema = new mongoose.Schema({
     // Reservation Details
     serviceId: { type: String, required: true },
     serviceType: { type: String, required: true },
+    serviceName: { type: String, required: false }, // Human-readable service name for display
     check_in: { type: Date, required: true }, // Store as a Date object for easy sorting/comparison
     check_out: { type: Date, required: true }, // <-- RE-ADDED
     guests: { type: Number, required: true },    // <-- RE-ADDED
@@ -97,7 +98,37 @@ const ReservationSchema = new mongoose.Schema({
     },
     
     // QR Code Data
-    qrCodeData: { type: String }
+    qrCodeData: { type: String },
+    
+    // Multi-Amenity Reservation Fields
+    isMultiAmenity: { 
+        type: Boolean, 
+        default: false // True if this reservation is part of a multi-amenity booking
+    },
+    multiAmenityGroupId: { 
+        type: mongoose.Schema.Types.ObjectId, 
+        required: false // Common ID shared by all amenities in the same booking
+    },
+    multiAmenityIndex: { 
+        type: Number, 
+        required: false // Position of this amenity in the group (0-indexed)
+    },
+    multiAmenityTotal: { 
+        type: Number, 
+        required: false // Total number of amenities in the group
+    },
+    multiAmenityGroupPrimary: { 
+        type: Boolean, 
+        default: false // True for the first item in a multi-amenity group (holds total pricing)
+    },
+    checkInTimeSlot: { 
+        type: String, 
+        required: false // Time slot for check-in (e.g., "8", "14", "20" or "8:00 AM")
+    },
+    checkOutTimeSlot: { 
+        type: String, 
+        required: false // Time slot for check-out (e.g., "6:00 AM", "8:00 PM")
+    }
 });
 
 module.exports = mongoose.model('Reservation', ReservationSchema);

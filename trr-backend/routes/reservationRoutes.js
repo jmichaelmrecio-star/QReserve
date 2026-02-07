@@ -26,6 +26,7 @@ router.get('/pending-payments', reservationController.getPendingPaymentVerificat
 
 // --- 2. MULTIPLE PARAMETER/DETAIL ROUTES (Must come before generic /:id) ---
 router.post('/create-reservation', reservationController.createReservation);
+router.post('/create-multi-amenity', reservationController.createMultiAmenityReservation);
 router.post('/finalize-reservation', reservationController.finalizeReservation);
 
 // FIX: This route needs to be higher up, above the generic /:id route!
@@ -38,6 +39,7 @@ router.get('/user/:email', reservationController.getUserReservations);
 
 // NEW: Routes for date validation and availability
 router.post('/check-availability', reservationController.checkAvailability);
+router.post('/check-service-types-availability', reservationController.checkServiceTypesAvailability);
 router.get('/service/:serviceId', reservationController.getReservationsByService);
 
 // Admin/Staff specific routes
