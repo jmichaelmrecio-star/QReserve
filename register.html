@@ -32,7 +32,7 @@
         <div class="form-content">
           <h2>New User Registration</h2>
           <p style="color: #4a5568;">Register to manage your reservations and profile.</p>
-          <form id="registerForm">
+          <form id="registerForm" style="gap: 10px; margin: auto;">
           <div class="form-row">
             <div class="form-group">
               <input
@@ -93,16 +93,40 @@
           </div>
 
           <div class="form-group">
-            <label for="registerBirthday" style="font-size: 1rem; color: #666; margin-top: -1rem; margin-bottom: -0.5rem; display: block;">Birthday</label>
             <input
-              type="date"
-              id="registerBirthday"
-              name="birthday"
+              placeholder="Address"
+              type="text"
+              id="registerAddress"
+              name="address"
+              minlength="20"
               required
             />
           </div>
 
+          <div class="form-group" style="margin-bottom: -0.15rem;">
+            <div style="position: relative; display: flex; align-items: center; border: 1px solid #d4ccc4; border-radius: 6px; overflow: hidden; background: white;">
+              <span style="padding: 0.75rem; font-size: 0.95rem; color: #4a5568; white-space: nowrap; pointer-events: none;">Birthday:</span>
+              <input
+                type="date"
+                id="registerBirthday"
+                name="birthday"
+                style="flex: 1; border: none; padding: 0.75rem; font-size: 0.95rem; outline: none; background: transparent; margin:auto;"
+                required
+              />
+            </div>
+          </div>
+
           <div class="form-group">
+            <!-- Password Strength Meter -->
+            <div id="passwordStrengthContainer" style="margin-top: -1rem; text-align: center;">
+              <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+                <div id="strength-bar-1" class="strength-bar"></div>
+                <div id="strength-bar-2" class="strength-bar"></div>
+                <div id="strength-bar-3" class="strength-bar"></div>
+                <div id="strength-bar-4" class="strength-bar"></div>
+              </div>
+              <span id="passwordStrengthText" style="font-size: 1rem; font-weight: 600; color: #666;">Password strength: —</span>
+            </div>
             <div class="password-input-wrapper">
               <input
                 placeholder="Password"
@@ -110,6 +134,8 @@
                 id="registerPassword"
                 name="password"
                 minlength="8"
+                pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}"
+                title="Password Requirements:&#10;At least 8 characters&#10;An uppercase letter&#10;A lowercase letter&#10;A number&#10;A special character"
                 required
                 autocomplete="new-password"
               />
@@ -122,17 +148,7 @@
                 👁️
               </button>
             </div>
-            <!-- Password Strength Meter -->
-            <div id="passwordStrengthContainer" style="margin-top: -1rem;">
-              <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
-                <div id="strength-bar-1" class="strength-bar"></div>
-                <div id="strength-bar-2" class="strength-bar"></div>
-                <div id="strength-bar-3" class="strength-bar"></div>
-                <div id="strength-bar-4" class="strength-bar"></div>
-              </div>
-              <span id="passwordStrengthText" style="font-size: 0.85rem; font-weight: 600; color: #666;">Password strength: —</span>
-            </div>
-            <!-- Password Requirements -->
+            <!-- Password Requirements 
             <div id="passwordRequirementsContainer" style="margin-top: 0.75rem; padding: 0.75rem; background: #f8f9fa; border-radius: 6px; font-size: 0.85rem;">
               <p style="margin: 0 0 0.5rem 0; font-weight: 600; color: #333;">Password must contain:</p>
               <ul style="margin: 0; padding-left: 1.5rem; list-style: none;">
@@ -143,7 +159,7 @@
                 <li id="req-special" style="color: #999;">✓ Special character (!@#$%^&*)</li>
               </ul>
             </div>
-          </div>
+          </div> -->
 
           <div class="form-group">
             <div class="password-input-wrapper">
@@ -166,16 +182,17 @@
               </button>
             </div>
             <!-- Password Match Indicator -->
-            <div id="passwordMatchContainer" style="margin-top: -0.5rem; font-size: 0.85rem;">
+            <div id="passwordMatchContainer" style="display: none; margin-top: -0.5rem; font-size: 0.85rem;">
               <span id="passwordMatchText" style="color: #999;">Passwords will be checked as you type</span>
             </div>
+            
           </div>
 
-          <button type="submit" class="button-primary" style="margin-top: -0.5rem;" id="registerSubmitBtn">Register Account</button>
-          <p class="form-footer" style="text-align: center;  margin-top: -0.3rem; margin-bottom: -0.2rem;">
+          <button type="submit" class="button-primary" style="margin: auto;" id="registerSubmitBtn">Register Account</button>
+          <p class="form-footer" style="text-align: center;  margin: auto;">
             Already have an account? <a href="login.html">Login Here</a>.
           </p>
-          <p style="text-align:center; margin-top: -5px;">
+          <p style="text-align:center; margin: auto;">
             <a href="#" id="termsLinkRegister" style="color:var(--primary-color);text-decoration:underline;">View Terms and Conditions</a>
           </p>
         </form>
@@ -261,18 +278,31 @@
               middle_name: middleInitial,
               last_name: lastName,
               phone: document.getElementById('registerContactNumber').value.trim(),
+              address: document.getElementById('registerAddress').value.trim(),
               birthday: document.getElementById('registerBirthday').value,
               password: document.getElementById('registerPassword').value,
               email: document.getElementById('registerEmail').value.trim(),
               role_id: customerRoleId
             };
             // Validation: ensure required fields
-            if (!data.first_name || !data.last_name || !data.phone || !data.password || !data.role_id || !data.email) {
+            if (!data.first_name || !data.last_name || !data.phone || !data.password || !data.role_id || !data.email || !data.address) {
               showModal('Registration Error', 'Please fill in all required fields.', 'error');
               if (submitBtn) submitBtn.disabled = false;
               registrationInProgress = false;
               return;
             }
+            // Validation: Password requirements
+            if (data.password.length < 8 ||
+                !/[A-Z]/.test(data.password) ||
+                !/[a-z]/.test(data.password) ||
+                !/[0-9]/.test(data.password) ||
+                !/[^A-Za-z0-9]/.test(data.password)) {
+              showModal('Registration Error', 'Password must contain: at least 8 characters, an uppercase letter, a lowercase letter, a number, and a special character.', 'error');
+              if (submitBtn) submitBtn.disabled = false;
+              registrationInProgress = false;
+              return;
+            }
+
             // Validation: names must be at least 2 characters
             if (firstName.length < 2) {
               showModal('Registration Error', 'First name must be at least 2 characters.', 'error');

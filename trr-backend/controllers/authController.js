@@ -31,6 +31,7 @@ exports.registerUser = async (req, res) => {
         const email = body.email || '';
         const phone = body.phone || body.contactNumber || '';
         const password = body.password || '';
+        const address = body.address || '';
         // Default to Customer ObjectId if not provided
         let role_id = body.role_id || body.roleId || '';
         if (!role_id) {
@@ -67,6 +68,7 @@ exports.registerUser = async (req, res) => {
                 middle_name: middle_name || null, 
                 last_name,
                 phone,
+                address: address || null, // NEW: Address field
                 role_id,
                 birthday, // Saved as Date or null
                 emailVerificationToken: verificationToken,
