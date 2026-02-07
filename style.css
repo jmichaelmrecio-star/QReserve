@@ -400,12 +400,12 @@ main.services-parallax {
   max-width: none;
   width: 100vw;
   margin: 0;
-  padding-top: var(--header-offset);
+  padding-top: 2rem;
   padding-bottom: 0;
   padding-left: 0;
   padding-right: 0;
-  background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)),
-    url("images/Cloverleaf_Hall.jpg");
+  background: linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)),
+    url("images/Sunsetting.jpg");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -1219,7 +1219,6 @@ footer {
   width: 100vw;
   margin-left: calc(50% - 50vw);
   margin-right: calc(50% - 50vw);
-  margin-bottom: 3rem;
   margin-top: calc(-1 * var(--header-offset)); /* Pull up to overlap header */
   padding-top: calc(
     var(--header-offset) + 3rem
@@ -1245,6 +1244,50 @@ footer {
 }
 
 .amenities-hero p {
+  color: white;
+  font-size: 1.3rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+.page-hero-section {
+  background: linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)),
+    url("images/Sunsetting.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed; /* Parallax effect */
+  color: white;
+  text-align: center;
+
+  /* Full-bleed */
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  margin-top: calc(-1 * var(--header-offset)); /* Pull up to overlap header */
+  padding-top: calc(
+    var(--header-offset) + 3rem
+  ); /* Compensate for negative margin */
+  padding-bottom: 3rem;
+
+  /* Height and centering */
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.page-hero-section .hero-content {
+  max-width: 800px;
+}
+
+.page-hero-section h1 {
+  color: white;
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+.page-hero-section p {
   color: white;
   font-size: 1.3rem;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
