@@ -39,9 +39,9 @@ async function generateFormalReservationId() {
     
     let sequenceNumber = 1;
     if (todaysReservations.length > 0 && todaysReservations[0].reservationId) {
-        // Extract the sequence number from the last reservation ID
+        // Extract the base sequence number, supports multi-amenity suffix (e.g., -001-01)
         const lastId = todaysReservations[0].reservationId;
-        const match = lastId.match(/-(\d{3})$/);
+        const match = lastId.match(/-(\d{3})(?:-\d{2})?$/);
         if (match) {
             sequenceNumber = parseInt(match[1]) + 1;
         }
@@ -92,6 +92,150 @@ async function findServiceByAnyId(serviceId, { includeInactive = false } = {}) {
     if (!includeInactive) query.isActive = true;
 
     return Service.findOne(query);
+}
+
+// Helper: Validate reservation lead time requirements
+// Standard Rooms (accommodation): Users must reserve at least 1 hour before check-in time
+// Venues (event/venue): Users must reserve at least 1 day (24 hours) before check-in date
+async function validateLeadTime(serviceId, checkInDateTime, serviceTypeFromRequest) {
+    try {
+        // Get service details to determine type
+        const service = await findServiceByAnyId(serviceId);
+        
+        if (!service) {
+            // If service not found, skip validation (will fail later in other checks)
+            return { valid: true };
+        }
+
+        const now = new Date();
+        
+        // Determine if this is a Standard Room or Venue based on service type/category
+        const serviceType = serviceTypeFromRequest || service.type || '';
+        const serviceCategory = service.category || '';
+        
+        // Venues: event_space, water_facility, or type is 'venue'
+        const isVenue = serviceCategory.toLowerCase().includes('event_space') ||
+                       serviceCategory.toLowerCase().includes('water_facility') ||
+                       serviceType.toLowerCase() === 'venue';
+        
+        if (isVenue) {
+            // Venues: Must reserve at least 1 day (24 hours) before check-in date
+            const twentyFourHoursFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+            
+            if (checkInDateTime < twentyFourHoursFromNow) {
+                return {
+                    valid: false,
+                    message: `${service.name || 'This venue'} requires at least 24 hours advance notice. Please select a check-in date that is at least 1 day away from today.`,
+                    leadTimeType: 'venue'
+                };
+            }
+        } else {
+            // Standard Rooms (accommodation): Must reserve at least 1 hour before check-in time
+            const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
+            
+            if (checkInDateTime < oneHourFromNow) {
+                return {
+                    valid: false,
+                    message: `${service.name || 'This room'} requires at least 1 hour advance notice. Please select a check-in time that is at least 1 hour away from now.`,
+                    leadTimeType: 'room'
+                };
+            }
+        }
+
+        return { valid: true };
+    } catch (error) {
+        console.error('❌ Error validating lead time:', error);
+        // Don't fail the reservation if validation function has an error
+        // Just log it and allow the reservation
+        return { valid: true };
+    }
+}
+
+// Helper: Create global resort lock when Private Pool is reserved
+async function createPrivatePoolGlobalLock(reservation) {
+    try {
+        console.log('🔍 Checking if reservation is Private Pool:', {
+            reservationId: reservation.reservationId,
+            serviceName: reservation.serviceName,
+            serviceType: reservation.serviceType
+        });
+
+        // Check if this is a Private Pool Area reservation
+        const isPrivatePool = reservation.serviceName && 
+                            reservation.serviceName.toLowerCase().includes('private pool');
+        
+        console.log(`   → isPrivatePool: ${isPrivatePool}`);
+
+        if (!isPrivatePool) {
+            console.log('ℹ️ Not a Private Pool reservation, skipping global lock');
+            return;
+        }
+
+        console.log('🔒 Creating global resort lock for Private Pool reservation:', {
+            reservationId: reservation.reservationId,
+            checkIn: reservation.check_in,
+            checkOut: reservation.check_out
+        });
+
+        // Create a BlockedDate that blocks ALL services for this time period
+        const blockedDate = new BlockedDate({
+            startDate: reservation.check_in,
+            endDate: reservation.check_out,
+            date: reservation.check_in, // Legacy field for backward compatibility
+            serviceIds: [], // Empty array means all services
+            appliesToAllServices: true,
+            reason: `Private Pool Area Reserved (${reservation.reservationId})`,
+            blockedBy: null // Could be set to admin ID if available
+        });
+
+        await blockedDate.save();
+
+        console.log('✅ Global resort lock created successfully:', {
+            blockedDateId: blockedDate._id,
+            startDate: blockedDate.startDate,
+            endDate: blockedDate.endDate,
+            reason: blockedDate.reason
+        });
+
+        return blockedDate;
+    } catch (error) {
+        console.error('❌ Error creating global resort lock:', error);
+        // Don't throw - we don't want to fail the reservation if blocking fails
+        // The double-booking prevention will still work as a fallback
+    }
+}
+
+// Helper: Remove global resort lock when Private Pool is cancelled
+async function removePrivatePoolGlobalLock(reservation) {
+    try {
+        // Check if this is a Private Pool Area reservation
+        const isPrivatePool = reservation.serviceName && 
+                            reservation.serviceName.toLowerCase().includes('private pool');
+        
+        if (!isPrivatePool) {
+            console.log('ℹ️ Not a Private Pool reservation, skipping lock removal');
+            return;
+        }
+
+        console.log('🔓 Removing global resort lock for cancelled Private Pool reservation:', {
+            reservationId: reservation.reservationId
+        });
+
+        // Find and remove the blocked date associated with this reservation
+        const result = await BlockedDate.deleteMany({
+            appliesToAllServices: true,
+            reason: { $regex: reservation.reservationId }
+        });
+
+        console.log('✅ Global resort lock removed:', {
+            deletedCount: result.deletedCount
+        });
+
+        return result;
+    } catch (error) {
+        console.error('❌ Error removing global resort lock:', error);
+        // Don't throw - we don't want to fail the cancellation if lock removal fails
+    }
 }
 
 // ============================================================
@@ -280,7 +424,7 @@ async function generateFormalReservationId() {
     // Extract all sequence numbers from today's reservations
     const existingSequences = todaysReservations
         .map(r => {
-            const match = r.reservationId.match(/-(\d{3})$/);
+            const match = r.reservationId.match(/-(\d{3})(?:-\d{2})?$/);
             return match ? parseInt(match[1]) : 0;
         })
         .sort((a, b) => b - a); // Sort descending to get the highest
@@ -402,6 +546,19 @@ exports.createReservation = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Invalid dates. Check-in and Check-out must be future dates, and check-out must be after check-in.' });
         }
 
+        // --- B2. Validate Lead Time Requirements ---
+        console.log('⏰ Validating lead time requirements for serviceId:', serviceId);
+        const leadTimeCheck = await validateLeadTime(serviceId, checkIn, serviceType);
+        if (!leadTimeCheck.valid) {
+            console.log('❌ Lead time validation failed:', leadTimeCheck.message);
+            return res.status(400).json({
+                success: false,
+                message: leadTimeCheck.message,
+                leadTimeType: leadTimeCheck.leadTimeType
+            });
+        }
+        console.log('✅ Lead time validation passed');
+
         // --- C. Check for Blocked Dates (Server-Side Validation) ---
         const blockedDates = await BlockedDate.find();
         for (const block of blockedDates) {
@@ -424,9 +581,17 @@ exports.createReservation = async (req, res) => {
             if (isServiceBlocked && checkIn <= blockEnd && checkOut >= blockStart) {
                 const blockStartStr = blockStart.toLocaleDateString();
                 const blockEndStr = blockEnd.toLocaleDateString();
+                
+                // Check if this is a Private Pool global lock
+                const isPrivatePoolBlock = block.reason && block.reason.includes('Private Pool Area Reserved');
+                const message = isPrivatePoolBlock
+                    ? `Sorry, the resort is fully booked for ${blockStartStr} to ${blockEndStr} due to a private pool reservation.`
+                    : `This service is unavailable from ${blockStartStr} to ${blockEndStr}. Reason: ${block.reason || 'Maintenance/Closure'}`;
+                
                 return res.status(400).json({
                     success: false,
-                    message: `This service is unavailable from ${blockStartStr} to ${blockEndStr}. Reason: ${block.reason || 'Maintenance/Closure'}`
+                    message: message,
+                    resortFullyBooked: isPrivatePoolBlock
                 });
             }
         }
@@ -594,6 +759,392 @@ exports.createReservation = async (req, res) => {
     }
 };
 
+// ============================================================
+// MULTI-AMENITY RESERVATION CREATION
+// ============================================================
+
+/**
+ * Create a multi-amenity reservation (multiple services in one transaction)
+ * This handles the "shopping cart" flow where users select multiple amenities
+ * with individual check-in/check-out dates and times.
+ */
+exports.createMultiAmenityReservation = async (req, res) => {
+    try {
+        console.log('📍 createMultiAmenityReservation called with body:', JSON.stringify(req.body, null, 2));
+        
+        const { customer, amenities, appliedPromo, pricing } = req.body;
+
+        // --- A. Validate Input Structure ---
+        if (!customer || !amenities || !Array.isArray(amenities) || amenities.length === 0) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Invalid request: customer details and amenities array are required.' 
+            });
+        }
+
+        if (!pricing || !pricing.finalTotal) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Invalid request: pricing information is required.' 
+            });
+        }
+
+        // --- B. Validate Customer Details ---
+        const { name, email, contact, address, notes } = customer;
+        if (!name || !email || !contact || !address) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Customer name, email, contact, and address are required.' 
+            });
+        }
+
+        // --- C. Identify User Account ---
+        let accountId = null;
+        if (req.user) {
+            accountId = req.user.accountId;
+        }
+
+        // --- D. Validate Each Amenity ---
+        const now = new Date(); // Use current date-time for validation
+
+        // Helper function to parse time string (e.g., "8:00 PM", "5:00 PM", or simple "8")
+        const parseTimeToHour = (timeStr) => {
+            if (!timeStr || timeStr === '--') return 0;
+            
+            // If it's just a number string (e.g., "8", "20")
+            if (/^\d+$/.test(timeStr)) {
+                return parseInt(timeStr);
+            }
+            
+            // Parse formatted time like "8:00 PM" or "5:00 PM"
+            const match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
+            if (match) {
+                let hour = parseInt(match[1]);
+                const isPM = match[3].toUpperCase() === 'PM';
+                
+                // Convert to 24-hour format
+                if (isPM && hour !== 12) {
+                    hour += 12;
+                } else if (!isPM && hour === 12) {
+                    hour = 0;
+                }
+                
+                return hour;
+            }
+            
+            // Fallback: try to parse as integer
+            return parseInt(timeStr) || 0;
+        };
+
+        for (let i = 0; i < amenities.length; i++) {
+            const amenity = amenities[i];
+            
+            // Validate required fields
+            if (!amenity.serviceId || !amenity.checkIn || !amenity.checkOut) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: `Amenity #${i + 1} (${amenity.serviceName || 'Unknown'}) is missing required fields.` 
+                });
+            }
+
+            // Convert dates - handle both date-only and full datetime strings
+            // Construct proper datetime if checkInTime and checkOutTime are provided
+            let checkIn, checkOut;
+            
+            if (amenity.checkInTime) {
+                // Parse check-in time (handles both "8" and "8:00 AM" formats)
+                const checkInHour = parseTimeToHour(amenity.checkInTime);
+                checkIn = new Date(amenity.checkIn);
+                checkIn.setHours(checkInHour, 0, 0, 0);
+            } else {
+                checkIn = new Date(amenity.checkIn);
+            }
+            
+            if (amenity.checkOutTime) {
+                // Parse check-out time (handles both "20" and "8:00 PM" formats)
+                const checkOutHour = parseTimeToHour(amenity.checkOutTime);
+                checkOut = new Date(amenity.checkOut);
+                checkOut.setHours(checkOutHour, 0, 0, 0);
+            } else {
+                checkOut = new Date(amenity.checkOut);
+            }
+
+            if (isNaN(checkIn.getTime()) || isNaN(checkOut.getTime())) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: `Amenity #${i + 1} (${amenity.serviceName || 'Unknown'}) has invalid date format.` 
+                });
+            }
+
+            // More lenient validation - allow bookings starting from today
+            if (checkOut <= checkIn) {
+                console.error('Invalid dates:', {
+                    amenity: amenity.serviceName,
+                    checkIn: checkIn.toISOString(),
+                    checkOut: checkOut.toISOString(),
+                    rawCheckInTime: amenity.checkInTime,
+                    rawCheckOutTime: amenity.checkOutTime
+                });
+                return res.status(400).json({ 
+                    success: false, 
+                    message: `Amenity #${i + 1} (${amenity.serviceName || 'Unknown'}) has invalid dates: check-out must be after check-in.` 
+                });
+            }
+
+            // Check for blocked dates
+            const blockedDates = await BlockedDate.find();
+            console.log(`🔍 Checking ${blockedDates.length} blocked dates for amenity #${i + 1} (${amenity.serviceName})`);
+            console.log(`   Requested dates: ${checkIn.toISOString()} to ${checkOut.toISOString()}`);
+            
+            for (const block of blockedDates) {
+                const serviceIds = Array.isArray(block.serviceIds) ? block.serviceIds.map(id => id.toString()) : [];
+                const appliesToAll = typeof block.appliesToAllServices === 'boolean'
+                    ? block.appliesToAllServices
+                    : serviceIds.length === 0;
+
+                if (!block.startDate || !block.endDate) {
+                    console.log(`   ⏭️  Skipping block ${block._id}: missing dates`);
+                    continue;
+                }
+
+                const blockStart = new Date(block.startDate);
+                const blockEnd = new Date(block.endDate);
+
+                const isServiceBlocked = appliesToAll || serviceIds.includes(amenity.serviceId?.toString());
+                
+                console.log(`   Block: ${blockStart.toISOString()} to ${blockEnd.toISOString()}`);
+                console.log(`   - appliesToAll: ${appliesToAll}, serviceIds: ${serviceIds.join(',')}`);
+                console.log(`   - isServiceBlocked: ${isServiceBlocked}`);
+
+                if (isServiceBlocked && checkIn <= blockEnd && checkOut >= blockStart) {
+                    const blockStartStr = blockStart.toLocaleDateString();
+                    const blockEndStr = blockEnd.toLocaleDateString();
+                    
+                    // Check if this is a Private Pool global lock
+                    const isPrivatePoolBlock = block.reason && block.reason.includes('Private Pool Area Reserved');
+                    const message = isPrivatePoolBlock
+                        ? `Sorry, the resort is fully booked for ${blockStartStr} to ${blockEndStr} due to a private pool reservation.`
+                        : `${amenity.serviceName || 'A service'} is unavailable from ${blockStartStr} to ${blockEndStr}. Reason: ${block.reason || 'Maintenance/Closure'}`;
+                    
+                    console.log(`❌ Blocked! Reason: ${message}`);
+                    return res.status(400).json({
+                        success: false,
+                        message: message,
+                        resortFullyBooked: isPrivatePoolBlock
+                    });
+                }
+            }
+            console.log(`✅ No blocking found for amenity #${i + 1}`);
+
+            // Check for double booking
+            const existingReservations = await Reservation.find({
+                serviceId: amenity.serviceId,
+                status: { $ne: 'CANCELLED' },
+                $or: [
+                    {
+                        check_in: { $lt: checkOut },
+                        check_out: { $gt: checkIn }
+                    }
+                ]
+            });
+
+            if (existingReservations.length > 0) {
+                const conflict = existingReservations[0];
+                const existingCheckinStr = new Date(conflict.check_in).toLocaleString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                const existingCheckoutStr = new Date(conflict.check_out).toLocaleString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+
+                return res.status(409).json({
+                    success: false,
+                    message: `${amenity.serviceName || 'A service'} is already booked during your selected time. Existing reservation: ${existingCheckinStr} to ${existingCheckoutStr}. Please choose different dates.`,
+                    conflict: {
+                        serviceName: amenity.serviceName,
+                        existingCheckin: existingCheckinStr,
+                        existingCheckout: existingCheckoutStr
+                    }
+                });
+            }
+        }
+
+        // --- D2. Validate Lead Time Requirements for Each Amenity ---
+        console.log('⏰ Validating lead time requirements for multi-amenity...');
+        for (let i = 0; i < amenities.length; i++) {
+            const amenity = amenities[i];
+            const checkIn = new Date(amenity.checkIn);
+            
+            // Parse check-in time if provided (reuse parseTimeToHour helper)
+            if (amenity.checkInTime) {
+                const parseTimeToHour = (timeStr) => {
+                    if (!timeStr || timeStr === '--') return 0;
+                    if (/^\d+$/.test(timeStr)) {
+                        return parseInt(timeStr);
+                    }
+                    const match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
+                    if (match) {
+                        let hour = parseInt(match[1]);
+                        const isPM = match[3].toUpperCase() === 'PM';
+                        if (isPM && hour !== 12) {
+                            hour += 12;
+                        } else if (!isPM && hour === 12) {
+                            hour = 0;
+                        }
+                        return hour;
+                    }
+                    return parseInt(timeStr) || 0;
+                };
+                const checkInHour = parseTimeToHour(amenity.checkInTime);
+                checkIn.setHours(checkInHour, 0, 0, 0);
+            }
+
+            const leadTimeCheck = await validateLeadTime(amenity.serviceId, checkIn, amenity.serviceType);
+            if (!leadTimeCheck.valid) {
+                console.log(`❌ Lead time validation failed for amenity #${i + 1}:`, leadTimeCheck.message);
+                return res.status(400).json({
+                    success: false,
+                    message: `Amenity #${i + 1} (${amenity.serviceName || 'Unknown'}): ${leadTimeCheck.message}`,
+                    leadTimeType: leadTimeCheck.leadTimeType
+                });
+            }
+        }
+        console.log('✅ Lead time validation passed for all amenities');
+
+        // --- E. Generate Reservation Hash and Formal ID ---
+        console.log('🔐 Generating reservation hash and formal ID...');
+        const reservationHash = crypto.randomBytes(16).toString('hex');
+        const formalReservationId = await generateFormalReservationId();
+        console.log('✅ Generated IDs:', { reservationHash: reservationHash.substring(0, 8) + '...', formalReservationId });
+
+        // --- F. Create Individual Reservation Records for Each Amenity ---
+        // Strategy: Create separate reservation documents for each amenity, but link them with a common groupId
+        const groupId = new mongoose.Types.ObjectId(); // Common ID to group related amenities
+        const createdReservations = [];
+
+        for (let i = 0; i < amenities.length; i++) {
+            const amenity = amenities[i];
+            
+            // Parse check-in with time component
+            let checkIn = new Date(amenity.checkIn);
+            if (amenity.checkInTime) {
+                const checkInHour = parseTimeToHour(amenity.checkInTime);
+                checkIn.setHours(checkInHour, 0, 0, 0);
+            }
+            
+            // Parse check-out with time component
+            let checkOut = new Date(amenity.checkOut);
+            if (amenity.checkOutTime) {
+                const checkOutHour = parseTimeToHour(amenity.checkOutTime);
+                checkOut.setHours(checkOutHour, 0, 0, 0);
+            }
+
+            // For multi-amenity, we'll use a modified formal ID with sequence suffix
+            const amenityFormalId = `${formalReservationId}-${String(i + 1).padStart(2, '0')}`;
+
+            const newReservation = new Reservation({
+                accountId,
+                serviceId: amenity.serviceId,
+                serviceType: amenity.serviceType || 'Unknown',
+                serviceName: amenity.serviceName || 'N/A', // Store service name for easier display
+                full_name: name,
+                check_in: checkIn,
+                check_out: checkOut,
+                guests: amenity.guests || 1, // Multi-amenity can track guests per item
+                phone: contact,
+                email: email,
+                address: address,
+                basePrice: amenity.price || 0,
+                finalTotal: amenity.price || 0, // Individual item price (discount applied at group level)
+                discountCode: appliedPromo?.code || null,
+                discountValue: 0, // Discount applied to total, not individual items
+                reservationHash: i === 0 ? reservationHash : `${reservationHash}-${i}`, // First item gets main hash
+                reservationId: amenityFormalId,
+                selectedDuration: amenity.selectedDuration || null,
+                selectedTimeSlot: amenity.selectedTimeSlot || null,
+                durationLabel: amenity.durationLabel || 'N/A',
+                inclusions: Array.isArray(amenity.inclusions) ? amenity.inclusions : [],
+                status: 'CART',
+                paymentStatus: 'CART',
+                // Multi-amenity specific fields
+                isMultiAmenity: true,
+                multiAmenityGroupId: groupId,
+                multiAmenityIndex: i,
+                multiAmenityTotal: amenities.length,
+                multiAmenityGroupPrimary: i === 0, // Mark first item as primary
+                // Store check-in time separately for display
+                checkInTimeSlot: amenity.checkInTime ? String(amenity.checkInTime) : null,
+                checkOutTimeSlot: amenity.checkOutTime ? String(amenity.checkOutTime) : null
+            });
+
+            await newReservation.save();
+            createdReservations.push(newReservation);
+        }
+
+        // --- G. Store Multi-Amenity Metadata ---
+        // Store pricing information in the first (primary) reservation
+        const primaryReservation = createdReservations[0];
+        primaryReservation.basePrice = pricing.originalTotal;
+        primaryReservation.finalTotal = pricing.finalTotal;
+        primaryReservation.discountValue = pricing.discountAmount || 0;
+        primaryReservation.multiAmenityGroupPrimary = true;
+        await primaryReservation.save();
+
+        console.log('✅ Multi-amenity reservations created:', {
+            groupId: groupId.toString(),
+            count: createdReservations.length,
+            primaryReservationId: primaryReservation._id
+        });
+
+        res.status(201).json({
+            success: true,
+            message: 'Multi-amenity reservation created successfully. Proceed to payment.',
+            reservationId: primaryReservation._id,
+            formalReservationId: formalReservationId,
+            reservationHash: reservationHash,
+            groupId: groupId.toString(),
+            amenityCount: amenities.length,
+            finalTotal: pricing.finalTotal
+        });
+
+    } catch (error) {
+        console.error('❌ Error creating multi-amenity reservation:', {
+            message: error.message,
+            stack: error.stack,
+            name: error.name,
+            code: error.code,
+            errors: error.errors // Mongoose validation errors
+        });
+        
+        // Check if it's a Mongoose validation error
+        if (error.name === 'ValidationError') {
+            const validationErrors = Object.keys(error.errors).map(key => 
+                `${key}: ${error.errors[key].message}`
+            ).join(', ');
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Validation error: ' + validationErrors,
+                error: error.message 
+            });
+        }
+        
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to create multi-amenity reservation.', 
+            error: error.message,
+            details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
+    }
+};
+
 // ... existing imports
 
 /**
@@ -635,7 +1186,7 @@ exports.finalizeReservation = async (req, res) => {
         }
 
         // 4. Idempotency Check: Prevent confirming an already confirmed/paid reservation
-        if (reservation.paymentStatus === 'PAID' && reservation.status !== 'PENDING') {
+        if (reservation.paymentStatus === 'PAID' || reservation.paymentStatus === 'DOWNPAYMENT_PAID') {
             // Use 409 Conflict status code
             return res.status(409).json({ success: false, message: "Reservation is already confirmed or payment has been processed." });
         }
@@ -647,16 +1198,17 @@ exports.finalizeReservation = async (req, res) => {
         reservation.receiptFileName = receiptFileName || 'receipt.jpg';
         reservation.receiptUploadedAt = new Date();
         
-        // Handle downpayment or full payment
+        // Handle downpayment or full payment (mark as pending verification)
         if (paymentType === 'downpayment' && downpaymentAmount) {
-            reservation.paymentStatus = 'DOWNPAYMENT_PAID';
+            reservation.paymentStatus = 'PENDING';
             reservation.totalAmount = totalAmount;
             reservation.downpaymentAmount = downpaymentAmount;
             reservation.remainingBalance = remainingBalance;
             reservation.paymentType = 'downpayment';
-            reservation.status = 'PENDING'; // Mark as PENDING after checkout, admin will mark as PAID
+            reservation.status = 'PENDING'; // Awaiting admin verification
         } else {
-            reservation.paymentStatus = 'PAID'; // Payment is complete, but status is still PENDING for admin approval
+            reservation.paymentStatus = 'PENDING'; // Payment submitted; awaiting admin verification
+            reservation.paymentType = 'full';
             reservation.status = 'PENDING';
         }
         
@@ -667,8 +1219,8 @@ exports.finalizeReservation = async (req, res) => {
         res.status(200).json({
             success: true,
             message: paymentType === 'downpayment' 
-                ? "Downpayment confirmed. Remaining balance will be paid upon check-in."
-                : "Payment confirmed and reservation finalized.",
+                ? "Downpayment submitted. Awaiting admin verification."
+                : "Payment submitted. Awaiting admin verification.",
             // FIX 3: Return the correct hash field in the response
             reservationHash: updatedReservation.reservationHash 
         });
@@ -792,6 +1344,11 @@ exports.updateReservationStatus = async (req, res) => {
 
         if (!updatedReservation) {
             return res.status(404).json({ message: 'Reservation not found.' });
+        }
+
+        // Remove global lock if Private Pool reservation is cancelled
+        if (normalizedStatus === 'CANCELLED') {
+            await removePrivatePoolGlobalLock(updatedReservation);
         }
 
         res.status(200).json({ 
@@ -1352,6 +1909,152 @@ exports.checkAvailability = async (req, res) => {
 };
 
 /**
+ * Check availability for multiple service types by date and time
+ * Returns list of available service IDs that match the requested types
+ * @route POST /api/reservations/check-service-types-availability
+ * @body { checkInDate, checkInTime, checkOutDate, serviceTypes: ['villa', 'room', etc.] }
+ */
+exports.checkServiceTypesAvailability = async (req, res) => {
+    try {
+        const { checkInDate, checkInTime, checkOutDate, checkOutTime, serviceTypes } = req.body;
+        
+        if (!checkInDate || !checkInTime || !checkOutDate || !serviceTypes || serviceTypes.length === 0) {
+            return res.status(400).json({ 
+                message: 'Missing required fields: checkInDate, checkInTime, checkOutDate, serviceTypes', 
+                availableServices: [] 
+            });
+        }
+
+        // Convert dates to proper format
+        const checkinDateTime = new Date(`${checkInDate}T${String(parseInt(checkInTime, 10)).padStart(2, '0')}:00:00`);
+        const checkoutDateTime = checkOutTime
+            ? new Date(`${checkOutDate}T${String(parseInt(checkOutTime, 10)).padStart(2, '0')}:00:00`)
+            : new Date(checkOutDate);
+        
+        // If checkout time is not provided, set to end of day
+        const checkoutWindowEnd = new Date(checkoutDateTime);
+        if (!checkOutTime) {
+            checkoutWindowEnd.setHours(23, 59, 59, 999);
+        }
+
+        // Get all services (filter inactive in memory; some records may not have isActive)
+        const allServices = await Service.find({});
+
+        if (!allServices || allServices.length === 0) {
+            return res.json({ 
+                message: 'No services found', 
+                availableServices: [] 
+            });
+        }
+
+        // Filter services by type (case-insensitive)
+        const matchingTypeServices = allServices.filter(service => {
+            if (service.isActive === false) return false;
+            if (!service.type) return false;
+            const serviceType = service.type.toLowerCase();
+            return serviceTypes.some(type => 
+                serviceType.includes(type.toLowerCase())
+            );
+        });
+
+        if (matchingTypeServices.length === 0) {
+            return res.json({ 
+                message: 'No services found with requested types', 
+                availableServices: [] 
+            });
+        }
+
+        // For each matching service, check if it has conflicting reservations
+        const availableServiceIds = [];
+
+        for (const service of matchingTypeServices) {
+            // Find overlapping reservations for this service
+            const overlappingReservations = await Reservation.find({
+                $or: [
+                    { serviceId: service._id?.toString() },
+                    { serviceId: service.id },
+                    { serviceId: service._id }
+                ],
+                status: { $nin: ['cancelled', 'rejected', 'CANCELLED', 'REJECTED'] },
+                // Overlap check: new check_in < existing check_out AND new check_out > existing check_in
+                check_in: { $lt: checkoutWindowEnd },
+                check_out: { $gt: checkinDateTime }
+            });
+
+            // If no conflicting reservations, service is available
+            if (overlappingReservations.length === 0) {
+                availableServiceIds.push((service._id || service.id).toString());
+            }
+        }
+
+        // Also check blocked dates
+        const startOfCheckIn = new Date(checkInDate);
+        startOfCheckIn.setHours(0, 0, 0, 0);
+        const endOfCheckOut = new Date(checkOutDate);
+        endOfCheckOut.setHours(23, 59, 59, 999);
+
+        const blockedDates = await BlockedDate.find({
+            $or: [
+                {
+                    startDate: { $lte: checkoutWindowEnd },
+                    endDate: { $gte: checkinDateTime }
+                },
+                {
+                    date: { $gte: startOfCheckIn, $lte: endOfCheckOut }
+                }
+            ]
+        });
+
+        // Filter out services that match blocked dates
+        const finalAvailableIds = availableServiceIds.filter(serviceId => {
+            const blockedForService = blockedDates.some(bd => {
+                if (bd.appliesToAllServices) {
+                    // Check if this is a Private Pool global lock
+                    if (bd.reason && bd.reason.includes('Private Pool Area Reserved')) {
+                        console.log(`🔒 Service ${serviceId} blocked by Private Pool reservation: ${bd.reason}`);
+                    }
+                    return true;
+                }
+                if (!bd.serviceIds || bd.serviceIds.length === 0) return false;
+                return bd.serviceIds.some(bdServiceId => 
+                    bdServiceId.toString() === serviceId || bdServiceId === serviceId
+                );
+            });
+            return !blockedForService;
+        });
+
+        // Check if resort is fully blocked due to Private Pool reservation
+        const hasPrivatePoolBlock = blockedDates.some(bd => 
+            bd.appliesToAllServices && 
+            bd.reason && 
+            bd.reason.includes('Private Pool Area Reserved')
+        );
+
+        res.json({ 
+            availableServices: finalAvailableIds,
+            totalMatching: matchingTypeServices.length,
+            totalAvailable: finalAvailableIds.length,
+            checkInDate,
+            checkInTime,
+            checkOutDate,
+            checkOutTime: checkOutTime || null,
+            serviceTypes,
+            resortFullyBooked: hasPrivatePoolBlock,
+            blockReason: hasPrivatePoolBlock 
+                ? 'The resort is fully booked due to a private pool reservation for this date and time.'
+                : null
+        });
+
+    } catch (error) {
+        console.error('Error checking service types availability:', error);
+        res.status(500).json({ 
+            message: error.message, 
+            availableServices: [] 
+        });
+    }
+};
+
+/**
  * Get all reservations for a specific service
  * @route GET /api/reservations/service/:serviceId
  */
@@ -1414,10 +2117,10 @@ exports.getPendingPaymentVerifications = async (req, res) => {
 exports.approvePayment = async (req, res) => {
     try {
         const { id } = req.params;
-        const { paymentStatus, status } = req.body; // Expecting 'PAID' or 'DOWNPAYMENT_PAID'
+        const { paymentStatus, status } = req.body;
 
-        if (!id || !paymentStatus || !status) {
-            return res.status(400).json({ message: 'Reservation ID, paymentStatus, and status are required.' });
+        if (!id) {
+            return res.status(400).json({ message: 'Reservation ID is required.' });
         }
 
         const reservation = await Reservation.findById(id);
@@ -1430,16 +2133,56 @@ exports.approvePayment = async (req, res) => {
             return res.status(400).json({ message: `Payment for reservation ${id} is already ${reservation.paymentStatus}.` });
         }
 
-        reservation.paymentStatus = paymentStatus;
-        reservation.status = status; // Update main status to PAID
-        reservation.updatedAt = new Date();
+        const resolvedPaymentStatus = paymentStatus || (reservation.paymentType === 'full' ? 'PAID' : 'DOWNPAYMENT_PAID');
+        const resolvedStatus = status || 'PAID';
 
-        await reservation.save();
+        let reservationsToUpdate = [reservation];
+        if (reservation.isMultiAmenity && reservation.multiAmenityGroupId) {
+            reservationsToUpdate = await Reservation.find({
+                multiAmenityGroupId: reservation.multiAmenityGroupId
+            }).sort({ multiAmenityIndex: 1 });
+        }
+
+        for (const r of reservationsToUpdate) {
+            r.paymentStatus = resolvedPaymentStatus;
+            r.status = resolvedStatus;
+            r.updatedAt = new Date();
+            await r.save();
+        }
+
+        // Check if any reservation in the group is Private Pool and create global lock
+        for (const r of reservationsToUpdate) {
+            await createPrivatePoolGlobalLock(r);
+        }
+
+        // Send QR code email after approval
+        try {
+            const hashes = reservationsToUpdate.map(r => r.reservationHash).filter(Boolean);
+            const hashString = hashes.join(',');
+            const confirmationUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/confirmation.html?hash=${encodeURIComponent(hashString)}`;
+            const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(hashString)}`;
+
+            const emailSubject = 'Reservation Approved - Your QR Code';
+            const emailBody = `
+                <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                    <h2>Your reservation has been approved!</h2>
+                    <p>Your payment was verified. Please use the QR code below for check-in.</p>
+                    <p style="margin: 16px 0;"><img src="${qrImageUrl}" alt="Reservation QR Code" style="width: 220px; height: 220px;" /></p>
+                    <p>If the image does not load, you can open your QR code here:</p>
+                    <p><a href="${confirmationUrl}">${confirmationUrl}</a></p>
+                    <p>Thank you for choosing Tito Renz Resort!</p>
+                </div>
+            `;
+
+            await emailService.sendGenericEmail(reservation.email, emailSubject, emailBody);
+        } catch (emailError) {
+            console.error('Email sending failed after approval:', emailError.message);
+        }
 
         res.status(200).json({
             success: true,
-            message: `Payment for reservation ${id} approved and status set to ${paymentStatus}.`,
-            reservation
+            message: `Payment for reservation ${id} approved and status set to ${resolvedPaymentStatus}.`,
+            reservation: reservationsToUpdate[0]
         });
     } catch (error) {
         console.error('SERVER ERROR approving payment:', error);
@@ -1456,10 +2199,10 @@ exports.approvePayment = async (req, res) => {
 exports.rejectPayment = async (req, res) => {
     try {
         const { id } = req.params;
-        const { paymentStatus, status } = req.body; // Expecting 'REJECTED'
+        const { paymentStatus, status } = req.body;
 
-        if (!id || !paymentStatus || !status) {
-            return res.status(400).json({ message: 'Reservation ID, paymentStatus, and status are required.' });
+        if (!id) {
+            return res.status(400).json({ message: 'Reservation ID is required.' });
         }
 
         const reservation = await Reservation.findById(id);
@@ -1472,16 +2215,32 @@ exports.rejectPayment = async (req, res) => {
             return res.status(400).json({ message: `Payment for reservation ${id} is already ${reservation.paymentStatus}.` });
         }
 
-        reservation.paymentStatus = paymentStatus;
-        reservation.status = status; // Revert to PENDING or set to a 'payment_rejected' status
-        reservation.updatedAt = new Date();
+        const resolvedPaymentStatus = paymentStatus || 'REJECTED';
+        const resolvedStatus = status || 'REJECTED';
 
-        await reservation.save();
+        let reservationsToUpdate = [reservation];
+        if (reservation.isMultiAmenity && reservation.multiAmenityGroupId) {
+            reservationsToUpdate = await Reservation.find({
+                multiAmenityGroupId: reservation.multiAmenityGroupId
+            }).sort({ multiAmenityIndex: 1 });
+        }
+
+        for (const r of reservationsToUpdate) {
+            r.paymentStatus = resolvedPaymentStatus;
+            r.status = resolvedStatus;
+            r.updatedAt = new Date();
+            await r.save();
+        }
+
+        // Remove global lock if Private Pool reservation is rejected
+        for (const r of reservationsToUpdate) {
+            await removePrivatePoolGlobalLock(r);
+        }
 
         res.status(200).json({
             success: true,
-            message: `Payment for reservation ${id} rejected. Status set to ${paymentStatus}.`,
-            reservation
+            message: `Payment for reservation ${id} rejected. Status set to ${resolvedPaymentStatus}.`,
+            reservation: reservationsToUpdate[0]
         });
     } catch (error) {
         console.error('SERVER ERROR rejecting payment:', error);
@@ -1528,8 +2287,37 @@ exports.uploadReceipt = async (req, res) => {
             return res.status(404).json({ success: false, message: "No reservations found for the provided hash(es)." });
         }
 
+        // Check if any reservation is part of a multi-amenity group
+        // If so, find ALL items in that group to update them together
+        const multiAmenityGroupIds = reservations
+            .filter(r => r.isMultiAmenity && r.multiAmenityGroupId)
+            .map(r => r.multiAmenityGroupId);
+        
+        let allReservationsToUpdate = [...reservations];
+        
+        if (multiAmenityGroupIds.length > 0) {
+            // Find all reservations in these multi-amenity groups
+            const groupReservations = await Reservation.find({
+                multiAmenityGroupId: { $in: multiAmenityGroupIds }
+            });
+            
+            // Merge with existing reservations (avoid duplicates)
+            const existingIds = new Set(reservations.map(r => r._id.toString()));
+            groupReservations.forEach(gr => {
+                if (!existingIds.has(gr._id.toString())) {
+                    allReservationsToUpdate.push(gr);
+                }
+            });
+            
+            console.log(`📦 Multi-amenity group detected. Updating ${allReservationsToUpdate.length} items in group(s).`);
+        }
+
         // Update each reservation
-        const updatePromises = reservations.map(async (reservation) => {
+        const updatePromises = allReservationsToUpdate.map(async (reservation) => {
+            if (['PAID', 'DOWNPAYMENT_PAID'].includes(reservation.paymentStatus)) {
+                return reservation;
+            }
+
             reservation.gcashReferenceNumber = gcashReferenceNumber;
             reservation.receiptFileName = receiptFile.filename;
             reservation.receiptUploadedAt = new Date();
@@ -1552,8 +2340,8 @@ exports.uploadReceipt = async (req, res) => {
                 }
             }
 
-            reservation.paymentStatus = (paymentType === 'full' ? 'PAID' : 'DOWNPAYMENT_PAID');
-            reservation.status = 'PAID'; // Mark as PAID to allow check-in/admin approval flow
+            reservation.paymentStatus = 'PENDING';
+            reservation.status = 'PENDING'; // Awaiting admin verification
             
             return reservation.save();
         });
@@ -1565,8 +2353,8 @@ exports.uploadReceipt = async (req, res) => {
         res.status(200).json({
             success: true,
             message: hashes.length > 1 
-                ? "Multiple reservations updated with payment proof." 
-                : "Payment confirmed and reservation finalized.",
+                ? "Payment proof submitted. Awaiting admin verification for all reservations." 
+                : "Payment proof submitted. Awaiting admin verification.",
             hashesUpdated: hashes
         });
 
