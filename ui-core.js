@@ -504,13 +504,11 @@ const navLinks = {
     { text: "Amenities", href: "services-list.html" },
     { text: "Reviews", href: "feedback.html" },
     { text: "Contact Us", href: "contact.html" },
-    { text: "🛒 Cart", href: "cart.html", id: "cart-link" },
   ],
   customer: [
     { text: "Amenities", href: "services-list.html" },
     { text: "Reviews", href: "feedback.html" },
     { text: "Contact Us", href: "contact.html" },
-    { text: "🛒 Cart", href: "cart.html", id: "cart-link" },
   ],
   admin: [
     { text: "Admin Dashboard", href: "/admin/admin-dashboard.html" },
@@ -525,12 +523,10 @@ const footerQuickLinks = {
   public: [
     { text: "Amenities", href: "services-list.html" },
     { text: "Reviews", href: "feedback.html" },
-    { text: "Cart", href: "cart.html" },
   ],
   customer: [
     { text: "Amenities", href: "services-list.html" },
     { text: "Reviews", href: "feedback.html" },
-    { text: "Cart", href: "cart.html" },
   ],
   admin: [
     { text: "Check-in Demo", href: "checkin-demo.html" },
@@ -681,22 +677,9 @@ function renderNavigation() {
   // Dynamic links
   links.forEach((link) => {
     const li = document.createElement("li");
-    if (link.id === 'cart-link') {
-      li.innerHTML = `
-        <a href="${link.href}" class="cart-icon-wrapper">
-          ${link.text}
-          <span id="cart-badge" style="display: none;">0</span>
-        </a>`;
-    } else {
-      li.innerHTML = `<a href="${link.href}">${link.text}</a>`;
-    }
+    li.innerHTML = `<a href="${link.href}">${link.text}</a>`;
     navUl.appendChild(li);
   });
-
-  // Update cart badge if function exists
-  if (typeof updateCartBadge === "function") {
-    setTimeout(() => updateCartBadge(), 100);
-  }
 
   // Help link
   const helpLi = document.createElement("li");
@@ -986,8 +969,14 @@ function formatReservationDetails(r) {
   const downpayment = r.downpaymentAmount || 0;
   const remainingBalance = r.remainingBalance || 0;
   
+  // Multi-amenity info
+  const multiAmenityInfo = r.isMultiAmenity 
+    ? `<p style="background:#fff3cd; padding:10px; border-radius:4px;"><strong>⚠️ Multi-Amenity Group:</strong> Item ${(r.multiAmenityIndex || 0) + 1} of ${r.multiAmenityTotal || 1}</p>`
+    : '';
+  
   return `
     <div class="details-container">
+      ${multiAmenityInfo}
       <div class="detail-section">
         <h6>👤 Guest Details</h6>
         <p><strong>Name:</strong> ${escapeHtml(r.full_name || r.customer_name || 'N/A')}</p>
@@ -1001,6 +990,8 @@ function formatReservationDetails(r) {
         <p><strong>Service Name:</strong> ${escapeHtml(r.serviceName || r.serviceId || 'N/A')}</p>
         <p><strong>Duration:</strong> ${escapeHtml(r.durationLabel || r.timeSlotLabel || 'N/A')}</p>
         <p><strong>Number of Guests:</strong> ${r.guests || r.numberOfGuests || 'N/A'}</p>
+        ${r.checkInTimeSlot ? `<p><strong>Check-in Time Slot:</strong> ${escapeHtml(r.checkInTimeSlot)}</p>` : ''}
+        ${r.checkOutTimeSlot ? `<p><strong>Check-out Time Slot:</strong> ${escapeHtml(r.checkOutTimeSlot)}</p>` : ''}
       </div>
       <div class="detail-section">
         <h6>💰 Financial Breakdown</h6>
@@ -1015,7 +1006,7 @@ function formatReservationDetails(r) {
       <div class="detail-section">
         <h6>💳 Payment Details</h6>
         <p><strong>GCash Ref #:</strong> ${escapeHtml(r.gcashReferenceNumber || 'N/A')}</p>
-        <p><strong>Payment Status:</strong> ${escapeHtml(r.paymentStatus || r.status || 'N/A')}</p>
+        <p><strong>Payment Status:</strong> <span class="badge bg-${r.paymentStatus === 'PAID' ? 'success' : r.paymentStatus === 'PENDING' ? 'warning' : 'danger'}">${escapeHtml(r.paymentStatus || r.status || 'N/A')}</span></p>
         <div><strong>Receipt:</strong><br>${receiptCell}</div>
       </div>
       <div class="detail-section">
@@ -1056,7 +1047,7 @@ function toggleReservationDetails(btn, reservationId) {
       const detailHTML = formatReservationDetails(reservation);
       const detailRow = document.createElement('tr');
       detailRow.className = 'reservation-details-row';
-      detailRow.innerHTML = `<td colspan="7">${detailHTML}</td>`;
+      detailRow.innerHTML = `<td colspan="6">${detailHTML}</td>`;
       row.after(detailRow);
       btn.textContent = '−';
       btn.classList.remove('btn-outline-primary');
@@ -1068,7 +1059,7 @@ function toggleReservationDetails(btn, reservationId) {
 async function renderAdminReservations() {
     const tbody = document.getElementById("admin-reservation-list");
     if (!tbody) return;
-    tbody.innerHTML = '<tr><td colspan="7" class="text-center">Loading reservations...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center">Loading reservations...</td></tr>';
        try {
          // Fetch all reservations for admin
          const response = await fetch("http://localhost:3000/api/reservations/allreservation");
@@ -1090,13 +1081,19 @@ async function renderAdminReservations() {
          });
          
          if (reservations.length === 0) {
-           tbody.innerHTML = '<tr><td colspan="7" class="text-center">No reservations found.</td></tr>';
+           tbody.innerHTML = '<tr><td colspan="6" class="text-center">No reservations found.</td></tr>';
            return;
          }
          tbody.innerHTML = reservations.map(r => {
            // Status badge styling
            let statusBadge = '';
-           switch(r.status) {
+           // Check paymentStatus first for pending payments, otherwise use status
+           const displayStatus = r.paymentStatus === 'PENDING' ? 'PENDING_PAYMENT' : r.status;
+           
+           switch(displayStatus) {
+             case 'PENDING_PAYMENT':
+               statusBadge = '<span class="badge bg-warning">PENDING PAYMENT</span>';
+               break;
              case 'PAID':
                statusBadge = '<span class="badge bg-warning">PAID</span>';
                break;
@@ -1112,11 +1109,19 @@ async function renderAdminReservations() {
              case 'CANCELLED':
                statusBadge = '<span class="badge bg-danger">CANCELLED</span>';
                break;
+             case 'REJECTED':
+               statusBadge = '<span class="badge bg-danger">REJECTED</span>';
+               break;
              default:
-               statusBadge = `<span class="badge bg-secondary">${r.status}</span>`;
+               statusBadge = `<span class="badge bg-secondary">${displayStatus}</span>`;
            }
            
            let actions = '';
+           // Multi-amenity indicator in actions
+           if (r.isMultiAmenity) {
+             actions += `<span class="badge bg-info me-2" title="This is part of a multi-amenity group">Multi-Item ${r.multiAmenityIndex + 1}/${r.multiAmenityTotal}</span>`;
+           }
+           
            // Only show Accept if status is PAID and not already confirmed/completed/cancelled
            if (r.status === 'PAID') {
              actions += `<button class="btn btn-success btn-sm me-1" onclick="confirmReservation('${r._id}', '${escapeHtml(r.email || '')}', '${escapeHtml(r.full_name || r.customer_name || '')}')">Accept</button>`;
@@ -1131,11 +1136,13 @@ async function renderAdminReservations() {
              actions += `<button class="btn btn-danger btn-sm me-1" onclick="cancelReservation('${r._id}')">Cancel</button>`;
            }
           // Send Email button
-          actions += `<button class="btn btn-info btn-sm me-1" onclick="openSendEmailModal('${r._id}', '${escapeHtml(r.email || '')}')">Send Email</button>`;
+          actions += `<button class="btn btn-info btn-sm me-1" onclick="openSendEmailModal('${r._id}', '${escapeHtml(r.email || '')}')">Email</button>`;
+          
+          // Add expand button to actions column
+          actions += `<button class="btn btn-sm btn-outline-primary expand-reservation-btn" onclick="toggleReservationDetails(this, '${r._id}')">+</button>`;
           
           return `<tr>
-            <td><button class="btn btn-sm btn-outline-primary expand-reservation-btn" onclick="toggleReservationDetails(this, '${r._id}')">+</button></td>
-            <td>${r.reservationId || r._id}</td>
+            <td><strong>${r.reservationId || r._id}</strong>${r.isMultiAmenity ? `<br><small class="text-muted">Item ${r.multiAmenityIndex + 1}/${r.multiAmenityTotal}</small>` : ''}</td>
             <td>${escapeHtml(r.full_name || r.customer_name || '')}</td>
             <td>${r.check_in ? new Date(r.check_in).toLocaleString() : ''}</td>
             <td>₱${parseFloat(r.finalTotal || 0).toLocaleString()}</td>
@@ -1157,7 +1164,7 @@ async function renderAdminReservations() {
         }, 100);
       }
     } catch (e) {
-      tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Error loading reservations.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">Error loading reservations.</td></tr>';
     }
 // DataTable for users table
 function renderUsersListDataTable() {

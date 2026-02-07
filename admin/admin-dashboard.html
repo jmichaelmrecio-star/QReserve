@@ -300,6 +300,7 @@
             { path: '/admin/admin-reservations.html', target: 'dashboard-area-container' },
             { path: '/admin/admin-promo-codes.html', target: 'nav-promocodes-container' },
             { path: '/admin/admin-services.html', target: 'service-management-container' },
+            { path: '/admin/payment-verifications.html', target: 'payment-verifications-section-container' }
             
         ]);
         // DEBUG: Patch renderAdminReservations to show errors in debug-info
@@ -328,7 +329,7 @@
         // Wait a bit for components to render
         setTimeout(() => {
             // Ensure sections have .tab-pane class (removed Home, Checkin Demo, Dining, Promotions)
-            ['schedule-management','nav-promocodes','service-management','user-management','dashboard-area'].forEach(id => {
+            ['schedule-management','nav-promocodes','service-management','user-management','dashboard-area','payment-verifications'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.classList.add('tab-pane');
             });

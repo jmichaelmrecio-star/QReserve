@@ -499,28 +499,40 @@
                     <div id="service-cards-container">
                     </div>
 
-                    <!-- Booking Summary Sidebar -->
+                    <!-- Selected Items Sidebar -->
                     <aside id="booking-summary-sidebar">
-                        <h3>Booking Summary</h3>
-                        <div class="summary-details" style="margin-top: 15px;">
-                            <p style="font-weight: bold;">Selected Room:</p>
-                            <p id="summary-room">No room selected yet</p>
-                        </div>
-
-                        <div id="summary-inclusions" class="summary-inclusions" style="display: none;">
-                            <h4>Inclusions</h4>
-                            <ul id="summary-inclusions-list"></ul>
+                        <h3>🛍️ Selected Items</h3>
+                        <div id="selected-items-list" style="margin-top: 15px; max-height: 300px; overflow-y: auto;">
+                            <p style="color: #999; font-size: 0.9rem;">No items selected yet</p>
                         </div>
 
                         <hr style="margin: 15px 0;">
 
-                        <div class="summary-total">
-                            <p style="font-size: 1.1rem; font-weight: bold; color: var(--primary-color);">Total Charge:</p>
-                            <p id="summary-price" style="font-size: 1.5rem; font-weight: bold; color: #dc3545;">P0.00</p>
+                        <!-- Promo Code Section -->
+                        <div style="margin-bottom: 15px;">
+                            <label for="promo-code-input" style="font-weight: 600; font-size: 0.9rem; color: #555;">Promo Code:</label>
+                            <div style="display: flex; gap: 8px; margin-top: 8px;">
+                                <input type="text" id="promo-code-input" placeholder="Enter code" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9rem;">
+                                <button id="apply-promo-btn" class="button-primary" style="padding: 8px 16px; font-size: 0.9rem; white-space: nowrap;" onclick="applyPromoCode(); return false;">Apply</button>
+                            </div>
+                            <div id="promo-message" style="margin-top: 8px; font-size: 0.85rem;"></div>
                         </div>
 
-                        <a href="#" class="button-primary disabled" id="sidebar-proceed-button" style="width: 100%; margin-top: 20px;" onclick="showModal('No Service Selected', '<p>Please select a service before proceeding with your booking.</p>', 'warning'); return false;">Continue Booking</a>
+                        <div class="summary-total">
+                            <div id="original-price-display" style="display: none; margin-bottom: 8px;">
+                                <p style="font-size: 0.85rem; color: #999; text-decoration: line-through; margin: 0;">Original: <span id="summary-original">₱0.00</span></p>
+                            </div>
+                            <p style="font-size: 0.95rem; font-weight: 600; color: #666;">Total:</p>
+                            <p id="summary-subtotal" style="font-size: 1.3rem; font-weight: bold; color: var(--primary-color);">₱0.00</p>
+                            <div id="discount-display" style="display: none; margin-top: 4px;">
+                                <p style="font-size: 0.85rem; color: #28a745; font-weight: 600; margin: 0;">Discount: -<span id="discount-amount">₱0.00</span></p>
+                            </div>
+                        </div>
 
+                        <div style="display: flex; gap: 10px; margin-top: 15px;">
+                            <button id="clear-selections-btn" class="button-secondary" style="flex: 1; padding: 0.75rem; font-size: 0.9rem;" onclick="clearSelectedItems(); return false;">Clear All</button>
+                            <a href="#" class="button-primary" id="sidebar-proceed-button" style="flex: 2; text-align: center; padding: 0.75rem;" onclick="proceedToReservation(); return false;">Proceed</a>
+                        </div>
                     </aside>
                 </div>
             </section>
@@ -534,12 +546,45 @@
             <p>Max Guests: <span id="modal-max-guests"></span></p>
             <p id="modal-description" style="margin-top: 15px;"></p>
             
-            <!-- Duration/Time Slot Selection -->
+            <!-- Check-in Date Selection -->
+            <div style="margin-top: 20px;">
+                <label for="modal-checkin-date" style="font-weight: bold;">Check-in Date:</label>
+                <input type="date" id="modal-checkin-date" style="width: 100%; padding: 12px; margin-top: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; font-weight: 500;" required>
+            </div>
+            
+            <!-- Check-in Time Selection -->
+            <div style="margin-top: 20px;">
+                <label for="modal-checkin-time" style="font-weight: bold;">Check-in Time:</label>
+                <select id="modal-checkin-time" style="width: 100%; padding: 8px; margin-top: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                    <option value="">-- Select --</option>
+                    <option value="8">8:00 AM</option>
+                    <option value="9">9:00 AM</option>
+                    <option value="10">10:00 AM</option>
+                    <option value="11">11:00 AM</option>
+                    <option value="12">12:00 PM</option>
+                    <option value="13">1:00 PM</option>
+                    <option value="14">2:00 PM</option>
+                    <option value="15">3:00 PM</option>
+                    <option value="16">4:00 PM</option>
+                    <option value="17">5:00 PM</option>
+                    <option value="18">6:00 PM</option>
+                    <option value="19">7:00 PM</option>
+                    <option value="20">8:00 PM</option>
+                </select>
+            </div>
+            
+            <!-- Duration Selection -->
             <div id="modal-duration-section" style="margin-top: 20px;">
-                <label for="modal-duration-select" style="font-weight: bold;">Select Duration/Time Slot:</label>
+                <label for="modal-duration-select" style="font-weight: bold;">Select Duration:</label>
                 <select id="modal-duration-select" style="width: 100%; padding: 8px; margin-top: 8px; border: 1px solid #ccc; border-radius: 4px;">
                     <option value="">-- Select --</option>
                 </select>
+            </div>
+            
+            <!-- Check-out Date Display (Auto-calculated) -->
+            <div id="modal-checkout-display" style="margin-top: 15px; padding: 10px; background: #e8f5e9; border-radius: 4px; display: none;">
+                <p style="margin: 0; font-weight: 600; color: #2e7d32;">Check-out: <span id="modal-checkout-date">--</span></p>
+                <p style="margin: 4px 0 0 0; font-size: 0.85rem; color: #1b5e20;">Check-out Time: <span id="modal-checkout-time">--</span></p>
             </div>
             
             <p style="margin-top: 15px;">Price: <span id="modal-price" style="font-weight: bold; font-size: 1.3rem; color: var(--primary-color);">Select duration</span></p>
@@ -550,7 +595,7 @@
                 <ul id="modal-inclusions-list" style="list-style: disc; padding-left: 25px;"></ul>
             </div>
             
-            <a href="#" id="modal-proceed-button" class="button-primary" style="margin-top: 20px; pointer-events: none; opacity: 0.5;">Proceed to Reservation Form</a>
+            <a href="#" id="modal-proceed-button" class="button-primary" style="margin-top: 20px; pointer-events: none; opacity: 0.5;">Add to Selection</a>
         </div>
     </div>
 
@@ -612,47 +657,699 @@
         <script src="notifications.js"></script>
         <script src="ui-core.js"></script>
         <script src="auth-profile.js"></script>
-        <script src="cart-system.js"></script>
         <script src="reservation.js"></script>
+        <script src="amenity-selector.js"></script>
         <script>
-        // Patch: Enable service selection to pass to reserve.html via GET
-        document.addEventListener('DOMContentLoaded', function() {
-            const proceedBtn = document.getElementById('modal-proceed-button');
-            const select = document.getElementById('modal-duration-select');
-            if (proceedBtn && select) {
-                select.addEventListener('change', function() {
-                    if (select.value) {
-                        proceedBtn.style.opacity = '1';
-                        proceedBtn.style.pointerEvents = 'auto';
-                        proceedBtn.onclick = function(e) {
-                            e.preventDefault();
-                            // Find serviceId from modal
-                            const serviceName = document.getElementById('modal-name').textContent;
-                            let serviceId = null;
-                            if (window.resortServices) {
-                                const svc = window.resortServices.find(s => s.name === serviceName);
-                                if (svc) serviceId = svc._id || svc.id;
-                            }
-                            if (!serviceId) return;
-                            let price = '';
-                            if (window.calculatePriceByDuration) {
-                                price = window.calculatePriceByDuration(serviceId, select.value);
-                            }
-                            const params = new URLSearchParams({
-                                serviceId: serviceId,
-                                serviceName: serviceName,
-                                duration: select.value,
-                                price: price
-                            });
-                            window.location.href = 'reserve.html?' + params.toString();
-                        };
-                    } else {
-                        proceedBtn.style.opacity = '0.5';
-                        proceedBtn.style.pointerEvents = 'none';
-                        proceedBtn.onclick = null;
+        // Override showServiceModal for multi-amenity selection mode
+        window.showServiceModalForAmenitySelection = function(serviceId) {
+            const services = window.getActiveServices ? window.getActiveServices() : (window.resortServices || []);
+            const service = services.find(s => (s._id || s.id) === serviceId);
+            if (!service) return;
+
+            const modal = document.getElementById("serviceModal");
+            if (!modal) return;
+
+            // Detect if this is Private Pool Area
+            const isPrivatePool = service.name && service.name.toLowerCase().includes('private pool area');
+
+            // Set basic info
+            document.getElementById("modal-name").textContent = service.name;
+            document.getElementById("modal-max-guests").textContent = service.max_guests || "N/A";
+            document.getElementById("modal-description").textContent = service.description || "No description available.";
+
+            // Setup check-in date picker (default today for rooms, tomorrow for venues)
+            const checkinInput = document.getElementById("modal-checkin-date");
+            if (checkinInput) {
+                const today = new Date();
+                const tomorrow = new Date(today);
+                tomorrow.setDate(today.getDate() + 1);
+
+                const serviceType = (service.type || '').toLowerCase();
+                const serviceCategory = (service.category || '').toLowerCase();
+                const isVenue = serviceType === 'venue' ||
+                    serviceCategory.includes('event_space') ||
+                    serviceCategory.includes('water_facility') ||
+                    (service.name && service.name.toLowerCase().includes('private pool'));
+
+                const defaultDate = isVenue ? tomorrow : today;
+
+                // Format as YYYY-MM-DD in local timezone
+                const year = defaultDate.getFullYear();
+                const month = String(defaultDate.getMonth() + 1).padStart(2, '0');
+                const day = String(defaultDate.getDate()).padStart(2, '0');
+                const defaultDateStr = `${year}-${month}-${day}`;
+
+                checkinInput.min = defaultDateStr;
+                checkinInput.value = defaultDateStr; // Default to today or tomorrow
+
+                // Add validation to prevent selecting dates before the minimum
+                checkinInput.onchange = function() {
+                    const selectedDate = new Date(checkinInput.value + 'T00:00:00');
+                    const minDateCheck = new Date(defaultDate);
+                    minDateCheck.setHours(0, 0, 0, 0);
+                    selectedDate.setHours(0, 0, 0, 0);
+
+                    if (selectedDate < minDateCheck) {
+                        showToast(
+                            isVenue ? 'Please select a date from tomorrow onwards' : 'Please select today or a future date',
+                            'warning'
+                        );
+                        checkinInput.value = defaultDateStr; // Reset to default
                     }
-                });
+
+                    updateTimeOptionsAvailability(checkinInput, document.getElementById("modal-checkin-time"));
+                    calculateCheckoutDate();
+                };
             }
+            
+            // Setup check-in time selector
+            const timeInput = document.getElementById("modal-checkin-time");
+            if (timeInput) {
+                // Special handling for Private Pool Area - only 8am or 8pm
+                if (isPrivatePool) {
+                    timeInput.innerHTML = `
+                        <option value="">-- Select --</option>
+                        <option value="8">8:00 AM</option>
+                        <option value="20">8:00 PM</option>
+                    `;
+                    // Add onchange handler to update price when time changes for private pool
+                    timeInput.onchange = function() {
+                        calculateCheckoutDate();
+                        if (isPrivatePool) {
+                            updatePrivatePoolPrice(serviceId, service);
+                        }
+                    };
+                } else {
+                    // Reset to default time options for non-private pool services
+                    timeInput.innerHTML = `
+                        <option value="">-- Select --</option>
+                        <option value="8">8:00 AM</option>
+                        <option value="9">9:00 AM</option>
+                        <option value="10">10:00 AM</option>
+                        <option value="11">11:00 AM</option>
+                        <option value="12">12:00 PM</option>
+                        <option value="13">1:00 PM</option>
+                        <option value="14">2:00 PM</option>
+                        <option value="15">3:00 PM</option>
+                        <option value="16">4:00 PM</option>
+                        <option value="17">5:00 PM</option>
+                        <option value="18">6:00 PM</option>
+                        <option value="19">7:00 PM</option>
+                        <option value="20">8:00 PM</option>
+                    `;
+                    timeInput.onchange = calculateCheckoutDate;
+                }
+
+                updateTimeOptionsAvailability(checkinInput, timeInput);
+            }
+
+            // Populate duration/time slot select
+            const select = document.getElementById("modal-duration-select");
+            if (select) {
+                select.innerHTML = '<option value="">-- Select --</option>';
+                
+                // Special handling for Private Pool Area - fixed 9 hours duration
+                if (isPrivatePool) {
+                    const option = document.createElement("option");
+                    option.value = "private-pool-9h";
+                    option.textContent = "9 Hours - Price depends on check-in time";
+                    option.setAttribute('data-hours', '9');
+                    select.appendChild(option);
+                    
+                    // For private pool, always select the only option
+                    select.value = "private-pool-9h";
+                } else {
+                    // Normal services - show all durations
+                    const options = [...(service.timeSlots || []), ...(service.durations || [])];
+                    options.forEach(opt => {
+                        const option = document.createElement("option");
+                        option.value = opt.id;
+                        option.textContent = `${opt.label} - ₱${opt.price.toLocaleString()}`;
+                        // Store nights count as data attribute for calculation
+                        option.setAttribute('data-nights', opt.nights || 0);
+                        select.appendChild(option);
+                    });
+                }
+
+                const options = [...(service.timeSlots || []), ...(service.durations || [])];
+
+                // CUSTOM: Handle selecting duration for amenity
+                select.onchange = function() {
+                    const priceEl = document.getElementById("modal-price");
+                    const proceedBtn = document.getElementById("modal-proceed-button");
+                    
+                    if (select.value) {
+                        if (isPrivatePool) {
+                            // For private pool, price depends on check-in time
+                            updatePrivatePoolPrice(serviceId, service);
+                        } else {
+                            // Calculate price normally
+                            const durationOption = options.find(o => o.id === select.value);
+                            const price = durationOption ? durationOption.price : 0;
+                            
+                            if (priceEl) {
+                                priceEl.textContent = `₱${price.toLocaleString()}`;
+                            }
+                        }
+                        
+                        // Calculate check-out date
+                        calculateCheckoutDate();
+                        
+                        // Validate button state
+                        updateModalProceedButton(serviceId, service, options, isPrivatePool);
+                    } else {
+                        if (priceEl) priceEl.textContent = "Select duration";
+                        if (proceedBtn) {
+                            proceedBtn.style.opacity = "0.5";
+                            proceedBtn.style.pointerEvents = "none";
+                            proceedBtn.onclick = null;
+                        }
+                        // Hide checkout display
+                        const checkoutDisplay = document.getElementById("modal-checkout-display");
+                        if (checkoutDisplay) checkoutDisplay.style.display = "none";
+                    }
+                };
+                
+                // If private pool, trigger price update after setup
+                if (isPrivatePool && select.value) {
+                    updatePrivatePoolPrice(serviceId, service);
+                }
+            }
+
+            // Populate Inclusions
+            const inclusionsContainer = document.getElementById("modal-inclusions");
+            const inclusionsList = document.getElementById("modal-inclusions-list");
+            if (inclusionsContainer && inclusionsList) {
+                if (service.inclusions && service.inclusions.length > 0) {
+                    inclusionsList.innerHTML = service.inclusions.map(inc => {
+                        const text = String(inc).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+                        return `<li>${text}</li>`;
+                    }).join("");
+                    inclusionsContainer.style.display = "block";
+                } else {
+                    inclusionsContainer.style.display = "none";
+                }
+            }
+
+            modal.style.display = "block";
+        };
+
+        function getLocalDateString(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function updateTimeOptionsAvailability(checkinInput, timeInput) {
+            if (!checkinInput || !timeInput) return;
+
+            const selectedDate = checkinInput.value;
+            if (!selectedDate) return;
+
+            const todayStr = getLocalDateString(new Date());
+            const isToday = selectedDate === todayStr;
+            const currentHour = new Date().getHours();
+
+            Array.from(timeInput.options).forEach(option => {
+                if (!option.value) {
+                    option.disabled = false;
+                    option.style.color = '';
+                    return;
+                }
+
+                const optionHour = parseInt(option.value, 10);
+                const shouldDisable = isToday && !Number.isNaN(optionHour) && optionHour <= currentHour;
+                option.disabled = shouldDisable;
+                option.style.color = shouldDisable ? '#999' : '';
+            });
+
+            if (timeInput.value) {
+                const selectedOption = timeInput.options[timeInput.selectedIndex];
+                if (selectedOption && selectedOption.disabled) {
+                    timeInput.value = '';
+                }
+            }
+        }
+
+        // Helper: Calculate check-out date based on check-in + duration
+        function calculateCheckoutDate() {
+            const checkinInput = document.getElementById("modal-checkin-date");
+            const checkinTimeInput = document.getElementById("modal-checkin-time");
+            const durationSelect = document.getElementById("modal-duration-select");
+            const checkoutDisplay = document.getElementById("modal-checkout-display");
+            const checkoutDateSpan = document.getElementById("modal-checkout-date");
+            const checkoutTimeSpan = document.getElementById("modal-checkout-time");
+
+            if (!checkinInput || !durationSelect || !checkoutDisplay || !checkoutDateSpan || !checkoutTimeSpan) return;
+
+            const checkinValue = checkinInput.value;
+            const durationId = durationSelect.value;
+            const checkinTime = checkinTimeInput ? checkinTimeInput.value : '';
+
+            if (!checkinValue || !durationId) {
+                checkoutDisplay.style.display = "none";
+                return;
+            }
+
+            // Get duration option details
+            const selectedOption = durationSelect.options[durationSelect.selectedIndex];
+            const durationLabel = selectedOption.text; // e.g., "22 Hours - ₱6,000" or "2 Nights - ₱15,000"
+            
+            // Parse duration to extract hours or nights
+            let hoursToAdd = 0;
+            let daysToAdd = 0;
+            let isHourlyDuration = false;
+            
+            // Check if this is Private Pool Area (fixed 9 hours)
+            if (durationId === 'private-pool-9h') {
+                hoursToAdd = 9;
+                isHourlyDuration = true;
+            } else if (durationLabel.includes('Hour')) {
+                // Extract hours from label (e.g., "22 Hours" → 22)
+                const hourMatch = durationLabel.match(/(\d+)\s*Hour/);
+                if (hourMatch) {
+                    hoursToAdd = parseInt(hourMatch[1]);
+                    isHourlyDuration = true;
+                }
+            } else if (durationLabel.includes('Night')) {
+                // Extract nights from label (e.g., "2 Nights" → 2)
+                const nightMatch = durationLabel.match(/(\d+)\s*Night/);
+                if (nightMatch) {
+                    daysToAdd = parseInt(nightMatch[1]);
+                }
+            } else {
+                // Fallback to data-nights attribute
+                const nights = parseInt(selectedOption.getAttribute('data-nights') || '0');
+                daysToAdd = nights;
+            }
+
+            // Calculate check-out date and time
+            const checkinDate = new Date(checkinValue);
+            const checkoutDate = new Date(checkinDate);
+            let checkoutTime = '--';
+
+            if (isHourlyDuration && hoursToAdd > 0) {
+                // For hourly durations: add hours to the start time
+                const checkinHour = parseInt(checkinTime); // e.g., 8, 14, 20
+                checkinDate.setHours(checkinHour);
+                checkoutDate.setHours(checkinHour);
+                checkoutDate.setHours(checkoutDate.getHours() + hoursToAdd);
+                
+                // Get hours and minutes from calculated checkout
+                const checkoutHours = checkoutDate.getHours();
+                const checkoutMins = checkoutDate.getMinutes();
+                const ampm = checkoutHours >= 12 ? 'PM' : 'AM';
+                const displayHours = checkoutHours % 12 || 12;
+                checkoutTime = `${displayHours}:${checkoutMins.toString().padStart(2, '0')} ${ampm}`;
+            } else if (daysToAdd > 0) {
+                // For night-based durations: add days, checkout at same time
+                checkoutDate.setDate(checkoutDate.getDate() + daysToAdd);
+                const checkinHour = parseInt(checkinTime);
+                const ampm = checkinHour >= 12 ? 'PM' : 'AM';
+                const displayHours = checkinHour % 12 || 12;
+                checkoutTime = `${displayHours}:00 ${ampm}`;
+            } else {
+                // Fallback: same time as check-in
+                const checkinHour = parseInt(checkinTime);
+                const ampm = checkinHour >= 12 ? 'PM' : 'AM';
+                const displayHours = checkinHour % 12 || 12;
+                checkoutTime = `${displayHours}:00 ${ampm}`;
+            }
+
+            // Format checkout date as readable
+            const dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
+            const readableDate = checkoutDate.toLocaleDateString('en-US', dateOptions);
+            
+            checkoutDateSpan.textContent = readableDate;
+            checkoutTimeSpan.textContent = checkoutTime;
+            
+            checkoutDisplay.style.display = "block";
+        }
+
+        // Helper: Update price for Private Pool Area based on check-in time
+        function updatePrivatePoolPrice(serviceId, service) {
+            const checkinTimeInput = document.getElementById("modal-checkin-time");
+            const durationSelect = document.getElementById("modal-duration-select");
+            const priceEl = document.getElementById("modal-price");
+            const proceedBtn = document.getElementById("modal-proceed-button");
+            
+            if (!checkinTimeInput || !durationSelect || !priceEl) return;
+            
+            const checkinTime = checkinTimeInput.value;
+            const durationId = durationSelect.value;
+            
+            if (durationId === 'private-pool-9h' && checkinTime) {
+                let price = 0;
+                
+                // 8am = ₱12,000, 8pm = ₱15,000
+                if (checkinTime === '8') {
+                    price = 12000;
+                } else if (checkinTime === '20') {
+                    price = 15000;
+                }
+                
+                priceEl.textContent = `₱${price.toLocaleString()}`;
+                
+                // Store price as data attribute for later use
+                durationSelect.setAttribute('data-private-pool-price', price);
+                
+                // Update button state
+                const options = []; // Empty for private pool
+                updateModalProceedButton(serviceId, service, options, true);
+            } else {
+                priceEl.textContent = "Select check-in time";
+                if (proceedBtn) {
+                    proceedBtn.style.opacity = "0.5";
+                    proceedBtn.style.pointerEvents = "none";
+                }
+            }
+        }
+
+        // Helper: Update proceed button state with all validations
+        function updateModalProceedButton(serviceId, service, options, isPrivatePool = false) {
+            const proceedBtn = document.getElementById("modal-proceed-button");
+            const checkinInput = document.getElementById("modal-checkin-date");
+            const checkinTimeInput = document.getElementById("modal-checkin-time");
+            const durationSelect = document.getElementById("modal-duration-select");
+
+            if (!proceedBtn || !checkinInput || !durationSelect) return;
+
+            const checkinValue = checkinInput.value;
+            const checkinTime = checkinTimeInput ? checkinTimeInput.value : '';
+            const durationId = durationSelect.value;
+
+            // Enable button only if check-in date, check-in time, and duration are all selected
+            if (checkinValue && checkinTime && durationId) {
+                let durationOption = null;
+                let price = 0;
+                
+                if (isPrivatePool && durationId === 'private-pool-9h') {
+                    // For private pool, get price from data attribute
+                    price = parseInt(durationSelect.getAttribute('data-private-pool-price') || '0');
+                    
+                    // Create a synthetic duration option for private pool
+                    durationOption = {
+                        id: durationId,
+                        label: '9 Hours',
+                        price: price,
+                        hours: 9
+                    };
+                } else {
+                    // Normal service - find from options
+                    durationOption = options.find(o => o.id === durationId);
+                }
+                
+                proceedBtn.style.opacity = "1";
+                proceedBtn.style.pointerEvents = "auto";
+                
+                // Override button click to add amenity with dates (async handler)
+                proceedBtn.onclick = async function(e) {
+                    e.preventDefault();
+                    await addAmenityFromModal(serviceId, durationId, service, durationOption, checkinValue, checkinTime, isPrivatePool);
+                };
+            } else {
+                proceedBtn.style.opacity = "0.5";
+                proceedBtn.style.pointerEvents = "none";
+                proceedBtn.onclick = null;
+            }
+        }
+
+        // Helper: Find and add complimentary villa room for Private Pool
+        async function addComplimentaryVillaRoom(checkInDate, checkInTime, checkOutDate, checkOutTime) {
+            const services = window.getActiveServices ? window.getActiveServices() : (window.resortServices || []);
+            
+            // Filter to villa/room services only
+            const villaServices = services.filter(service => {
+                const isVilla = service.type && (service.type.toLowerCase().includes('room') || service.type.toLowerCase().includes('villa'));
+                if (!isVilla) return false;
+                
+                // Check if not already selected
+                if (isAmenitySelected(service._id || service.id, service.assetNumber)) {
+                    return false;
+                }
+                
+                return true;
+            });
+            
+            if (villaServices.length === 0) {
+                console.log('⚠️ No available villa room found for complimentary inclusion');
+                return false;
+            }
+            
+            // Check backend for availability
+            try {
+                const response = await fetch('/api/reservations/check-service-types-availability', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        checkInDate: checkInDate,
+                        checkInTime: checkInTime,
+                        checkOutDate: checkOutDate,
+                        checkOutTime: checkOutTime,
+                        serviceTypes: ['villa', 'room']
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Backend availability check failed: ${response.status}`);
+                }
+                
+                const availabilityData = await response.json();
+                
+                // Check if resort is fully booked due to Private Pool
+                if (availabilityData.resortFullyBooked) {
+                    console.log('🔒 Resort fully booked:', availabilityData.blockReason);
+                    showToast(availabilityData.blockReason || 'The resort is fully booked for the selected date and time', 'error');
+                    return false;
+                }
+                
+                // availabilityData contains list of available service IDs
+                const availableServiceIds = availabilityData.availableServices || [];
+                
+                if (availableServiceIds.length === 0) {
+                    console.log('⚠️ No villa rooms available on the selected date/time');
+                    showToast('Villa rooms are not available for the selected date and time', 'warning');
+                    return false;
+                }
+                
+                // Find first villa that's available on the backend
+                const availableVilla = villaServices.find(villa => {
+                    const villaId = villa._id || villa.id;
+                    return availableServiceIds.includes(villaId) || availableServiceIds.includes(villaId.toString());
+                });
+                
+                if (!availableVilla) {
+                    console.log('⚠️ No matching villa from frontend list found in available services');
+                    showToast('Villa rooms are not available for the selected date and time', 'warning');
+                    return false;
+                }
+                
+                return await createAndAddComplimentaryVilla(availableVilla, checkInDate, checkInTime);
+                
+            } catch (error) {
+                console.error('❌ Backend availability check error:', error);
+                // Fallback: just pick the first villa if backend check fails
+                console.log('ℹ️ Falling back to first available villa (backend check failed)');
+                return await createAndAddComplimentaryVilla(villaServices[0], checkInDate, checkInTime);
+            }
+        }
+        
+        // Helper: Create and add complimentary villa with 12-hour duration
+        async function createAndAddComplimentaryVilla(villaRoom, checkInDate, checkInTime) {
+            // Calculate check-out for 12-hour villa duration
+            const villaCheckinDateObj = new Date(checkInDate);
+            const villaCheckoutDateObj = new Date(villaCheckinDateObj);
+            
+            const checkinHour = parseInt(checkInTime);
+            villaCheckinDateObj.setHours(checkinHour);
+            villaCheckoutDateObj.setHours(checkinHour);
+            villaCheckoutDateObj.setHours(villaCheckoutDateObj.getHours() + 12); // 12-hour duration
+            
+            // Get checkout time
+            const checkoutHours = villaCheckoutDateObj.getHours();
+            const checkoutMins = villaCheckoutDateObj.getMinutes();
+            const ampm = checkoutHours >= 12 ? 'PM' : 'AM';
+            const displayHours = checkoutHours % 12 || 12;
+            const villaCheckoutTime = `${displayHours}:${checkoutMins.toString().padStart(2, '0')} ${ampm}`;
+            const villaCheckoutDate = villaCheckoutDateObj.toISOString().split('T')[0];
+            
+            // Create complimentary villa amenity object
+            const villaAmenity = {
+                serviceId: villaRoom._id || villaRoom.id,
+                assetNumber: villaRoom.assetNumber || null,
+                serviceName: villaRoom.name,
+                serviceType: 'accommodation',
+                selectedDuration: 'complimentary-with-pool',
+                durationLabel: '12 Hours (Complimentary with Private Pool)',
+                nights: 0,
+                hours: 12,
+                checkIn: checkInDate,
+                checkInTime: checkInTime,
+                checkOut: villaCheckoutDate,
+                checkOutTime: villaCheckoutTime,
+                price: 0, // FREE - complimentary
+                inclusions: villaRoom.inclusions || [],
+                image: villaRoom.image,
+                isComplimentary: true, // Flag to identify this as a complimentary item
+                linkedTo: 'private-pool-area' // Link it to the private pool
+            };
+            
+            // Add the complimentary villa room
+            if (addAmenity(villaAmenity)) {
+                console.log(`✨ Complimentary villa room "${villaRoom.name}" (12 hours) added with Private Pool Area`);
+                return true;
+            }
+            
+            return false;
+        }
+
+        // Function to add amenity from modal
+        async function addAmenityFromModal(serviceId, durationId, service, durationOption, checkInDate, checkInTime, isPrivatePool = false) {
+            if (!durationOption || !checkInDate || !checkInTime) {
+                showToast('Error: Missing duration, check-in date, or check-in time', 'error');
+                return;
+            }
+
+            // Parse duration label to handle both hours and nights
+            const durationLabel = durationOption.label || durationOption.name || durationId;
+            let hoursToAdd = 0;
+            let daysToAdd = 0;
+            let isHourlyDuration = false;
+            
+            if (isPrivatePool && durationId === 'private-pool-9h') {
+                // Private Pool - fixed 9 hours
+                hoursToAdd = 9;
+                isHourlyDuration = true;
+            } else if (durationLabel.includes('Hour')) {
+                const hourMatch = durationLabel.match(/(\d+)\s*Hour/);
+                if (hourMatch) {
+                    hoursToAdd = parseInt(hourMatch[1]);
+                    isHourlyDuration = true;
+                }
+            } else if (durationLabel.includes('Night')) {
+                const nightMatch = durationLabel.match(/(\d+)\s*Night/);
+                if (nightMatch) {
+                    daysToAdd = parseInt(nightMatch[1]);
+                }
+            } else {
+                // Fallback: use nights from duration option
+                daysToAdd = durationOption.nights || 0;
+            }
+
+            // Calculate check-out date and time
+            const checkinDateObj = new Date(checkInDate);
+            const checkoutDateObj = new Date(checkinDateObj);
+            let checkOutTime = '--';
+
+            if (isHourlyDuration && hoursToAdd > 0) {
+                // For hourly durations: add hours to the start time
+                const checkinHour = parseInt(checkInTime); // e.g., 8, 14, 20
+                checkinDateObj.setHours(checkinHour);
+                checkoutDateObj.setHours(checkinHour);
+                checkoutDateObj.setHours(checkoutDateObj.getHours() + hoursToAdd);
+                
+                // Get checkout time
+                const checkoutHours = checkoutDateObj.getHours();
+                const checkoutMins = checkoutDateObj.getMinutes();
+                const ampm = checkoutHours >= 12 ? 'PM' : 'AM';
+                const displayHours = checkoutHours % 12 || 12;
+                checkOutTime = `${displayHours}:${checkoutMins.toString().padStart(2, '0')} ${ampm}`;
+            } else if (daysToAdd > 0) {
+                // For night-based durations: add days
+                checkoutDateObj.setDate(checkoutDateObj.getDate() + daysToAdd);
+                const checkinHour = parseInt(checkInTime);
+                const ampm = checkinHour >= 12 ? 'PM' : 'AM';
+                const displayHours = checkinHour % 12 || 12;
+                checkOutTime = `${displayHours}:00 ${ampm}`;
+            }
+
+            const checkOutDate = checkoutDateObj.toISOString().split('T')[0];
+
+            // Check for duplicate
+            if (isAmenitySelected(serviceId, service.assetNumber)) {
+                showToast('This item is already selected', 'warning');
+                return;
+            }
+
+            // Create amenity object with dates and check-in time
+            const amenity = {
+                serviceId: serviceId,
+                assetNumber: service.assetNumber || null,
+                serviceName: service.name,
+                serviceType: service.type || 'accommodation',
+                selectedDuration: durationId,
+                durationLabel: isPrivatePool ? `9 Hours (${checkInTime === '8' ? '8am' : '8pm'})` : durationLabel,
+                nights: daysToAdd,
+                hours: hoursToAdd,
+                checkIn: checkInDate,
+                checkInTime: checkInTime,
+                checkOut: checkOutDate,
+                checkOutTime: checkOutTime,
+                price: durationOption.price || 0,
+                inclusions: service.inclusions || [],
+                image: service.image
+            };
+
+            // Add to amenity selector
+            if (addAmenity(amenity)) {
+                // If this is Private Pool Area, also add complimentary villa room (async)
+                if (isPrivatePool) {
+                    const villaAdded = await addComplimentaryVillaRoom(checkInDate, checkInTime, checkOutDate, checkOutTime);
+                    if (!villaAdded) {
+                        showToast('⚠️ Private Pool added, but no villa available for the selected date', 'warning');
+                    }
+                }
+                
+                // Re-render sidebar
+                renderSelectedItems();
+                
+                // Show success message
+                if (isPrivatePool) {
+                    showToast(`✅ ${service.name} + Complimentary Villa Room added to selection!`, 'success');
+                } else {
+                    showToast(`✅ ${service.name} added to selection!`, 'success');
+                }
+                
+                // Close modal
+                const modal = document.getElementById("serviceModal");
+                modal.style.display = "none";
+                
+                // Clear inputs for next selection
+                const checkinInput = document.getElementById("modal-checkin-date");
+                const timeInput = document.getElementById("modal-checkin-time");
+                const select = document.getElementById("modal-duration-select");
+                if (checkinInput) {
+                    const today = new Date();
+                    const tomorrow = new Date(today);
+                    tomorrow.setDate(today.getDate() + 1);
+                    
+                    // Format as YYYY-MM-DD in local timezone
+                    const year = tomorrow.getFullYear();
+                    const month = String(tomorrow.getMonth() + 1).padStart(2, '0');
+                    const day = String(tomorrow.getDate()).padStart(2, '0');
+                    checkinInput.value = `${year}-${month}-${day}`;
+                }
+                if (timeInput) timeInput.value = '';
+                if (select) select.value = '';
+                
+                // Hide checkout display
+                const checkoutDisplay = document.getElementById("modal-checkout-display");
+                if (checkoutDisplay) checkoutDisplay.style.display = "none";
+            } else {
+                showToast('Failed to add amenity', 'error');
+            }
+        }
+
+        // Override window.showServiceModal to use amenity selection mode
+        window.showServiceModal = window.showServiceModalForAmenitySelection;
+
+        // Initialize amenity selector on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeAmenitySelector();
+            console.log('✅ Services-list page ready for multi-amenity selection');
         });
 
         // Gallery Modal Functions

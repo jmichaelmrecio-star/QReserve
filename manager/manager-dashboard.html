@@ -233,12 +233,13 @@
         await adminComponentLoader.loadComponents([
             { path: '/manager/manager-schedule.html', target: 'manager-schedule-management-container' },
             { path: '/manager/manager-reservations.html', target: 'dashboard-area-container' },
-            { path: '/manager/manager-promo-codes.html', target: 'manager-promocodes-container' }
+            { path: '/manager/manager-promo-codes.html', target: 'manager-promocodes-container' },
+            { path: '/admin/payment-verifications.html', target: 'payment-verifications-section-container' }
         ]);
         // Wait a bit for components to render
         setTimeout(() => {
             // Ensure sections have .tab-pane class
-            ['manager-schedule-management','dashboard-area','manager-promo-codes'].forEach(id => {
+            ['manager-schedule-management','dashboard-area','manager-promo-codes','payment-verifications'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.classList.add('tab-pane');
             });
