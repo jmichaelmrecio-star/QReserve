@@ -441,7 +441,6 @@
 
             <ul>
                 </ul>
-            <div class="nav-right" id="navRight"></div>
         </nav>
     </header>
 
@@ -946,7 +945,9 @@
             }
 
             // Calculate check-out date and time
-            const checkinDate = new Date(checkinValue);
+            // Parse date string correctly to local timezone (not UTC)
+            const dateParts = checkinValue.split('-');
+            const checkinDate = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]), 0, 0, 0, 0);
             const checkoutDate = new Date(checkinDate);
             let checkoutTime = '--';
 
@@ -1241,7 +1242,9 @@
             }
 
             // Calculate check-out date and time
-            const checkinDateObj = new Date(checkInDate);
+            // Parse date string correctly to local timezone (not UTC)
+            const dateParts = checkInDate.split('-');
+            const checkinDateObj = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]), 0, 0, 0, 0);
             const checkoutDateObj = new Date(checkinDateObj);
             let checkOutTime = '--';
 
@@ -1267,7 +1270,11 @@
                 checkOutTime = `${displayHours}:00 ${ampm}`;
             }
 
-            const checkOutDate = checkoutDateObj.toISOString().split('T')[0];
+            // Format checkout date in local timezone (not UTC)
+            const checkoutYear = checkoutDateObj.getFullYear();
+            const checkoutMonth = String(checkoutDateObj.getMonth() + 1).padStart(2, '0');
+            const checkoutDay = String(checkoutDateObj.getDate()).padStart(2, '0');
+            const checkOutDate = `${checkoutYear}-${checkoutMonth}-${checkoutDay}`;
 
             // Check for duplicate
             if (isAmenitySelected(serviceId, service.assetNumber)) {

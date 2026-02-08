@@ -3,7 +3,15 @@
     <div class="card p-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2 class="mb-0">Payment Verifications</h2>
-            <button id="refresh-pending-payments" class="btn btn-outline-primary btn-sm">Refresh</button>
+            <div class="d-flex gap-2 align-items-center">
+                <label for="reservation-type-filter" class="mb-0 me-2">Filter:</label>
+                <select id="reservation-type-filter" class="form-select form-select-sm" style="width: auto; min-width: 180px;">
+                    <option value="all">All Reservations</option>
+                    <option value="single">Single-Amenity Only</option>
+                    <option value="multi">Multi-Amenity Only</option>
+                </select>
+                <button id="refresh-pending-payments" class="btn btn-outline-primary btn-sm">Refresh</button>
+            </div>
         </div>
 
         <div class="table-responsive">
@@ -30,6 +38,9 @@
     <style>
         .payment-details-row {
             background-color: #f8f9fa;
+        }
+        .multi-amenity-details-row {
+            background-color: #fff9e6;
         }
         .details-container {
             display: grid;
@@ -70,6 +81,16 @@
     const refreshBtn = document.getElementById('refresh-pending-payments');
     if (refreshBtn) {
         refreshBtn.addEventListener('click', function() {
+            if (typeof renderPendingPayments === 'function') {
+                renderPendingPayments();
+            }
+        });
+    }
+    
+    // Filter change handler
+    const filterSelect = document.getElementById('reservation-type-filter');
+    if (filterSelect) {
+        filterSelect.addEventListener('change', function() {
             if (typeof renderPendingPayments === 'function') {
                 renderPendingPayments();
             }
