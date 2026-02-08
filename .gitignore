@@ -1,4 +1,9 @@
 .env 
 # Dependencies
 /trr-backend/node_modules
+# Ignore everything in the uploads folder
+trr-backend/uploads/*
+
+# But don't ignore the .gitkeep file itself
+!trr-backend/uploads/.gitkeep
 /.history
