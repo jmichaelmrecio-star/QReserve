@@ -585,7 +585,6 @@ async function fetchServices() {
   try {
     const response = await fetch("http://localhost:3000/api/services");
     const data = await response.json();
-    console.log('Fetched data from /api/services:', data);
     let services = [];
     if (data.success && Array.isArray(data.services)) {
       services = data.services;
@@ -595,7 +594,6 @@ async function fetchServices() {
     resortServices.length = 0;
     resortServices.push(...services);
     window.resortServices = resortServices;
-    console.log('resortServices after fetch:', resortServices);
     if (typeof renderServiceCards === "function") {
       renderServiceCards();
     }
@@ -652,6 +650,7 @@ function logout() {
 
 function renderNavigation() {
   const navUl = document.querySelector("nav ul");
+  const navRight = document.querySelector(".nav-right");
   if (!navUl) return;
 
   const roleFromStorage = getCurrentRole();
@@ -668,6 +667,9 @@ function renderNavigation() {
 
   const links = navLinks[currentRoleToUse] || navLinks.public;
   navUl.innerHTML = "";
+  if (navRight) {
+    navRight.innerHTML = "";
+  }
 
   // Home link
   const homeLi = document.createElement("li");
@@ -686,37 +688,47 @@ function renderNavigation() {
   helpLi.innerHTML = `<a href="help.html">Help</a>`;
   navUl.appendChild(helpLi);
 
-  // Auth section
+  // My Reservations link (for logged-in users)
   if (roleFromStorage !== "public") {
-    const profileLi = document.createElement("li");
-    profileLi.classList.add("profile-dropdown");
-    
-    // Get logged-in user's full name
-    const loggedInUserStr = sessionStorage.getItem('loggedInUser');
-    const userName = loggedInUserStr ? JSON.parse(loggedInUserStr).full_name || 'User' : 'User';
-    
-    profileLi.innerHTML = `
-      <button id="profile-icon" class="icon-button" aria-expanded="false" aria-controls="profile-menu">
-        <span style="font-size: 1.5rem;">👤</span>
-      </button>
-      <div class="dropdown-content" id="profile-menu">
-        <div style="padding: 0.75rem 1rem; border-bottom: 1px solid #ddd; font-weight: 600; color: white; text-align: center;">${userName}</div>
-        <a href="customer-dashboard.html">My Profile</a>
-        <a href="#" onclick="logout(); return false;">Logout</a>
-      </div>`;
-    navUl.appendChild(profileLi);
-    attachDropdownToggle();
+    const reservationsLi = document.createElement("li");
+    reservationsLi.innerHTML = `<a href="customer-dashboard.html">My Reservations</a>`;
+    navUl.appendChild(reservationsLi);
+  }
 
-    if (typeof addResumeReservationNav === "function") {
-      addResumeReservationNav();
+  // Auth section - placed in nav-right if it exists
+  if (navRight) {
+    if (roleFromStorage !== "public") {
+      const profileDiv = document.createElement("div");
+      profileDiv.classList.add("profile-dropdown");
+      
+      // Get logged-in user's full name
+      const loggedInUserStr = sessionStorage.getItem('loggedInUser');
+      const userName = loggedInUserStr ? JSON.parse(loggedInUserStr).full_name || 'User' : 'User';
+      
+      profileDiv.innerHTML = `
+        <button id="profile-icon" class="icon-button" aria-expanded="false" aria-controls="profile-menu">
+          <span style="font-size: 1.5rem;">👤</span>
+        </button>
+        <div class="dropdown-content" id="profile-menu">
+          <div style="padding: 0.75rem 1rem; border-bottom: 1px solid #ddd; font-weight: 600; color: white; text-align: center;">${userName}</div>
+          <a href="customer-dashboard.html">My Profile</a>
+          <a href="#" onclick="logout(); return false;">Logout</a>
+        </div>`;
+      navRight.appendChild(profileDiv);
+      attachDropdownToggle();
+
+      if (typeof addResumeReservationNav === "function") {
+        addResumeReservationNav();
+      }
+    } else {
+      const loginDiv = document.createElement("div");
+      const registerDiv = document.createElement("div");
+      loginDiv.classList.add("nav-auth-login");
+      loginDiv.innerHTML = `<a href="login.html">Login</a>`;
+      registerDiv.innerHTML = `<a href="register.html">Register</a>`;
+      navRight.appendChild(loginDiv);
+      navRight.appendChild(registerDiv);
     }
-  } else {
-    const loginLi = document.createElement("li");
-    const registerLi = document.createElement("li");
-    loginLi.innerHTML = `<a href="login.html">Login</a>`;
-    registerLi.innerHTML = `<a href="register.html">Register</a>`;
-    navUl.appendChild(loginLi);
-    navUl.appendChild(registerLi);
   }
 }
 
@@ -808,6 +820,10 @@ function attachDropdownToggle() {
 
 // Global initialization
 document.addEventListener("DOMContentLoaded", async () => {
+  // Guard to prevent carousel setup from running multiple times
+  if (window.__carouselInitialized) return;
+  window.__carouselInitialized = true;
+
   await fetchServices();
   
   // Password toggle
@@ -856,16 +872,24 @@ document.addEventListener("DOMContentLoaded", async () => {
   const nextButtons = document.querySelectorAll(".carousel-nav-btn.next");
 
   prevButtons.forEach((button) => {
-    button.addEventListener("click", () => {
+    button.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
       const carousel = button.closest(".amenities-carousel");
       if (carousel) navigateCarousel(carousel, -1);
+      return false;
     });
   });
 
   nextButtons.forEach((button) => {
-    button.addEventListener("click", () => {
+    button.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
       const carousel = button.closest(".amenities-carousel");
       if (carousel) navigateCarousel(carousel, 1);
+      return false;
     });
   });
 
@@ -881,9 +905,17 @@ function navigateCarousel(carousel, direction) {
   const slides = carousel.querySelectorAll(".carousel-slide");
   if (slides.length === 0) return;
   let currentIndex = Array.from(slides).findIndex((slide) => slide.classList.contains("active"));
-  currentIndex = (currentIndex + direction + slides.length) % slides.length;
+  const newIndex = (currentIndex + direction + slides.length) % slides.length;
+  
+  // Prevent navigation if already animating
+  if (carousel.getAttribute("data-animating") === "true") return;
+  
+  carousel.setAttribute("data-animating", "true");
   slides.forEach((slide) => slide.classList.remove("active"));
-  slides[currentIndex].classList.add("active");
+  slides[newIndex].classList.add("active");
+  setTimeout(() => {
+    carousel.setAttribute("data-animating", "false");
+  }, 500);
 }
 
 // Expose globals
