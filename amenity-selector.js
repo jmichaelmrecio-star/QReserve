@@ -171,12 +171,15 @@ function renderSelectedItems(containerId = 'selected-items-list') {
         let timeDisplay = '';
         
         if (amenity.checkIn) {
-            const checkInDate = new Date(amenity.checkIn);
+            // Parse date correctly to avoid UTC timezone issues
+            const checkInParts = amenity.checkIn.split('-');
+            const checkInDate = new Date(parseInt(checkInParts[0]), parseInt(checkInParts[1]) - 1, parseInt(checkInParts[2]));
             const checkInFormatted = checkInDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
             
             let checkoutInfo = '';
             if (amenity.checkOut) {
-                const checkOutDate = new Date(amenity.checkOut);
+                const checkOutParts = amenity.checkOut.split('-');
+                const checkOutDate = new Date(parseInt(checkOutParts[0]), parseInt(checkOutParts[1]) - 1, parseInt(checkOutParts[2]));
                 const checkOutFormatted = checkOutDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
                 
                 if (checkOutDate > checkInDate) {
