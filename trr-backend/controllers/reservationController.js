@@ -1895,9 +1895,40 @@ exports.checkAvailability = async (req, res) => {
             check_out: { $gt: checkin }
         });
         
+        if (overlapping.length > 0) {
+            return res.json({ 
+                available: false, 
+                conflictingReservations: overlapping.length,
+                reason: 'This amenity is already reserved for the selected date/time'
+            });
+        }
+
+        // Check for blocked dates (including global resort locks from Private Pool)
+        const blockedDates = await BlockedDate.find({
+            $or: [
+                // Global blocks (Private Pool reservations block everything)
+                { appliesToAllServices: true },
+                // Specific service blocks
+                { serviceIds: { $in: [serviceId, service.id, service._id?.toString()] } }
+            ],
+            // Overlap: new check_in < existing endDate AND new check_out > existing startDate
+            startDate: { $lt: checkout },
+            endDate: { $gt: checkin }
+        });
+
+        if (blockedDates.length > 0) {
+            const blockReason = blockedDates[0].reason || 'This date/time is blocked';
+            return res.json({
+                available: false,
+                conflictingReservations: 0,
+                blockedDates: blockedDates.length,
+                reason: blockReason
+            });
+        }
+        
         res.json({ 
-            available: overlapping.length === 0, 
-            conflictingReservations: overlapping.length 
+            available: true, 
+            conflictingReservations: 0 
         });
     } catch (error) {
         console.error('Error checking availability:', error);
