@@ -573,6 +573,13 @@
                 </select>
             </div>
             
+            <!-- Number of Guests -->
+            <div style="margin-top: 20px;">
+                <label for="modal-guests" style="font-weight: bold;">Number of Guests:</label>
+                <input type="number" id="modal-guests" min="1" style="width: 100%; padding: 12px; margin-top: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; font-weight: 500;" required>
+                <small id="modal-guests-info" style="display: block; margin-top: 4px; color: #666; font-size: 0.85rem;">Maximum guests will be shown once service is selected</small>
+            </div>
+            
             <!-- Duration Selection -->
             <div id="modal-duration-section" style="margin-top: 20px;">
                 <label for="modal-duration-select" style="font-weight: bold;">Select Duration:</label>
@@ -676,6 +683,30 @@
             document.getElementById("modal-name").textContent = service.name;
             document.getElementById("modal-max-guests").textContent = service.max_guests || "N/A";
             document.getElementById("modal-description").textContent = service.description || "No description available.";
+
+            // Setup guests input with max guests constraint
+            const guestsInput = document.getElementById("modal-guests");
+            const guestsInfo = document.getElementById("modal-guests-info");
+            if (guestsInput) {
+                const maxGuests = service.max_guests || 999;
+                guestsInput.max = maxGuests;
+                guestsInput.value = 1; // Default to 1 guest
+                if (guestsInfo) {
+                    guestsInfo.textContent = `Maximum ${maxGuests} guests allowed`;
+                }
+                
+                // Add validation
+                guestsInput.onchange = function() {
+                    const value = parseInt(this.value);
+                    if (value < 1) {
+                        this.value = 1;
+                        showToast('At least 1 guest required', 'warning');
+                    } else if (value > maxGuests) {
+                        this.value = maxGuests;
+                        showToast(`Maximum ${maxGuests} guests allowed for ${service.name}`, 'warning');
+                    }
+                };
+            }
 
             // Setup check-in date picker (default today for rooms, tomorrow for venues)
             const checkinInput = document.getElementById("modal-checkin-date");
@@ -1034,15 +1065,17 @@
             const checkinInput = document.getElementById("modal-checkin-date");
             const checkinTimeInput = document.getElementById("modal-checkin-time");
             const durationSelect = document.getElementById("modal-duration-select");
+            const guestsInput = document.getElementById("modal-guests");
 
             if (!proceedBtn || !checkinInput || !durationSelect) return;
 
             const checkinValue = checkinInput.value;
             const checkinTime = checkinTimeInput ? checkinTimeInput.value : '';
             const durationId = durationSelect.value;
+            const guests = guestsInput ? guestsInput.value : '';
 
-            // Enable button only if check-in date, check-in time, and duration are all selected
-            if (checkinValue && checkinTime && durationId) {
+            // Enable button only if check-in date, check-in time, guests, and duration are all selected
+            if (checkinValue && checkinTime && guests && durationId) {
                 let durationOption = null;
                 let price = 0;
                 
@@ -1210,8 +1243,23 @@
 
         // Function to add amenity from modal
         async function addAmenityFromModal(serviceId, durationId, service, durationOption, checkInDate, checkInTime, isPrivatePool = false) {
+            const guestsInput = document.getElementById("modal-guests");
+            const guests = guestsInput ? parseInt(guestsInput.value) : 0;
+            
             if (!durationOption || !checkInDate || !checkInTime) {
                 showToast('Error: Missing duration, check-in date, or check-in time', 'error');
+                return;
+            }
+            
+            if (!guests || guests < 1) {
+                showToast('Error: Please specify number of guests', 'error');
+                return;
+            }
+            
+            // Validate max guests
+            const maxGuests = service.max_guests || 999;
+            if (guests > maxGuests) {
+                showToast(`Error: Maximum ${maxGuests} guests allowed for ${service.name}`, 'error');
                 return;
             }
 
@@ -1276,6 +1324,53 @@
             const checkoutDay = String(checkoutDateObj.getDate()).padStart(2, '0');
             const checkOutDate = `${checkoutYear}-${checkoutMonth}-${checkoutDay}`;
 
+            // Check backend availability before adding to cart
+            // Build proper ISO datetime strings with time information for accurate overlap detection
+            try {
+                // Construct check-in datetime (date + time)
+                const checkinDateTime = new Date(checkinDateObj);
+                if (isHourlyDuration && hoursToAdd > 0) {
+                    checkinDateTime.setHours(parseInt(checkInTime), 0, 0, 0);
+                } else {
+                    checkinDateTime.setHours(parseInt(checkInTime), 0, 0, 0);
+                }
+                
+                // Construct check-out datetime
+                const checkoutDateTime = new Date(checkoutDateObj);
+                if (isHourlyDuration && hoursToAdd > 0) {
+                    checkoutDateTime.setHours(checkoutDateObj.getHours(), checkoutDateObj.getMinutes(), 0, 0);
+                } else {
+                    checkoutDateTime.setHours(parseInt(checkInTime), 0, 0, 0);
+                }
+
+                const availabilityResponse = await fetch('/api/reservations/check-availability', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        serviceId: serviceId,
+                        checkin_date: checkinDateTime.toISOString(),
+                        checkout_date: checkoutDateTime.toISOString()
+                    })
+                });
+
+                if (!availabilityResponse.ok) {
+                    throw new Error('Failed to check availability');
+                }
+
+                const availabilityData = await availabilityResponse.json();
+                
+                if (!availabilityData.available) {
+                    const errorMessage = availabilityData.reason || 
+                        `${service.name} is already reserved for the selected date/time. Please choose a different date or amenity.`;
+                    showToast(`❌ ${errorMessage}`, 'error');
+                    return;
+                }
+            } catch (error) {
+                console.error('❌ Error checking availability:', error);
+                showToast('⚠️ Could not verify availability. Please try again.', 'error');
+                return;
+            }
+
             // Check for duplicate
             if (isAmenitySelected(serviceId, service.assetNumber)) {
                 showToast('This item is already selected', 'warning');
@@ -1292,6 +1387,7 @@
                 durationLabel: isPrivatePool ? `9 Hours (${checkInTime === '8' ? '8am' : '8pm'})` : durationLabel,
                 nights: daysToAdd,
                 hours: hoursToAdd,
+                guests: guests,
                 checkIn: checkInDate,
                 checkInTime: checkInTime,
                 checkOut: checkOutDate,
