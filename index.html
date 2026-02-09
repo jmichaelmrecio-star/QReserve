@@ -425,37 +425,101 @@
       });
 
       // Availability Calendar Logic
-      let currentMonth = new Date().getMonth();
-      let currentYear = new Date().getFullYear();
+      const calendarToday = new Date();
+      let viewMonthIndex = calendarToday.getMonth();
+      let viewYear = calendarToday.getFullYear();
+      let currentMonth = viewMonthIndex;
+      let currentYear = viewYear;
+      let lastNavAt = 0;
       let blockedDatesData = [];
+      let blockedDatesByDate = {}; // Store full blocked date details
       let reservationDatesData = [];
+      let reservationsByDate = {}; // Store full reservation details by date
 
       async function fetchBlockedDatesForCalendar() {
         try {
           // Fetch blocked dates
           const blockedResponse = await fetch('http://localhost:3000/api/blocked-dates');
           const blockedData = await blockedResponse.json();
-          blockedDatesData = (blockedData.blockedDates || []).map(d => new Date(d.startDate).toDateString());
+          
+          // Store blocked dates and their details
+          blockedDatesData = [];
+          blockedDatesByDate = {};
+          
+          (blockedData.blockedDates || []).forEach(blockedDate => {
+            const startDate = new Date(blockedDate.startDate);
+            const endDate = new Date(blockedDate.endDate);
+            
+            // Add all dates in the blocked range
+            for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+              const dateStr = new Date(d).toDateString();
+              if (!blockedDatesData.includes(dateStr)) {
+                blockedDatesData.push(dateStr);
+              }
+              
+              // Store blocked date details
+              if (!blockedDatesByDate[dateStr]) {
+                blockedDatesByDate[dateStr] = [];
+              }
+              
+              blockedDatesByDate[dateStr].push({
+                reason: blockedDate.reason || 'Fully Booked',
+                startDate: startDate,
+                endDate: endDate,
+                appliesToAllServices: blockedDate.appliesToAllServices
+              });
+            }
+          });
           
           // Fetch all reservations to check which dates have bookings
           const reservationsResponse = await fetch('http://localhost:3000/api/reservations/allreservation');
           const reservationsData = await reservationsResponse.json();
           
-          // Extract all dates that have reservations (approved or pending)
+          // Extract all dates that have reservations and store details
           reservationDatesData = [];
+          reservationsByDate = {};
+          
           if (reservationsData.success && reservationsData.reservations) {
             reservationsData.reservations.forEach(reservation => {
               // Only include confirmed and pending reservations, not cancelled
               if (reservation.status !== 'cancelled' && reservation.status !== 'rejected') {
-                const checkIn = new Date(reservation.check_in_date);
-                const checkOut = new Date(reservation.check_out_date);
+                const checkInRaw = reservation.check_in || reservation.check_in_date;
+                const checkOutRaw = reservation.check_out || reservation.check_out_date;
+                if (!checkInRaw || !checkOutRaw) {
+                  return;
+                }
+
+                const checkIn = new Date(checkInRaw);
+                const checkOut = new Date(checkOutRaw);
+                if (Number.isNaN(checkIn.getTime()) || Number.isNaN(checkOut.getTime())) {
+                  return;
+                }
                 
-                // Add all dates in the range
+                // Calculate duration
+                const durationMs = checkOut - checkIn;
+                const durationDays = Math.ceil(durationMs / (1000 * 60 * 60 * 24));
+                const durationHours = Math.ceil(durationMs / (1000 * 60 * 60));
+                
+                // Add all dates in the range with full details
                 for (let d = new Date(checkIn); d <= checkOut; d.setDate(d.getDate() + 1)) {
                   const dateStr = new Date(d).toDateString();
                   if (!reservationDatesData.includes(dateStr)) {
                     reservationDatesData.push(dateStr);
                   }
+                  
+                  // Store reservation details
+                  if (!reservationsByDate[dateStr]) {
+                    reservationsByDate[dateStr] = [];
+                  }
+                  
+                  reservationsByDate[dateStr].push({
+                    amenity: reservation.serviceName || 'Service',
+                    checkIn: checkIn,
+                    checkOut: checkOut,
+                    duration: durationDays >= 1 ? `${durationDays} day(s)` : `${durationHours} hour(s)`,
+                    status: reservation.status,
+                    reservationId: reservation.reservationId
+                  });
                 }
               }
             });
@@ -468,9 +532,163 @@
         }
       }
 
+      function formatDateTime(date) {
+        const options = { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' };
+        return date.toLocaleString('en-US', options);
+      }
+
+      function formatShortDateTime(date) {
+        const options = { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+        return date.toLocaleString('en-US', options);
+      }
+
+      function safeFormatShortDateTime(value) {
+        const date = value instanceof Date ? value : new Date(value);
+        if (Number.isNaN(date.getTime())) return 'n/a';
+        return formatShortDateTime(date);
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      function buildCellDetails(reservations, blockedDates) {
+        let html = '';
+        const maxItems = 2;
+
+        if (blockedDates && blockedDates.length > 0) {
+          const block = blockedDates[0];
+          html += `
+            <div style="margin-top: 0.35rem; font-size: 0.7rem; line-height: 1.2; text-align: left;">
+              <div style="font-weight: 700; color: #c62828;">Blocked</div>
+              <div>${escapeHtml(block.reason || 'Fully Booked')}</div>
+            </div>
+          `;
+        }
+
+        if (reservations && reservations.length > 0) {
+          const uniqueReservations = [];
+          const seenIds = new Set();
+          reservations.forEach(res => {
+            if (!seenIds.has(res.reservationId)) {
+              seenIds.add(res.reservationId);
+              uniqueReservations.push(res);
+            }
+          });
+
+          uniqueReservations.slice(0, maxItems).forEach(res => {
+            html += `
+              <div style="margin-top: 0.35rem; font-size: 0.7rem; line-height: 1.2; text-align: left;">
+                <div style="font-weight: 700; color: #333;">${escapeHtml(res.amenity)}</div>
+                <div>Check-in: ${escapeHtml(safeFormatShortDateTime(res.checkIn))}</div>
+                <div>Check-out: ${escapeHtml(safeFormatShortDateTime(res.checkOut))}</div>
+                <div>Stay: ${escapeHtml(res.duration)}</div>
+              </div>
+            `;
+          });
+
+          if (uniqueReservations.length > maxItems) {
+            const remaining = uniqueReservations.length - maxItems;
+            html += `<div style="margin-top: 0.25rem; font-size: 0.7rem; color: #555;">+${remaining} more</div>`;
+          }
+        }
+
+        return html;
+      }
+
+      function createTooltip(reservations, blockedDates) {
+        const tooltip = document.createElement('div');
+        tooltip.style.cssText = `
+          position: absolute;
+          background: white;
+          border: 2px solid var(--primary-color);
+          border-radius: 8px;
+          padding: 0.75rem;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+          z-index: 1000;
+          min-width: 250px;
+          max-width: 350px;
+          pointer-events: none;
+          font-size: 0.85rem;
+          line-height: 1.4;
+        `;
+        
+        let html = '';
+        
+        // Show blocked date information if present
+        if (blockedDates && blockedDates.length > 0) {
+          html += '<div style="font-weight: bold; margin-bottom: 0.5rem; color: #c62828; border-bottom: 1px solid #ddd; padding-bottom: 0.25rem;">🔒 Fully Booked</div>';
+          
+          const uniqueBlocks = [];
+          const seenReasons = new Set();
+          blockedDates.forEach(block => {
+            if (!seenReasons.has(block.reason)) {
+              seenReasons.add(block.reason);
+              uniqueBlocks.push(block);
+            }
+          });
+          
+          uniqueBlocks.forEach((block, idx) => {
+            if (idx > 0) html += '<div style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid #eee;"></div>';
+            html += `
+              <div>
+                <div style="font-weight: 600; color: #c62828;">${block.reason}</div>
+                <div style="color: #666; font-size: 0.8rem; margin-top: 0.2rem;">
+                  <div>📅 From: ${formatDateTime(block.startDate)}</div>
+                  <div>📅 Until: ${formatDateTime(block.endDate)}</div>
+                  ${block.appliesToAllServices ? '<div style="color: #c62828; font-weight: 600;">⚠️ Entire Resort Blocked</div>' : ''}
+                </div>
+              </div>
+            `;
+          });
+        }
+        
+        // Show reservation information if present
+        if (reservations && reservations.length > 0) {
+          if (html) html += '<div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 2px solid #ddd;"></div>';
+          html += '<div style="font-weight: bold; margin-bottom: 0.5rem; color: var(--primary-color); border-bottom: 1px solid #ddd; padding-bottom: 0.25rem;">Bookings:</div>';
+          
+          // Remove duplicates by reservationId
+          const uniqueReservations = [];
+          const seenIds = new Set();
+          reservations.forEach(res => {
+            if (!seenIds.has(res.reservationId)) {
+              seenIds.add(res.reservationId);
+              uniqueReservations.push(res);
+            }
+          });
+          
+          uniqueReservations.forEach((res, idx) => {
+            if (idx > 0) html += '<div style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid #eee;"></div>';
+            html += `
+              <div>
+                <div style="font-weight: 600; color: #333;">${res.amenity}</div>
+                <div style="color: #666; font-size: 0.8rem; margin-top: 0.2rem;">
+                  <div>📅 Check-in: ${formatDateTime(res.checkIn)}</div>
+                  <div>📅 Check-out: ${formatDateTime(res.checkOut)}</div>
+                  <div>⏱️ Duration: ${res.duration}</div>
+                  <div>🎫 ID: ${res.reservationId}</div>
+                </div>
+              </div>
+            `;
+          });
+        }
+        
+        tooltip.innerHTML = html;
+        return tooltip;
+      }
+
       function renderCalendar() {
         const monthYearEl = document.getElementById('calendar-month-year');
         const calendarGrid = document.getElementById('calendar-grid');
+
+        currentMonth = viewMonthIndex;
+        currentYear = viewYear;
         
         const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
         monthYearEl.textContent = `${monthNames[currentMonth]} ${currentYear}`;
@@ -499,6 +717,8 @@
         
         // Day cells
         const today = new Date();
+        let activeTooltip = null;
+        
         for (let day = 1; day <= daysInMonth; day++) {
           const date = new Date(currentYear, currentMonth, day);
           const dateString = date.toDateString();
@@ -509,6 +729,7 @@
           
           const dayCell = document.createElement('div');
           dayCell.textContent = day;
+          dayCell.style.position = 'relative';
           
           let bgColor = '#e8f5e9'; // Available (green)
           let borderColor = '#2d8f5c';
@@ -543,41 +764,73 @@
             cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
             font-size: 0.95rem;
+            position: relative;
             ${isToday ? 'font-weight: bold;' : ''}
           `;
           
-          if (!isPast) {
-            dayCell.addEventListener('mouseenter', () => {
+          dayCell.addEventListener('mouseenter', () => {
+            if (!isPast) {
               dayCell.style.transform = 'scale(1.05)';
               dayCell.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
-            });
-            dayCell.addEventListener('mouseleave', () => {
-              dayCell.style.transform = 'scale(1)';
-              dayCell.style.boxShadow = 'none';
-            });
-          }
+            }
+
+            const hasBlockedInfo = isBlocked && blockedDatesByDate[dateString];
+            const hasReservationInfo = hasReservation && reservationsByDate[dateString];
+
+            if (hasBlockedInfo || hasReservationInfo) {
+              const blockedInfo = hasBlockedInfo ? blockedDatesByDate[dateString] : null;
+              const reservationInfo = hasReservationInfo ? reservationsByDate[dateString] : null;
+
+              dayCell.dataset.originalContent = dayCell.innerHTML;
+              dayCell.innerHTML = `<div style="font-weight: 700;">${day}</div>${buildCellDetails(reservationInfo, blockedInfo)}`;
+            }
+          });
+
+          dayCell.addEventListener('mouseleave', () => {
+            dayCell.style.transform = 'scale(1)';
+            dayCell.style.boxShadow = 'none';
+
+            if (dayCell.dataset.originalContent) {
+              dayCell.innerHTML = dayCell.dataset.originalContent;
+            }
+          });
           
           calendarGrid.appendChild(dayCell);
         }
       }
 
-      document.getElementById('prev-month')?.addEventListener('click', () => {
-        currentMonth--;
-        if (currentMonth < 0) {
-          currentMonth = 11;
-          currentYear--;
+      function changeMonth(delta) {
+        const now = Date.now();
+        if (now - lastNavAt < 150) {
+          return;
         }
-        renderCalendar();
-      });
+        lastNavAt = now;
 
-      document.getElementById('next-month')?.addEventListener('click', () => {
-        currentMonth++;
-        if (currentMonth > 11) {
-          currentMonth = 0;
-          currentYear++;
+        viewMonthIndex += delta;
+        if (viewMonthIndex < 0) {
+          viewMonthIndex = 11;
+          viewYear -= 1;
+        } else if (viewMonthIndex > 11) {
+          viewMonthIndex = 0;
+          viewYear += 1;
         }
         renderCalendar();
-      });
+      }
+
+      const prevMonthBtn = document.getElementById('prev-month');
+      const nextMonthBtn = document.getElementById('next-month');
+
+      if (prevMonthBtn) {
+        prevMonthBtn.onclick = () => {
+          changeMonth(-1);
+        };
+      }
+
+      if (nextMonthBtn) {
+        nextMonthBtn.onclick = () => {
+          changeMonth(1);
+        };
+      }
 
       fetchBlockedDatesForCalendar();
     });

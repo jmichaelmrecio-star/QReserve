@@ -33,7 +33,7 @@
         
         <!-- Cart Items Display (for multi-item checkout) -->
         <div id="cart-items-section" style="margin-bottom: 2rem; display: none;">
-            <h3>Items in Your Cart</h3>
+            <h3>Items in this reservation</h3>
             <div id="cart-items-for-payment" style="display: flex; flex-direction: column; gap: 0.75rem;"></div>
         </div>
         
@@ -42,8 +42,12 @@
             <div class="payment-summary-section">
                 <h3>Reservation Summary</h3>
                 <div class="summary-row">
-                    <span class="summary-label">Service:</span>
-                    <span class="summary-value" id="serviceNameDisplay"></span>
+                    <span class="summary-label">Reservation type:</span>
+                    <span class="summary-value" id="reservationTypeDisplay"></span>
+                </div>
+                <div class="summary-row" id="amenitiesListRow" style="display: none;">
+                    <span class="summary-label">Amenities:</span>
+                    <span class="summary-value" id="amenitiesListDisplay"></span>
                 </div>
                 <div class="summary-row">
                     <span class="summary-label">Customer Name:</span>
@@ -82,7 +86,7 @@
             <!-- Reference Number Form Group -->
             <div class="form-group">
                 <label for="gcashReferenceNumber">GCash Reference Number:</label>
-                <input type="text" id="gcashReferenceNumber" placeholder="Enter 13 digit reference number" minlength ="13" maxlength="13" required>
+                <input type="text" id="gcashReferenceNumber" placeholder="Enter 13 digit reference number" minlength="13" maxlength="13" pattern="\d{13}" inputmode="numeric" required>
                 <small>Please pay the amount (₱<span id="paymentAmountSmall">0.00</span>) to our official GCash number before proceeding.</small>
             </div>
 
@@ -228,6 +232,13 @@
         }
         // Validate GCash reference number format
         if (refInput) {
+            // Real-time validation: strip non-numeric characters as user types
+            refInput.addEventListener('input', function() {
+                // Remove any non-digit characters
+                this.value = this.value.replace(/\D/g, '');
+            });
+            
+            // Visual validation feedback on change
             refInput.addEventListener('change', function() {
                 const refNumber = this.value.trim();
                 // GCash references are typically 10-13 digits
