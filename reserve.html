@@ -295,6 +295,7 @@
 									<tr style="background-color: #f8f9fa; border-bottom: 2px solid #dee2e6;">
 										<th style="padding: 12px; text-align: left; font-weight: 600;">Service Name</th>
 										<th style="padding: 12px; text-align: left; font-weight: 600;">Duration</th>
+										<th style="padding: 12px; text-align: center; font-weight: 600;">Guests</th>
 										<th style="padding: 12px; text-align: center; font-weight: 600;">Check-In</th>
 										<th style="padding: 12px; text-align: center; font-weight: 600;">Check-Out</th>
 										<th style="padding: 12px; text-align: right; font-weight: 600;">Price</th>
@@ -736,6 +737,9 @@
 		            <td style="padding: 12px; vertical-align: middle;">${amenity.serviceName || 'Unknown'}</td>
 		            <td style="padding: 12px; vertical-align: middle;">${amenity.durationLabel || 'N/A'}</td>
 		            <td style="padding: 12px; text-align: center; vertical-align: middle;">
+		                <span style="font-weight: 500;">${amenity.guests || 1}</span>
+		            </td>
+		            <td style="padding: 12px; text-align: center; vertical-align: middle;">
 		                <div style="font-size: 0.85rem; color: #666;">${checkInDate}</div>
 		                <div style="font-weight: 500;">${checkInTime}</div>
 		            </td>
@@ -878,13 +882,48 @@
 					const durationFromStorage = sessionStorage.getItem('selectedDuration');
 					const durationLabelFromStorage = sessionStorage.getItem('selectedDurationLabel');
 					
+					// ✅ FIX: Also check for cart data (from services-list.html amenity selector)
+					const selectedCheckIn = sessionStorage.getItem('selectedCheckIn');
+					const selectedCheckInTime = sessionStorage.getItem('selectedCheckInTime');
+					const selectedCheckOut = sessionStorage.getItem('selectedCheckOut');
+					const selectedCheckOutTime = sessionStorage.getItem('selectedCheckOutTime');
+					
 					if (guestsFromStorage && document.getElementById('guests')) {
 						document.getElementById('guests').value = guestsFromStorage;
 					}
-					if (checkinFromStorage && document.getElementById('checkin')) {
+					
+					// Prioritize cart data over legacy checkinDate
+					if (selectedCheckIn && selectedCheckInTime && document.getElementById('checkin')) {
+						// Convert date (YYYY-MM-DD) + time (hour number) to datetime-local format (YYYY-MM-DDTHH:MM)
+						const checkinHour = String(selectedCheckInTime).padStart(2, '0');
+						const checkinDateTime = `${selectedCheckIn}T${checkinHour}:00`;
+						document.getElementById('checkin').value = checkinDateTime;
+					} else if (checkinFromStorage && document.getElementById('checkin')) {
 						document.getElementById('checkin').value = checkinFromStorage;
 					}
-					if (checkoutFromStorage && document.getElementById('checkout')) {
+					
+					if (selectedCheckOut && selectedCheckOutTime && document.getElementById('checkout')) {
+						// Convert checkout time (might be "8:00 AM" or hour number) to 24-hour format
+						let checkoutHour = selectedCheckOutTime;
+						if (String(checkoutHour).includes('AM') || String(checkoutHour).includes('PM')) {
+							// Parse "8:00 AM" to 24-hour
+							const match = String(checkoutHour).match(/(\d+):(\d+)\s*(AM|PM)/i);
+							if (match) {
+								let hour = parseInt(match[1]);
+								const ampm = match[3].toUpperCase();
+								if (ampm === 'PM' && hour !== 12) hour += 12;
+								if (ampm === 'AM' && hour === 12) hour = 0;
+								checkoutHour = String(hour).padStart(2, '0');
+								const checkoutDateTime = `${selectedCheckOut}T${checkoutHour}:${match[2]}`;
+								document.getElementById('checkout').value = checkoutDateTime;
+							}
+						} else {
+							// It's already a number
+							checkoutHour = String(checkoutHour).padStart(2, '0');
+							const checkoutDateTime = `${selectedCheckOut}T${checkoutHour}:00`;
+							document.getElementById('checkout').value = checkoutDateTime;
+						}
+					} else if (checkoutFromStorage && document.getElementById('checkout')) {
 						document.getElementById('checkout').value = checkoutFromStorage;
 					}
 					if (durationFromStorage && document.getElementById('duration-selector')) {

@@ -1031,19 +1031,20 @@ function formatReservationDetails(r) {
         <p><strong>Discount Code:</strong> ${escapeHtml(r.discountCode || 'None')}</p>
         <p><strong>Discount Value:</strong> -₱${parseFloat(discount).toLocaleString()}</p>
         <p><strong>Final Total:</strong> <span style="font-size:1.2em;color:#28a745;">₱${parseFloat(r.finalTotal || 0).toLocaleString()}</span></p>
-        ${downpayment > 0 ? `<p><strong>Downpayment:</strong> ₱${parseFloat(downpayment).toLocaleString()}</p>` : ''}
-        ${remainingBalance > 0 ? `<p><strong>Remaining Balance:</strong> ₱${parseFloat(remainingBalance).toLocaleString()}</p>` : ''}
-        <p><strong>Payment Type:</strong> ${escapeHtml(r.paymentType || 'N/A')}</p>
+        ${r.downpaymentAmount ? `<p><strong>Downpayment Amount Paid (50%):</strong> <span style="color:#007bff;">₱${parseFloat(r.downpaymentAmount).toLocaleString()}</span></p>` : ''}
+        ${r.remainingBalance ? `<p><strong>Remaining Balance Due at Check-in (50%):</strong> <span style="color:#ffc107;">₱${parseFloat(r.remainingBalance).toLocaleString()}</span></p>` : ''}
+        <p><strong>Payment Type:</strong> ${escapeHtml(r.paymentType || 'downpayment')}</p>
       </div>
       <div class="detail-section">
         <h6>💳 Payment Details</h6>
         <p><strong>GCash Ref #:</strong> ${escapeHtml(r.gcashReferenceNumber || 'N/A')}</p>
         <p><strong>Payment Status:</strong> <span class="badge bg-${r.paymentStatus === 'PAID' ? 'success' : r.paymentStatus === 'PENDING' ? 'warning' : 'danger'}">${escapeHtml(r.paymentStatus || r.status || 'N/A')}</span></p>
+        ${r.paymentConfirmedAt ? `<p><strong>Payment Confirmed:</strong> ${new Date(r.paymentConfirmedAt).toLocaleString()}</p>` : ''}
         <div><strong>Receipt:</strong><br>${receiptCell}</div>
       </div>
       <div class="detail-section">
         <h6>⏱️ Timeline</h6>
-        <p><strong>Date Booked:</strong> ${r.createdAt ? new Date(r.createdAt).toLocaleString() : 'N/A'}</p>
+        <p><strong>Date Booked:</strong> ${r.dateCreated ? new Date(r.dateCreated).toLocaleString() : 'N/A'}</p>
         <p><strong>Check-in:</strong> ${r.check_in ? new Date(r.check_in).toLocaleString() : 'N/A'}</p>
         <p><strong>Check-out:</strong> ${r.check_out ? new Date(r.check_out).toLocaleString() : 'N/A'}</p>
         ${r.checkoutPerformedBy ? `<p><strong>Checked out by:</strong> ${escapeHtml(r.checkoutPerformedBy)}</p>` : ''}

@@ -88,33 +88,37 @@ async function renderPendingPayments() {
         // Store globally for expand functionality
         pendingPaymentsData = pending;
         
-        // Group reservations by reservationHash (multi-amenity indicator)
+        // Group reservations by multiAmenityGroupId when flagged as multi-amenity
         const multiAmenityGroups = {};
         const singleReservations = [];
         
         pending.forEach(reservation => {
-            const hash = reservation.reservationHash;
-            if (hash) {
-                // Has a hash - could be multi-amenity
-                if (!multiAmenityGroups[hash]) {
-                    multiAmenityGroups[hash] = [];
+            // Debug logging for classification
+            console.log('📋 Classifying reservation:', {
+                id: reservation.reservationId,
+                serviceName: reservation.serviceName,
+                isMultiAmenity: reservation.isMultiAmenity,
+                hasGroupId: !!reservation.multiAmenityGroupId,
+                groupId: reservation.multiAmenityGroupId
+            });
+            
+            if (reservation.isMultiAmenity && reservation.multiAmenityGroupId) {
+                const groupId = reservation.multiAmenityGroupId;
+                if (!multiAmenityGroups[groupId]) {
+                    multiAmenityGroups[groupId] = [];
                 }
-                multiAmenityGroups[hash].push(reservation);
+                multiAmenityGroups[groupId].push(reservation);
             } else {
-                // No hash - single reservation
                 singleReservations.push(reservation);
             }
         });
         
-        // Separate truly multi-amenity (more than 1 reservation per hash) from single
+        // Treat any reservation marked as multi-amenity as a multi-amenity group
         const trueMultiAmenity = [];
-        Object.keys(multiAmenityGroups).forEach(hash => {
-            const group = multiAmenityGroups[hash];
-            if (group.length > 1) {
-                trueMultiAmenity.push({ hash, reservations: group });
-            } else {
-                // Only 1 reservation with this hash - treat as single
-                singleReservations.push(...group);
+        Object.keys(multiAmenityGroups).forEach(groupId => {
+            const group = multiAmenityGroups[groupId];
+            if (group.length > 0) {
+                trueMultiAmenity.push({ groupId, reservations: group });
             }
         });
         
@@ -151,7 +155,7 @@ async function renderPendingPayments() {
 }
 
 function renderSingleReservations(tbody, reservations) {
-    reservations.forEach(reservation => {
+    reservations.filter(reservation => !reservation.isMultiAmenity).forEach(reservation => {
         const reservationId = reservation.reservationId || reservation._id || 'N/A';
         const customerName = reservation.full_name || reservation.customer_name || 'N/A';
         const serviceType = reservation.serviceType || 'N/A';
@@ -169,8 +173,10 @@ function renderSingleReservations(tbody, reservations) {
             <td>₱${amount}</td>
             <td>${uploaded}</td>
             <td>
-                <button class="btn btn-success btn-sm" data-action="approve" data-id="${reservation._id}">Approve</button>
-                <button class="btn btn-danger btn-sm" data-action="reject" data-id="${reservation._id}">Reject</button>
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                    <button class="btn btn-success btn-sm" data-action="approve" data-id="${reservation._id}">Approve</button>
+                    <button class="btn btn-danger btn-sm" data-action="reject" data-id="${reservation._id}">Reject</button>
+                </div>
             </td>
         `;
 
@@ -197,17 +203,22 @@ function renderMultiAmenityGroups(tbody, groups) {
         // Create main group row
         const groupRow = document.createElement('tr');
         groupRow.style.backgroundColor = '#fff3cd';
+        // Use the first reservation's formal ID, with fallback to group ID
+        const displayId = firstRes.reservationId || (group.groupId ? String(group.groupId).substring(0, 12) + '...' : 'N/A');
         groupRow.innerHTML = `
-            <td><button class="btn btn-sm btn-warning expand-payment-btn" onclick="toggleMultiAmenityGroup(this, ${groupIndex})">+</button></td>
-            <td><span class="badge bg-info">Multi-Amenity</span><br>${escapeHtml(group.hash.substring(0, 12))}...</td>
+            <td></td>
+            <td><span class="badge bg-info">Multi-Amenity</span><br>${escapeHtml(displayId)}</td>
             <td>${escapeHtml(customerName)}</td>
             <td><strong>${group.reservations.length} Services</strong></td>
             <td>${escapeHtml(reference)}</td>
             <td><strong>₱${totalAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</strong></td>
             <td>${uploaded}</td>
             <td>
-                <button class="btn btn-success btn-sm" data-action="approve-group" data-group-index="${groupIndex}">Approve All</button>
-                <button class="btn btn-danger btn-sm" data-action="reject-group" data-group-index="${groupIndex}">Reject All</button>
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                    <button class="btn btn-sm btn-warning expand-payment-btn" onclick="toggleMultiAmenityGroup(this, ${groupIndex})" style="width: 100%;">+</button>
+                    <button class="btn btn-success btn-sm" data-action="approve-group" data-group-index="${groupIndex}">Approve All</button>
+                    <button class="btn btn-danger btn-sm" data-action="reject-group" data-group-index="${groupIndex}">Reject All</button>
+                </div>
             </td>
         `;
         
@@ -238,6 +249,7 @@ function toggleMultiAmenityGroup(btn, groupIndex) {
         if (group && group.reservations) {
             let detailsHTML = '<div style="padding: 15px; background: #fff;">';
             detailsHTML += '<h6 class="mb-3">📋 Reservations in this Multi-Amenity Booking:</h6>';
+            detailsHTML += '<div style="margin-bottom: 10px; padding: 8px 10px; border-radius: 6px; background: #fff3cd; color: #856404; font-size: 0.9rem;">Approvals are bundle-wide. Use Approve All/Reject All to keep the booking consistent.</div>';
             detailsHTML += '<table class="table table-sm table-bordered">';
             detailsHTML += '<thead><tr><th>Reservation ID</th><th>Service</th><th>Duration</th><th>Check-In</th><th>Amount</th></tr></thead><tbody>';
             
@@ -293,46 +305,38 @@ async function handleGroupPaymentAction(groupIndex, action, buttonEl) {
     buttonEl.textContent = isApprove ? 'Approving...' : 'Rejecting...';
     
     const token = sessionStorage.getItem('token') || localStorage.getItem('token') || '';
-    let successCount = 0;
-    let failCount = 0;
     
-    // Process all reservations in the group
-    for (const reservation of group.reservations) {
-        try {
-            const endpoint = isApprove
-                ? `http://localhost:3000/api/reservations/${reservation._id}/approve-payment`
-                : `http://localhost:3000/api/reservations/${reservation._id}/reject-payment`;
-            
-            const payload = isApprove
-                ? { status: 'PAID' }
-                : { status: 'REJECTED', paymentStatus: 'REJECTED' };
-            
-            const response = await fetch(endpoint, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(payload)
-            });
-            
-            const result = await response.json();
-            if (response.ok && result.success) {
-                successCount++;
-            } else {
-                failCount++;
-            }
-        } catch (error) {
-            console.error(`Error processing reservation ${reservation._id}:`, error);
-            failCount++;
+    // For multi-amenity groups, the backend automatically updates ALL reservations in the group
+    // when we approve/reject just ONE reservation. So we only need to call the endpoint once.
+    const firstReservation = group.reservations[0];
+    
+    try {
+        const endpoint = isApprove
+            ? `http://localhost:3000/api/reservations/${firstReservation._id}/approve-payment`
+            : `http://localhost:3000/api/reservations/${firstReservation._id}/reject-payment`;
+        
+        const payload = isApprove
+            ? { status: 'PAID' }
+            : { status: 'REJECTED', paymentStatus: 'REJECTED' };
+        
+        const response = await fetch(endpoint, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(payload)
+        });
+        
+        const result = await response.json();
+        if (response.ok && result.success) {
+            showToast(`All ${group.reservations.length} reservations ${isApprove ? 'approved' : 'rejected'} successfully!`, 'success');
+        } else {
+            showToast(`Failed to ${isApprove ? 'approve' : 'reject'} reservations: ${result.message || 'Unknown error'}`, 'danger');
         }
-    }
-    
-    // Show result
-    if (failCount === 0) {
-        showToast(`All ${successCount} reservations ${isApprove ? 'approved' : 'rejected'} successfully!`, 'success');
-    } else {
-        showToast(`${successCount} succeeded, ${failCount} failed.`, 'warning');
+    } catch (error) {
+        console.error(`Error processing multi-amenity group:`, error);
+        showToast(`Error: ${error.message}`, 'danger');
     }
     
     // Refresh tables
