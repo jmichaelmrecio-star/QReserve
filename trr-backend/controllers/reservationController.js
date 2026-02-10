@@ -94,8 +94,11 @@ async function findServiceByAnyId(serviceId, { includeInactive = false } = {}) {
     return Service.findOne(query);
 }
 
-// Helper: Validate reservation lead time requirements
-// Standard Rooms (accommodation): Users must reserve at least 1 hour before check-in time
+// Helper: Validate reservation lead time requirements using Rolling 30-Minute Rule
+// Standard Rooms (accommodation): Rolling 30-Minute Rule
+//   - If current time is MM:00 to MM:30, can book current hour
+//   - If current time is MM:31 to MM:59, must book next hour
+//   - Resort operates 8:00 AM to 8:00 PM
 // Venues (event/venue): Users must reserve at least 1 day (24 hours) before check-in date
 async function validateLeadTime(serviceId, checkInDateTime, serviceTypeFromRequest) {
     try {
@@ -108,6 +111,8 @@ async function validateLeadTime(serviceId, checkInDateTime, serviceTypeFromReque
         }
 
         const now = new Date();
+        const currentMinutes = now.getMinutes();
+        const currentHour = now.getHours();
         
         // Determine if this is a Standard Room or Venue based on service type/category
         const serviceType = serviceTypeFromRequest || service.type || '';
@@ -130,13 +135,40 @@ async function validateLeadTime(serviceId, checkInDateTime, serviceTypeFromReque
                 };
             }
         } else {
-            // Standard Rooms (accommodation): Must reserve at least 1 hour before check-in time
-            const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
+            // Standard Rooms (accommodation): Rolling 30-Minute Rule
+            // Determine the earliest allowable check-in hour
+            let earliestHour;
+            if (currentMinutes <= 30) {
+                // Within :00-:30 window, can book current hour
+                earliestHour = currentHour;
+            } else {
+                // Within :31-:59 window, must book next hour
+                earliestHour = currentHour + 1;
+            }
             
-            if (checkInDateTime < oneHourFromNow) {
+            // Create the minimum allowed check-in time (start of the earliest hour)
+            const minCheckInTime = new Date(now);
+            minCheckInTime.setHours(earliestHour, 0, 0, 0);
+            
+            // If earliest hour is past operating hours (8 PM = 20:00) or before opening (8 AM),
+            // adjust to next day 8 AM
+            if (earliestHour >= 20 || earliestHour < 8) {
+                minCheckInTime.setDate(minCheckInTime.getDate() + 1);
+                minCheckInTime.setHours(8, 0, 0, 0);
+            }
+            
+            // Validate the requested check-in time
+            if (checkInDateTime < minCheckInTime) {
+                const minTimeStr = minCheckInTime.toLocaleString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                });
                 return {
                     valid: false,
-                    message: `${service.name || 'This room'} requires at least 1 hour advance notice. Please select a check-in time that is at least 1 hour away from now.`,
+                    message: `${service.name || 'This room'} follows the Rolling 30-Minute Rule. The earliest available check-in time is ${minTimeStr}. Please select a later time.`,
                     leadTimeType: 'room'
                 };
             }

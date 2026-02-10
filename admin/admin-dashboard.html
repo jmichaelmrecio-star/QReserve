@@ -10,7 +10,8 @@
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="/admin/admin-dashboard.css">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    
+    <!-- Flatpickr CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 </head>
 <body>
     <!-- Header navigation removed for admin pages -->
@@ -351,6 +352,83 @@
             console.log('✅ Admin Dashboard initialized successfully');
         }, 100);
     });
+    </script>
+    <!-- Flatpickr JS -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+        // Initialize Flatpickr for all date inputs in admin dashboard
+        function initializeFlatpickr() {
+            // Report date range pickers
+            const reportStartDate = document.getElementById("reportStartDate");
+            if (reportStartDate) {
+                flatpickr(reportStartDate, {
+                    dateFormat: "Y-m-d",
+                    altFormat: "F j, Y",
+                    altInput: true,
+                    disableMobile: false
+                });
+            }
+
+            const reportEndDate = document.getElementById("reportEndDate");
+            if (reportEndDate) {
+                flatpickr(reportEndDate, {
+                    dateFormat: "Y-m-d",
+                    altFormat: "F j, Y",
+                    altInput: true,
+                    disableMobile: false
+                });
+            }
+
+            // Schedule/Block dates pickers
+            const blockStartDate = document.getElementById("blockStartDate");
+            if (blockStartDate) {
+                flatpickr(blockStartDate, {
+                    minDate: new Date(),
+                    dateFormat: "Y-m-d",
+                    altFormat: "F j, Y",
+                    altInput: true,
+                    disableMobile: false
+                });
+            }
+
+            const blockEndDate = document.getElementById("blockEndDate");
+            if (blockEndDate) {
+                flatpickr(blockEndDate, {
+                    minDate: new Date(),
+                    dateFormat: "Y-m-d",
+                    altFormat: "F j, Y",
+                    altInput: true,
+                    disableMobile: false
+                });
+            }
+
+            // Promo code expiration date
+            const expirationDateInput = document.getElementById("expirationDateInput");
+            if (expirationDateInput) {
+                flatpickr(expirationDateInput, {
+                    minDate: new Date(),
+                    dateFormat: "Y-m-d",
+                    altFormat: "F j, Y",
+                    altInput: true,
+                    disableMobile: false
+                });
+            }
+        }
+
+        // Initialize on document ready and whenever content is loaded
+        document.addEventListener('DOMContentLoaded', initializeFlatpickr);
+        document.addEventListener('contentLoaded', initializeFlatpickr);
+
+        // Re-initialize after dynamic content is loaded (for component loader)
+        const originalFetch = window.fetch;
+        window.fetch = function(...args) {
+            return originalFetch.apply(this, args).then(response => {
+                if (response.ok) {
+                    setTimeout(initializeFlatpickr, 100);
+                }
+                return response;
+            });
+        };
     </script>
 </body>
 </html>
