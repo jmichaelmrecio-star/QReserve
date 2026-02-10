@@ -31,19 +31,23 @@
         <h2 style="text-align: center; max-width: 800px; margin: 0 auto 2rem;">Finalize Your Reservation Payment</h2>
         <p>Your booking details have been saved. Please complete the payment via <strong>GCash</strong> and provide your reference number and receipt for admin verification and approval.</p>
         
-        <!-- Cart Items Display (for multi-item checkout) -->
-        <div id="cart-items-section" style="margin-bottom: 2rem; display: none;">
-            <h3>Items in this reservation</h3>
-            <div id="cart-items-for-payment" style="display: flex; flex-direction: column; gap: 0.75rem;"></div>
-        </div>
-        
         <form id="gcashPaymentForm">
+            <!-- Reservation Items Display -->
+            <div id="reservation-items-section" class="payment-summary-section" style="display: none;">
+                <h3>Items in this reservation</h3>
+                <div id="reservation-items-for-payment" style="display: flex; flex-direction: column; gap: 0.75rem;"></div>
+            </div>
+            
             <!-- Reservation Summary Section -->
             <div class="payment-summary-section">
                 <h3>Reservation Summary</h3>
                 <div class="summary-row">
                     <span class="summary-label">Reservation type:</span>
                     <span class="summary-value" id="reservationTypeDisplay"></span>
+                </div>
+                <div class="summary-row" id="singleAmenityRow" style="display: none;">
+                    <span class="summary-label">Amenity:</span>
+                    <span class="summary-value" id="singleAmenityDisplay"></span>
                 </div>
                 <div class="summary-row" id="amenitiesListRow" style="display: none;">
                     <span class="summary-label">Amenities:</span>

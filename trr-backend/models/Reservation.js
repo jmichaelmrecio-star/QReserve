@@ -96,6 +96,10 @@ const ReservationSchema = new mongoose.Schema({
         type: Date,
         required: false,
     },
+    paymentConfirmedAt: {
+        type: Date,
+        required: false,
+    },
     
     // QR Code Data
     qrCodeData: { type: String },

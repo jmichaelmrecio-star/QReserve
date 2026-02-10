@@ -100,8 +100,8 @@ async function processGCashPayment(event, reservationId, reservationHash) {
 }
 
 function renderMultiAmenityItems(amenities) {
-  const section = document.getElementById("cart-items-section");
-  const container = document.getElementById("cart-items-for-payment");
+  const section = document.getElementById("reservation-items-section");
+  const container = document.getElementById("reservation-items-for-payment");
   if (!section || !container) return;
 
   if (!Array.isArray(amenities) || amenities.length === 0) {
@@ -270,6 +270,18 @@ function populateSummaryFromSingleAmenity() {
   const checkOut = sessionStorage.getItem('selectedCheckOut');
   const checkOutTime = sessionStorage.getItem('selectedCheckOutTime');
   
+  // Retrieve inclusions from sessionStorage (stored during service selection)
+  let inclusions = [];
+  const inclusionsJSON = sessionStorage.getItem('serviceInclusions');
+  if (inclusionsJSON) {
+    try {
+      inclusions = JSON.parse(inclusionsJSON);
+    } catch (e) {
+      console.warn('Failed to parse serviceInclusions from sessionStorage:', e);
+      inclusions = [];
+    }
+  }
+  
   const reservationTypeEl = document.getElementById("reservationTypeDisplay");
   const nameEl = document.getElementById("summaryCustomerName");
   const totalEl = document.getElementById("totalReservationCost");
@@ -277,10 +289,18 @@ function populateSummaryFromSingleAmenity() {
   const paySmallEl = document.getElementById("paymentAmountSmall");
   const remainingEl = document.getElementById("remainingBalance");
   const amenitiesListRow = document.getElementById("amenitiesListRow");
+  const singleAmenityRow = document.getElementById("singleAmenityRow");
+  const singleAmenityDisplay = document.getElementById("singleAmenityDisplay");
 
   // Set reservation type
   if (reservationTypeEl) {
     reservationTypeEl.textContent = "Single Amenity";
+  }
+
+  // Show single amenity row in reservation summary
+  if (singleAmenityRow && singleAmenityDisplay) {
+    singleAmenityRow.style.display = "flex";
+    singleAmenityDisplay.textContent = serviceName;
   }
 
   // Hide multi-amenity list row
@@ -313,7 +333,7 @@ function populateSummaryFromSingleAmenity() {
     checkOut: checkOut,
     checkOutTime: checkOutTime,
     price: servicePrice,
-    inclusions: [] // Could retrieve from sessionStorage if stored
+    inclusions: inclusions
   };
 
   renderMultiAmenityItems([singleAmenityItem]);
@@ -333,9 +353,17 @@ async function fetchAndDisplaySummary(reservationId, reservationHash) {
       const paySmallEl = document.getElementById("paymentAmountSmall");
       const remainingEl = document.getElementById("remainingBalance");
       const amenitiesListRow = document.getElementById("amenitiesListRow");
+      const singleAmenityRow = document.getElementById("singleAmenityRow");
+      const singleAmenityDisplay = document.getElementById("singleAmenityDisplay");
       
       // For single reservations, show "Single Amenity"
       if (reservationTypeEl) reservationTypeEl.textContent = "Single Amenity";
+      
+      // Show single amenity name in reservation summary
+      if (singleAmenityRow && singleAmenityDisplay) {
+        singleAmenityRow.style.display = "flex";
+        singleAmenityDisplay.textContent = res.serviceName || 'Service';
+      }
       
       // Hide multi-amenity list row
       if (amenitiesListRow) amenitiesListRow.style.display = "none";
