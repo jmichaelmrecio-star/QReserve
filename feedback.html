@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Guest Feedback & Reviews | Tito Renz Resort</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Flatpickr CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 </head>
 <body>
     <!-- Standard Navigation Header (matching index.html) -->
@@ -585,3 +587,20 @@
         loadTestimonials();
         updateRatingSummary();
     </script>
+    <!-- Flatpickr JS -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+        // Initialize Flatpickr for visit date field
+        const visitDateInput = document.getElementById("visitDate");
+        if (visitDateInput) {
+            flatpickr(visitDateInput, {
+                dateFormat: "Y-m-d",
+                altFormat: "F j, Y",
+                altInput: true,
+                disableMobile: false,
+                maxDate: new Date() // Can't review a future visit
+            });
+        }
+    </script>
+</body>
+</html>

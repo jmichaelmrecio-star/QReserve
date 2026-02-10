@@ -158,6 +158,8 @@
 			}
 		}
 	</style>
+	<!-- Flatpickr CSS -->
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 </head>
 <body>
 
@@ -168,6 +170,7 @@
             </a>
             <ul>
                 </ul>
+            <div class="nav-right" id="navRight"></div>
         </nav>
     </header>
 	<main class="has-fixed-header-offset reserve-parallax">
@@ -1086,24 +1089,57 @@
 				});
 			}
 			
-			// ===== PREVENT PAST DATES IN CHECK-IN =====
-			// Set minimum date to today/now to prevent selecting past dates
+			// ===== ROLLING 30-MINUTE RULE FOR CHECK-IN =====
+			// Implements the Rolling 30-Minute Rule:
+			// - If current time is MM:00 to MM:30, allow booking for current hour
+			// - If current time is MM:31 to MM:59, allow booking for next hour
+			// Resort operates 8:00 AM to 8:00 PM
 			function setCheckInMinDate() {
 				if (!checkinInput) return;
 				
 				// Get current date/time
 				const now = new Date();
-				const year = now.getFullYear();
-				const month = String(now.getMonth() + 1).padStart(2, '0');
-				const day = String(now.getDate()).padStart(2, '0');
-				const hours = String(now.getHours()).padStart(2, '0');
-				const minutes = String(now.getMinutes()).padStart(2, '0');
+				const currentMinutes = now.getMinutes();
+				const currentHour = now.getHours();
 				
-				// Set min attribute to current date/time
+				// Determine the earliest bookable hour based on Rolling 30-Minute Rule
+				let earliestHour;
+				if (currentMinutes <= 30) {
+					// Within :00-:30 window, can book current hour
+					earliestHour = currentHour;
+				} else {
+					// Within :31-:59 window, must book next hour
+					earliestHour = currentHour + 1;
+				}
+				
+				// Create a date object for the minimum allowed time
+				const minDate = new Date(now);
+				minDate.setHours(earliestHour, 0, 0, 0); // Set to the start of the hour (:00)
+				
+				// If the earliest hour goes past midnight or before 8 AM, adjust to next day 8 AM
+				if (earliestHour >= 24 || earliestHour < 8) {
+					minDate.setDate(minDate.getDate() + 1);
+					minDate.setHours(8, 0, 0, 0);
+				}
+				
+				// If current time is after 8:00 PM (20:00), set min to next day 8 AM
+				if (currentHour >= 20) {
+					minDate.setDate(minDate.getDate() + 1);
+					minDate.setHours(8, 0, 0, 0);
+				}
+				
+				// Format for datetime-local input
+				const year = minDate.getFullYear();
+				const month = String(minDate.getMonth() + 1).padStart(2, '0');
+				const day = String(minDate.getDate()).padStart(2, '0');
+				const hours = String(minDate.getHours()).padStart(2, '0');
+				const minutes = '00'; // Always start at :00 of the hour
+				
+				// Set min attribute
 				const minDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
 				checkinInput.min = minDateTime;
 				
-				console.log('Check-in minimum date set to:', minDateTime);
+				console.log('Rolling 30-Min Rule - Check-in minimum set to:', minDateTime);
 			}
 			
 			// Call on page load
@@ -1965,6 +2001,38 @@
 	        });
 	    }
 	});
+	</script>
+	<!-- Flatpickr JS -->
+	<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+	<script>
+		// Initialize Flatpickr for check-in datetime
+		const checkinInput = document.getElementById("checkin");
+		if (checkinInput) {
+			flatpickr(checkinInput, {
+				minDate: new Date(),
+				dateFormat: "Y-m-d H:i",
+				altFormat: "F j, Y H:i",
+				altInput: true,
+				enableTime: true,
+				time_24hr: true,
+				minuteIncrement: 30,
+				disableMobile: false
+			});
+		}
+
+		// Initialize Flatpickr for check-out datetime (read-only, but still styled)
+		const checkoutInput = document.getElementById("checkout");
+		if (checkoutInput) {
+			flatpickr(checkoutInput, {
+				dateFormat: "Y-m-d H:i",
+				altFormat: "F j, Y H:i",
+				altInput: true,
+				enableTime: true,
+				time_24hr: true,
+				minuteIncrement: 30,
+				disableMobile: false
+			});
+		}
 	</script>
 </body>
 </html>

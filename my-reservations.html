@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Reservations - Tito Renz Resort</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <a href="index.html" class="nav-logo" aria-label="Tito Renz Resort">
+                <img src="images/logo.png" alt="Tito Renz Resort Logo">
+            </a>
+            <ul></ul>
+            <div class="nav-right" id="navRight"></div>
+        </nav>
+    </header>
+
+    <section class="page-hero-section">
+        <div class="hero-content">
+            <br><br>
+            <h1>My Reservations</h1>
+            <p>View and manage your booking history</p>
+        </div>
+    </section>
+
+    <main class="has-fixed-header-offset">
+        <section class="profile-card">
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Service Type</th>
+                            <th>Check-in Date</th>
+                            <th>Checkout Date</th>
+                            <th>Status</th>
+                            <th>Total Paid</th>
+                            <th>Payment Image</th>
+                            <th>QR Code</th>
+                        </tr>
+                    </thead>
+                    <tbody id="user-reservations-list">
+                        <!-- Reservation rows will be dynamically inserted here by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section contact-info">
+                <h3>Tito Renz Resort</h3>
+                <p>Your seamless booking experience starts here.</p>
+                <p>📍 Sitio Bulalo, Norzagaray, Philippines</p>
+                <p>📞 0977 246 8920 or 0916 640 3411</p>
+                <p>📧 titorenznorzagaray@gmail.com</p>
+            </div>
+
+            <div class="footer-section quick-links">
+                <h3>Quick Links</h3>
+                <ul>
+                    <!-- Dynamically populated by renderFooterQuickLinks() -->
+                </ul>
+            </div>
+
+            <div class="footer-section about-contact">
+                <h3>About & Contact</h3>
+                <ul>
+                    <li><a href="contact.html">Send Us a Message</a></li>
+                    <li><a href="help.html">Help / Guides</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2025 QReserve Project - All Rights Reserved.</p>
+            <p style="margin-top:8px;">
+                <a href="#" id="termsLinkFooter" style="color:#d4a574;text-decoration:underline;font-weight:600;">View Terms and Conditions</a>
+            </p>
+        </div>
+    </footer>
+
+    <script src="ui-core.js"></script>
+    <script src="my-reservations.js"></script>
+</body>
+</html>

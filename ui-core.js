@@ -691,7 +691,7 @@ function renderNavigation() {
   // My Reservations link (for logged-in users)
   if (roleFromStorage !== "public") {
     const reservationsLi = document.createElement("li");
-    reservationsLi.innerHTML = `<a href="customer-dashboard.html">My Reservations</a>`;
+    reservationsLi.innerHTML = `<a href="my-reservations.html">My Reservations</a>`;
     navUl.appendChild(reservationsLi);
   }
 
