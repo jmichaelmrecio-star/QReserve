@@ -51,6 +51,30 @@ async function generateFormalReservationId() {
     return `${datePrefix}-${formattedSequence}`;
 }
 
+// Helper function to get service name from serviceId
+async function getServiceName(serviceId) {
+    if (!serviceId) return null;
+    
+    // First try to find in servicesData (for string IDs like 'villa_room_1')
+    const serviceFromData = servicesData.find(s => s.id === serviceId);
+    if (serviceFromData) {
+        return serviceFromData.name;
+    }
+    
+    // If not found and looks like a MongoDB ObjectId, query database
+    if (mongoose.Types.ObjectId.isValid(serviceId)) {
+        try {
+            const serviceFromDB = await Service.findById(serviceId);
+            return serviceFromDB ? serviceFromDB.name : null;
+        } catch (err) {
+            console.error('Error fetching service from database:', err);
+            return null;
+        }
+    }
+    
+    return null;
+}
+
 // Helper function to calculate price from service data
 function calculateServicePrice(service, durationId, guestCount = 1) {
     if (!service) return null;
@@ -343,10 +367,15 @@ exports.addCartItem = async (req, res) => {
         const reservationHash = crypto.randomBytes(16).toString('hex');
         const formalReservationId = await generateFormalReservationId();
 
+        // Calculate payment amounts (50% downpayment, 50% remaining balance)
+        const downpayment = finalTotal * 0.5;
+        const remaining = finalTotal * 0.5;
+
         const newReservation = new Reservation({
             accountId,
             serviceId,
             serviceType,
+            serviceName: await getServiceName(serviceId),
             full_name: customer_name,
             check_in: new Date(checkin_date),
             check_out: new Date(checkout_date),
@@ -356,6 +385,10 @@ exports.addCartItem = async (req, res) => {
             address: customer_address,
             basePrice,
             finalTotal,
+            totalAmount: finalTotal,
+            downpaymentAmount: downpayment,
+            remainingBalance: remaining,
+            paymentType: 'downpayment',
             discountCode: discountCode || null,
             discountValue: discountValue || 0,
             reservationHash,
@@ -741,10 +774,16 @@ exports.createReservation = async (req, res) => {
         
         // --- F. Create Reservation Record ---
         console.log('📝 Creating reservation record...');
+        
+        // Calculate payment amounts (50% downpayment, 50% remaining balance)
+        const downpayment = expectedFinalTotal * 0.5;
+        const remaining = expectedFinalTotal * 0.5;
+        
         const newReservation = new Reservation({
             accountId,
             serviceId,
             serviceType,
+            serviceName: await getServiceName(serviceId),
             full_name: fullName,
             check_in: checkIn,
             check_out: checkOut,
@@ -754,6 +793,10 @@ exports.createReservation = async (req, res) => {
             address,
             basePrice: expectedBasePrice,
             finalTotal: expectedFinalTotal,
+            totalAmount: expectedFinalTotal,
+            downpaymentAmount: downpayment,
+            remainingBalance: remaining,
+            paymentType: 'downpayment',
             discountCode: discountCode || null,
             discountValue: discountValue || 0,
             reservationHash: reservationHash, // CRITICAL: Correctly defined and used here
@@ -1082,11 +1125,16 @@ exports.createMultiAmenityReservation = async (req, res) => {
             // For multi-amenity, we'll use a modified formal ID with sequence suffix
             const amenityFormalId = `${formalReservationId}-${String(i + 1).padStart(2, '0')}`;
 
+            // Calculate payment amounts for this amenity (50% downpayment, 50% remaining balance)
+            const amenityPrice = amenity.price || 0;
+            const amenityDownpayment = amenityPrice * 0.5;
+            const amenityRemaining = amenityPrice * 0.5;
+
             const newReservation = new Reservation({
                 accountId,
                 serviceId: amenity.serviceId,
                 serviceType: amenity.serviceType || 'Unknown',
-                serviceName: amenity.serviceName || 'N/A', // Store service name for easier display
+                serviceName: amenity.serviceName || await getServiceName(amenity.serviceId) || 'N/A', // Store service name for easier display
                 full_name: name,
                 check_in: checkIn,
                 check_out: checkOut,
@@ -1096,6 +1144,10 @@ exports.createMultiAmenityReservation = async (req, res) => {
                 address: address,
                 basePrice: amenity.price || 0,
                 finalTotal: amenity.price || 0, // Individual item price (discount applied at group level)
+                totalAmount: amenityPrice,
+                downpaymentAmount: amenityDownpayment,
+                remainingBalance: amenityRemaining,
+                paymentType: 'downpayment',
                 discountCode: appliedPromo?.code || null,
                 discountValue: 0, // Discount applied to total, not individual items
                 reservationHash: i === 0 ? reservationHash : `${reservationHash}-${i}`, // First item gets main hash
@@ -1364,6 +1416,11 @@ exports.updateReservationStatus = async (req, res) => {
             nextFields.paymentStatus = 'REFUNDED';
         } else if (['CONFIRMED', 'CHECKED_IN', 'COMPLETED'].includes(normalizedStatus)) {
             nextFields.paymentStatus = 'PAID';
+            // Set payment confirmed timestamp if not already set
+            const currentReservation = await Reservation.findById(id);
+            if (currentReservation && !currentReservation.paymentConfirmedAt) {
+                nextFields.paymentConfirmedAt = new Date();
+            }
         }
         nextFields.updatedAt = new Date();
 
@@ -1927,9 +1984,40 @@ exports.checkAvailability = async (req, res) => {
             check_out: { $gt: checkin }
         });
         
+        if (overlapping.length > 0) {
+            return res.json({ 
+                available: false, 
+                conflictingReservations: overlapping.length,
+                reason: 'This amenity is already reserved for the selected date/time'
+            });
+        }
+
+        // Check for blocked dates (including global resort locks from Private Pool)
+        const blockedDates = await BlockedDate.find({
+            $or: [
+                // Global blocks (Private Pool reservations block everything)
+                { appliesToAllServices: true },
+                // Specific service blocks
+                { serviceIds: { $in: [serviceId, service.id, service._id?.toString()] } }
+            ],
+            // Overlap: new check_in < existing endDate AND new check_out > existing startDate
+            startDate: { $lt: checkout },
+            endDate: { $gt: checkin }
+        });
+
+        if (blockedDates.length > 0) {
+            const blockReason = blockedDates[0].reason || 'This date/time is blocked';
+            return res.json({
+                available: false,
+                conflictingReservations: 0,
+                blockedDates: blockedDates.length,
+                reason: blockReason
+            });
+        }
+        
         res.json({ 
-            available: overlapping.length === 0, 
-            conflictingReservations: overlapping.length 
+            available: true, 
+            conflictingReservations: 0 
         });
     } catch (error) {
         console.error('Error checking availability:', error);
@@ -2178,6 +2266,7 @@ exports.approvePayment = async (req, res) => {
         for (const r of reservationsToUpdate) {
             r.paymentStatus = resolvedPaymentStatus;
             r.status = resolvedStatus;
+            r.paymentConfirmedAt = new Date();
             r.updatedAt = new Date();
             await r.save();
         }

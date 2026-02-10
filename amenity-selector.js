@@ -226,6 +226,7 @@ function renderSelectedItems(containerId = 'selected-items-list') {
                 <div style="flex: 1;">
                     <p style="margin: 0 0 4px 0; font-weight: 600; color: #333;">${escapeHtml(itemName)}</p>
                     <p style="margin: 0 0 4px 0; font-size: 0.85rem; color: #666;">${escapeHtml(durationLabel)}</p>
+                    ${amenity.guests ? `<p style="margin: 0 0 4px 0; font-size: 0.8rem; color: #555;">👥 ${amenity.guests} guest${amenity.guests > 1 ? 's' : ''}</p>` : ''}
                     ${datesDisplay ? `<p style="margin: 0 0 4px 0; font-size: 0.8rem; color: #0066cc;">${datesDisplay}${timeDisplay}</p>` : ''}
                     <p style="margin: 0; font-weight: 600; color: var(--primary-color);">₱${price.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
                 </div>
@@ -452,6 +453,42 @@ function proceedToReservation() {
 
     // Get applied promo (if any)
     const appliedPromo = JSON.parse(sessionStorage.getItem('appliedPromo') || 'null');
+    
+    // ✅ FIX: If only 1 amenity, redirect to single-amenity mode
+    if (multipleAmenities.length === 1) {
+        const singleItem = multipleAmenities[0];
+        
+        // Store as single amenity reservation data
+        sessionStorage.setItem('selectedServiceId', singleItem.serviceId);
+        sessionStorage.setItem('selectedServiceName', singleItem.serviceName);
+        sessionStorage.setItem('selectedServicePrice', singleItem.price);
+        sessionStorage.setItem('selectedDuration', singleItem.selectedDuration || singleItem.durationLabel || '');
+        sessionStorage.setItem('selectedDurationLabel', singleItem.durationLabel || singleItem.selectedDuration || '');
+        sessionStorage.setItem('selectedAssetNumber', singleItem.assetNumber || '');
+        
+        // Store dates and times if provided
+        if (singleItem.checkIn) sessionStorage.setItem('selectedCheckIn', singleItem.checkIn);
+        if (singleItem.checkOut) sessionStorage.setItem('selectedCheckOut', singleItem.checkOut);
+        if (singleItem.checkInTime) sessionStorage.setItem('selectedCheckInTime', singleItem.checkInTime);
+        if (singleItem.checkOutTime) sessionStorage.setItem('selectedCheckOutTime', singleItem.checkOutTime);
+        
+        // Store guests if provided
+        if (singleItem.guests) sessionStorage.setItem('guests', singleItem.guests);
+        
+        // Store promo if applied
+        if (appliedPromo) {
+            sessionStorage.setItem('appliedPromoCode', appliedPromo.code);
+            sessionStorage.setItem('appliedPromoDiscount', appliedPromo.discountAmount);
+        }
+        
+        // Clear multi-amenity data
+        sessionStorage.removeItem('multiAmenityReservation');
+        sessionStorage.removeItem('multipleAmenities');
+        
+        console.log('✅ Redirecting to single-amenity mode:', singleItem.serviceName);
+        window.location.href = 'reserve.html';
+        return;
+    }
     
     // Store promo data along with amenities for reserve.html
     const reservationData = {
