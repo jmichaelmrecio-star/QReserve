@@ -264,7 +264,7 @@
     <style>
         .profile-card {
             max-width: 1200px;
-            margin: 2rem auto;
+            margin: 2rem auto 0 auto;
             padding: 2rem;
             background-color: white;
             border-radius: var(--border-radius);
@@ -356,7 +356,7 @@
 
     <main class="container page-content has-fixed-header-offset">
         <!-- Page Hero Section -->
-        <section class="page-hero-section" style="margin-bottom: 3rem;">
+        <section class="page-hero-section">
             <div class="hero-content">
                 <br><br>
                 <h1>My Profile</h1>
@@ -366,7 +366,7 @@
 
         <div class="profile-layout">
             
-            <section class="profile-card">
+            <section class="profile-card" style="margin-top: 0;">
                 <h3>Account Details</h3>
                 <br>
                 <form id="profile-edit-form" style="display: flex; flex-direction: column; gap: 2rem;">
@@ -416,30 +416,6 @@
                         <button type="submit" class="button-primary" style="padding: 0.75rem 1.5rem;">Save Changes</button>
                     </div>
                 </form>
-            </section>
-            <section class="profile-card">
-                <h3>My Recent Reservations</h3>
-                <div class="table-responsive">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-
-                                <th>ID</th>
-                                <th>Service Type</th>
-                                <th>Check-in Date</th>
-                                <th>Checkout Date</th>
-                                <th>Status</th>
-                                <th>Total Paid</th>
-                                <th>Payment Image</th>
-                                <th>QR Code</th>
-                            
-                            </tr>
-                        </thead>
-                        <tbody id="user-reservations-list">
-                            <tr><td colspan="8" style="text-align: center;">Loading Reservations...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
             </section>
         </div>
     </main>

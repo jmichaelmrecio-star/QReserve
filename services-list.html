@@ -431,6 +431,8 @@
             }
         }
     </style>
+    <!-- Flatpickr CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 </head>
 <body>
     <header>
@@ -441,6 +443,7 @@
 
             <ul>
                 </ul>
+            <div class="nav-right" id="navRight"></div>
         </nav>
     </header>
 
@@ -549,7 +552,7 @@
             <!-- Check-in Date Selection -->
             <div style="margin-top: 20px;">
                 <label for="modal-checkin-date" style="font-weight: bold;">Check-in Date:</label>
-                <input type="date" id="modal-checkin-date" style="width: 100%; padding: 12px; margin-top: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; font-weight: 500;" required>
+                <input type="date" id="modal-checkin-date" style="width: 100%; padding: 8px; margin-top: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px;" required>
             </div>
             
             <!-- Check-in Time Selection -->
@@ -1494,6 +1497,32 @@
             }
         });
         
+        </script>
+        <!-- Flatpickr JS -->
+        <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+        <script>
+            // Initialize Flatpickr for modal check-in date
+            const checkinInput = document.getElementById("modal-checkin-date");
+            if (checkinInput) {
+                flatpickr(checkinInput, {
+                    minDate: new Date(),
+                    dateFormat: "Y-m-d",
+                    altFormat: "F j, Y",
+                    altInput: true,
+                    enableTime: false,
+                    disableMobile: false,
+                    onReady: function(selectedDates, dateStr, instance) {
+                        // Style the Flatpickr input to match Check-in Time
+                        instance.altInput.style.width = '100%';
+                        instance.altInput.style.padding = '8px';
+                        instance.altInput.style.marginTop = '8px';
+                        instance.altInput.style.border = '1px solid #ccc';
+                        instance.altInput.style.borderRadius = '4px';
+                        instance.altInput.style.fontSize = '16px';
+                        instance.altInput.style.fontWeight = '400';
+                    }
+                });
+            }
         </script>
 </body>
 </html>

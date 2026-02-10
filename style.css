@@ -96,6 +96,7 @@ header {
   -webkit-backdrop-filter: saturate(140%) blur(6px);
   backdrop-filter: saturate(140%) blur(6px);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+  overflow: visible;
 }
 
 @supports not (backdrop-filter: blur(1px)) {
@@ -110,6 +111,7 @@ nav {
   width: 100%;
   padding: 0.75rem var(--spacing);
   position: relative;
+  overflow: visible;
 }
 
 .nav-logo {
@@ -155,10 +157,11 @@ nav ul li.nav-auth-login {
 
 .nav-right {
   margin-left: auto;
-  flex-shrink: 0;
+  flex-shrink: 1;
   display: flex;
   align-items: center;
   gap: 1rem;
+  min-width: 0;
 }
 
 nav a[href="login.html"],
@@ -231,16 +234,6 @@ nav a[href="register.html"][aria-current="page"] {
   color: var(--primary-color) !important;
   border-color: var(--primary-color);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
-}
-
-/* Ensure nav-right stays on the right side */
-nav .nav-right {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  flex-shrink: 0;
-  position: absolute;
-  right: var(--spacing);
 }
 
 /* Mobile fallback: adjust layout for small screens */
@@ -1604,7 +1597,7 @@ footer {
 #featured-amenities .browse-amenities-btn {
   display: inline-block;
   margin-top: 0.25rem;
-  padding: 0.45rem 1rem;
+  padding: 0.25rem 0.65rem;
   font-size: 0.95rem;
 }
 
@@ -1645,7 +1638,7 @@ footer {
   border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   background: #f5f4f1;
-  min-height: 450px;
+  min-height: 390px;
 }
 
 /* Individual carousel slide */
@@ -1723,7 +1716,7 @@ footer {
   font-size: 1rem;
   line-height: 1.7;
   margin: clamp(0.12rem, 0.6vw, 0.15rem) clamp(0.4rem, 1.2vw, 0.45rem)
-    clamp(0.4rem, 1.2vw, 0.45rem) clamp(0.4rem, 1.2vw, 0.45rem);
+    clamp(0.1rem, 0.4vw, 0.15rem) clamp(0.4rem, 1.2vw, 0.45rem);
   padding: 0;
 }
 
@@ -2174,12 +2167,13 @@ footer {
 }
 
 .dropdown-content a {
-  color: black;
+  color: white;
   padding: 12px 16px;
   text-decoration: none;
   display: block;
   text-align: left;
   transition: background-color 0.3s;
+  font-weight: bold;
 }
 
 .dropdown-content a:hover {
@@ -2362,7 +2356,7 @@ footer {
 
 .data-table th:nth-child(5),
 .data-table td:nth-child(5) {
-  text-align: right;
+  text-align: center;
 }
 
 /* Ensure the Status pills look consistent */
