@@ -83,6 +83,22 @@ router.patch(
     reservationController.approvePayment
 );
 
+// New route to approve partial payment (50% down payment)
+router.patch(
+    '/:id/approve-partial',
+    verifyToken,
+    requireRole('Admin', 'Manager'),
+    reservationController.approvePartialPayment
+);
+
+// New route to approve full payment (100% or remaining 50%)
+router.patch(
+    '/:id/approve-full',
+    verifyToken,
+    requireRole('Admin', 'Manager'),
+    reservationController.approveFullPayment
+);
+
 // New route to reject a payment
 router.patch(
     '/:id/reject-payment',

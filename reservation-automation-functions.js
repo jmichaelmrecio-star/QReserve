@@ -125,13 +125,18 @@ async function setupDateValidation() {
             }
 
             // Check existing reservations for conflicts
+            // Get logged-in user's email for private pool exemption
+            const loggedInUser = getLoggedInUser();
+            const userEmail = loggedInUser?.email || '';
+            
             const availabilityResponse = await fetch('http://localhost:3000/api/reservations/check-availability', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     serviceId,
                     checkin_date: checkinValue,
-                    checkout_date: checkoutValue
+                    checkout_date: checkoutValue,
+                    email: userEmail
                 })
             });
 

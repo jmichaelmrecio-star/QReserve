@@ -36,9 +36,10 @@
                             <th>Check-in Date</th>
                             <th>Checkout Date</th>
                             <th>Status</th>
+                            <th>Payment Type</th>
                             <th>Total Paid</th>
                             <th>Payment Image</th>
-                            <th>QR Code</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="user-reservations-list">
@@ -48,6 +49,23 @@
             </div>
         </section>
     </main>
+
+    <!-- Cancel Reservation Confirmation Modal -->
+    <div id="cancelReservationModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.6); z-index: 9999; align-items: center; justify-content: center;">
+        <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 500px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);">
+            <h2 style="margin-top: 0; color: #d97757; font-size: 1.4rem; margin-bottom: 1rem;">⚠️ Cancel Reservation</h2>
+            <p style="color: #4a5568; margin-bottom: 1.5rem; line-height: 1.6;">
+                Are you sure you want to cancel your <strong id="cancelServiceName"></strong> reservation?
+            </p>
+            <p style="color: #666; font-size: 0.95rem; margin-bottom: 2rem;">
+                This action cannot be undone. Your payment will be subject to our cancellation policy.
+            </p>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <button id="confirmCancelBtn" class="btn btn-danger" style="flex: 1; min-width: 150px;">Confirm Cancel</button>
+                <button id="keepReservationBtn" class="btn btn-primary" style="flex: 1; min-width: 150px;">Keep Reservation</button>
+            </div>
+        </div>
+    </div>
 
     <footer>
         <div class="footer-content">
