@@ -1168,8 +1168,6 @@ async function renderAdminReservations() {
            if (r.status !== 'CANCELLED' && r.status !== 'COMPLETED') {
              actions += `<button class="btn btn-danger btn-sm me-1" onclick="cancelReservation('${r._id}')">Cancel</button>`;
            }
-          // Send Email button
-          actions += `<button class="btn btn-info btn-sm me-1" onclick="openSendEmailModal('${r._id}', '${escapeHtml(r.email || '')}')">Email</button>`;
           
           // Add expand button to actions column
           actions += `<button class="btn btn-sm btn-outline-primary expand-reservation-btn" onclick="toggleReservationDetails(this, '${r._id}')">+</button>`;

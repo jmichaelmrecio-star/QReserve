@@ -10,6 +10,32 @@ function formatPaymentDetails(reservation) {
 
   const uploadedDate = reservation.receiptUploadedAt ? new Date(reservation.receiptUploadedAt).toLocaleString() : 'N/A';
   
+  // Determine payment type badge
+  let paymentTypeBadge = '<span class="badge bg-info">50% Down Payment</span>';
+  if (reservation.paymentType === 'fullpayment') {
+    paymentTypeBadge = '<span class="badge bg-success">100% Full Payment</span>';
+  }
+  
+  // Determine payment status badge
+  let paymentStatusBadge = '<span class="badge bg-warning">Pending</span>';
+  if (reservation.paymentStatus === 'partial-payment') {
+    paymentStatusBadge = '<span class="badge bg-info">50% Submitted</span>';
+  } else if (reservation.paymentStatus === 'partially-paid') {
+    paymentStatusBadge = '<span class="badge bg-primary">50% Approved</span>';
+  } else if (reservation.paymentStatus === 'full-payment') {
+    paymentStatusBadge = '<span class="badge bg-info">100% Submitted</span>';
+  } else if (reservation.paymentStatus === 'fully-paid') {
+    paymentStatusBadge = '<span class="badge bg-success">100% Approved</span>';
+  }
+  
+  // Calculate amounts
+  const totalAmount = Number(reservation.finalTotal || 0);
+  const downPaymentAmount = Math.round(totalAmount * 0.5 * 100) / 100;
+  // Calculate amount actually submitted based on payment type
+  const submittedAmount = reservation.paymentType === 'downpayment' ? downPaymentAmount : totalAmount;
+  const paidAmount = reservation.paymentStatus === 'partially-paid' ? downPaymentAmount : (reservation.paymentStatus === 'fully-paid' ? totalAmount : 0);
+  const remainingAmount = totalAmount - submittedAmount;
+  
   return `
     <div class="details-container">
       <div class="detail-section">
@@ -28,8 +54,11 @@ function formatPaymentDetails(reservation) {
       <div class="detail-section">
         <h6>💳 Payment Details</h6>
         <p><strong>GCash Reference #:</strong> ${escapeHtml(reservation.gcashReferenceNumber || 'N/A')}</p>
-        <p><strong>Final Total:</strong> <span style="font-size:1.2em;color:#28a745;">₱${(Number(reservation.finalTotal || 0)).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</span></p>
-        <p><strong>Payment Status:</strong> <span class="badge bg-warning">${escapeHtml(reservation.paymentStatus || 'PENDING')}</span></p>
+        <p><strong>Total Reservation Cost:</strong> <span style="font-size:1.2em;color:#28a745;">₱${totalAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</span></p>
+        <p><strong>Payment Type:</strong> ${paymentTypeBadge}</p>
+        <p><strong>Amount Submitted for Approval:</strong> <span style="font-size:1.1em;color:#0066cc;">₱${submittedAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</span></p>
+        ${remainingAmount > 0 ? `<p><strong>Remaining Balance:</strong> <span style="font-size:1.1em;color:#ff9800;">₱${remainingAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</span></p>` : ''}
+        <p><strong>Payment Status:</strong> ${paymentStatusBadge}</p>
         <p><strong>Uploaded Date:</strong> ${uploadedDate}</p>
       </div>
       <div class="detail-section">
@@ -57,7 +86,7 @@ function togglePaymentDetails(btn, paymentId) {
       const detailHTML = formatPaymentDetails(payment);
       const detailRow = document.createElement('tr');
       detailRow.className = 'payment-details-row';
-      detailRow.innerHTML = `<td colspan="8">${detailHTML}</td>`;
+      detailRow.innerHTML = `<td colspan="9">${detailHTML}</td>`;
       row.after(detailRow);
       btn.textContent = '−';
       btn.classList.remove('btn-outline-primary');
@@ -73,7 +102,15 @@ async function renderPendingPayments() {
     tbody.innerHTML = '<tr><td colspan="8" class="text-center">Loading pending payments...</td></tr>';
 
     try {
-        const response = await fetch('http://localhost:3000/api/reservations/pending-payments');
+        const token = typeof getAuthToken === 'function' ? getAuthToken() : (sessionStorage.getItem('token') || localStorage.getItem('token') || '');
+        
+        const response = await fetch('http://localhost:3000/api/reservations/pending-payments', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}`);
         }
@@ -81,7 +118,7 @@ async function renderPendingPayments() {
         const pending = await response.json();
 
         if (!Array.isArray(pending) || pending.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" class="text-center">No pending payments.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center">No pending payments.</td></tr>';
             return;
         }
 
@@ -145,36 +182,75 @@ async function renderPendingPayments() {
         
         // If nothing to show after filtering
         if (tbody.children.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" class="text-center">No matching reservations found.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center">No matching reservations found.</td></tr>';
         }
 
     } catch (error) {
         console.error('Error loading pending payments:', error);
-        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-danger">Failed to load pending payments.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center text-danger">Failed to load pending payments.</td></tr>';
     }
+}
+
+function getPaymentActionLabel(paymentStatus) {
+  if (paymentStatus === 'partial-payment') {
+    return { button: 'Approve Partial (50%)', action: 'approve-partial' };
+  } else if (paymentStatus === 'partially-paid') {
+    return { button: 'Approve Full (Remaining 50%)', action: 'approve-full' };
+  } else if (paymentStatus === 'full-payment') {
+    return { button: 'Approve Full (100%)', action: 'approve-full' };
+  }
+  return { button: 'Approve', action: 'approve' };
 }
 
 function renderSingleReservations(tbody, reservations) {
     reservations.filter(reservation => !reservation.isMultiAmenity).forEach(reservation => {
         const reservationId = reservation.reservationId || reservation._id || 'N/A';
         const customerName = reservation.full_name || reservation.customer_name || 'N/A';
+        const serviceName = reservation.serviceName || 'N/A';
         const serviceType = reservation.serviceType || 'N/A';
+        const serviceDisplay = serviceName !== 'N/A' ? `${serviceName} <small>(${serviceType})</small>` : serviceType;
         const reference = reservation.gcashReferenceNumber || 'N/A';
-        const amount = Number(reservation.finalTotal || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 });
+        const totalAmount = Number(reservation.finalTotal || 0);
+        // Calculate actual payment amount based on payment type
+        const paymentAmount = reservation.paymentType === 'downpayment' ? (totalAmount * 0.5) : totalAmount;
+        const amount = paymentAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 });
         const uploaded = reservation.receiptUploadedAt ? new Date(reservation.receiptUploadedAt).toLocaleString() : 'N/A';
+        
+        // Determine payment type and action button
+        let paymentTypeBadge = '<span class="badge bg-info">50% Down</span>';
+        let paymentStatusBadge = '<span class="badge bg-warning">Pending</span>';
+        
+        if (reservation.paymentType === 'full') {
+          paymentTypeBadge = '<span class="badge bg-success">Full 100%</span>';
+        }
+        
+        if (reservation.paymentStatus === 'partial-payment') {
+          paymentStatusBadge = '<span class="badge bg-info">50% Submitted</span>';
+        } else if (reservation.paymentStatus === 'partially-paid') {
+          paymentStatusBadge = '<span class="badge bg-primary">50% Approved</span>';
+        } else if (reservation.paymentStatus === 'full-payment') {
+          paymentStatusBadge = '<span class="badge bg-info">100% Submitted</span>';
+        } else if (reservation.paymentStatus === 'fully-paid') {
+          paymentStatusBadge = '<span class="badge bg-success">100% Approved</span>';
+        }
+        
+        const actionLabel = getPaymentActionLabel(reservation.paymentStatus);
+        const approveButtonClass = reservation.paymentStatus === 'partially-paid' ? 'btn-info' : 'btn-success';
 
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td><button class="btn btn-sm btn-outline-primary expand-payment-btn" onclick="togglePaymentDetails(this, '${reservation._id}')">+</button></td>
             <td>${reservationId}</td>
             <td>${escapeHtml(customerName)}</td>
-            <td>${escapeHtml(serviceType)}</td>
+            <td>${serviceDisplay}</td>
             <td>${escapeHtml(reference)}</td>
+            <td>${paymentTypeBadge}</td>
+            <td>${paymentStatusBadge}</td>
             <td>₱${amount}</td>
             <td>${uploaded}</td>
             <td>
                 <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                    <button class="btn btn-success btn-sm" data-action="approve" data-id="${reservation._id}">Approve</button>
+                    <button class="btn btn-sm btn-outline-primary expand-payment-btn" onclick="togglePaymentDetails(this, '${reservation._id}')" style="width: 100%;">+</button>
+                    <button class="btn ${approveButtonClass} btn-sm" data-action="${actionLabel.action}" data-id="${reservation._id}">${actionLabel.button}</button>
                     <button class="btn btn-danger btn-sm" data-action="reject" data-id="${reservation._id}">Reject</button>
                 </div>
             </td>
@@ -183,7 +259,8 @@ function renderSingleReservations(tbody, reservations) {
         tbody.appendChild(row);
     });
 
-    tbody.querySelectorAll('button[data-action]').forEach(btn => {
+    // Only attach listeners to single reservation buttons (not group buttons)
+    tbody.querySelectorAll('button[data-action]:not([data-action*="group"])').forEach(btn => {
         btn.addEventListener('click', async function() {
             const action = this.getAttribute('data-action');
             const id = this.getAttribute('data-id');
@@ -198,7 +275,34 @@ function renderMultiAmenityGroups(tbody, groups) {
         const customerName = firstRes.full_name || firstRes.customer_name || 'N/A';
         const reference = firstRes.gcashReferenceNumber || 'N/A';
         const totalAmount = group.reservations.reduce((sum, r) => sum + Number(r.finalTotal || 0), 0);
+        // Calculate actual payment amount based on payment type
+        const paymentAmount = firstRes.paymentType === 'downpayment' ? (totalAmount * 0.5) : totalAmount;
         const uploaded = firstRes.receiptUploadedAt ? new Date(firstRes.receiptUploadedAt).toLocaleString() : 'N/A';
+        
+        // Create list of service names for multi-amenity
+        const servicesList = group.reservations.map(r => r.serviceName || r.serviceType || 'Unknown').join(', ');
+        const servicesDisplay = `<strong>${group.reservations.length} Services:</strong><br><small>${servicesList}</small>`;
+        
+        // Determine payment type and status badges for the group
+        let paymentTypeBadge = '<span class="badge bg-info">50% Down</span>';
+        let paymentStatusBadge = '<span class="badge bg-warning">Pending</span>';
+        
+        if (firstRes.paymentType === 'full') {
+          paymentTypeBadge = '<span class="badge bg-success">Full 100%</span>';
+        }
+        
+        if (firstRes.paymentStatus === 'partial-payment') {
+          paymentStatusBadge = '<span class="badge bg-info">50% Submitted</span>';
+        } else if (firstRes.paymentStatus === 'partially-paid') {
+          paymentStatusBadge = '<span class="badge bg-primary">50% Approved</span>';
+        } else if (firstRes.paymentStatus === 'full-payment') {
+          paymentStatusBadge = '<span class="badge bg-info">100% Submitted</span>';
+        } else if (firstRes.paymentStatus === 'fully-paid') {
+          paymentStatusBadge = '<span class="badge bg-success">100% Approved</span>';
+        }
+        
+        const actionLabel = getPaymentActionLabel(firstRes.paymentStatus);
+        const approveButtonClass = firstRes.paymentStatus === 'partially-paid' ? 'btn-info' : 'btn-success';
         
         // Create main group row
         const groupRow = document.createElement('tr');
@@ -206,17 +310,18 @@ function renderMultiAmenityGroups(tbody, groups) {
         // Use the first reservation's formal ID, with fallback to group ID
         const displayId = firstRes.reservationId || (group.groupId ? String(group.groupId).substring(0, 12) + '...' : 'N/A');
         groupRow.innerHTML = `
-            <td></td>
-            <td><span class="badge bg-info">Multi-Amenity</span><br>${escapeHtml(displayId)}</td>
+            <td><span class="badge bg-warning">Multi-Amenity</span><br>${escapeHtml(displayId)}</td>
             <td>${escapeHtml(customerName)}</td>
-            <td><strong>${group.reservations.length} Services</strong></td>
+            <td>${servicesDisplay}</td>
             <td>${escapeHtml(reference)}</td>
-            <td><strong>₱${totalAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</strong></td>
+            <td>${paymentTypeBadge}</td>
+            <td>${paymentStatusBadge}</td>
+            <td><strong>₱${paymentAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</strong></td>
             <td>${uploaded}</td>
             <td>
                 <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                    <button class="btn btn-sm btn-warning expand-payment-btn" onclick="toggleMultiAmenityGroup(this, ${groupIndex})" style="width: 100%;">+</button>
-                    <button class="btn btn-success btn-sm" data-action="approve-group" data-group-index="${groupIndex}">Approve All</button>
+                    <button class="btn btn-sm btn-outline-warning expand-payment-btn" onclick="toggleMultiAmenityGroup(this, ${groupIndex})" style="width: 100%;">+</button>
+                    <button class="btn ${approveButtonClass} btn-sm" data-action="${actionLabel.action}-group" data-group-index="${groupIndex}">${actionLabel.button}</button>
                     <button class="btn btn-danger btn-sm" data-action="reject-group" data-group-index="${groupIndex}">Reject All</button>
                 </div>
             </td>
@@ -226,12 +331,14 @@ function renderMultiAmenityGroups(tbody, groups) {
     });
     
     // Attach group action handlers
-    tbody.querySelectorAll('button[data-action="approve-group"], button[data-action="reject-group"]').forEach(btn => {
-        btn.addEventListener('click', async function() {
-            const action = this.getAttribute('data-action');
-            const groupIndex = parseInt(this.getAttribute('data-group-index'));
-            await handleGroupPaymentAction(groupIndex, action, this);
-        });
+    tbody.querySelectorAll('button[data-action]').forEach(btn => {
+        if (btn.getAttribute('data-action') && btn.getAttribute('data-action').includes('group')) {
+            btn.addEventListener('click', async function() {
+                const action = this.getAttribute('data-action');
+                const groupIndex = parseInt(this.getAttribute('data-group-index'));
+                await handleGroupPaymentAction(groupIndex, action, this);
+            });
+        }
     });
 }
 
@@ -282,7 +389,7 @@ function toggleMultiAmenityGroup(btn, groupIndex) {
             
             const detailRow = document.createElement('tr');
             detailRow.className = 'multi-amenity-details-row';
-            detailRow.innerHTML = `<td colspan="8">${detailsHTML}</td>`;
+            detailRow.innerHTML = `<td colspan="9">${detailsHTML}</td>`;
             row.after(detailRow);
             btn.textContent = '−';
         }
@@ -293,31 +400,60 @@ async function handleGroupPaymentAction(groupIndex, action, buttonEl) {
     const group = groupedPayments.multi[groupIndex];
     if (!group || !group.reservations) return;
     
-    const isApprove = action === 'approve-group';
-    const confirmMsg = isApprove 
-        ? `Approve all ${group.reservations.length} reservations in this multi-amenity booking?`
-        : `Reject all ${group.reservations.length} reservations in this multi-amenity booking?`;
+    const isApprove = action.startsWith('approve');
+    let confirmMsg = '';
+    
+    if (action === 'approve-partial-group') {
+        confirmMsg = `Approve the 50% down payment for all ${group.reservations.length} reservations in this multi-amenity booking?`;
+    } else if (action === 'approve-full-group') {
+        confirmMsg = `Approve the full payment for all ${group.reservations.length} reservations in this multi-amenity booking?`;
+    } else if (action === 'reject-group') {
+        confirmMsg = `Reject all ${group.reservations.length} reservations in this multi-amenity booking?`;
+    } else if (action === 'approve-group') {
+        // Legacy support
+        confirmMsg = `Approve all ${group.reservations.length} reservations in this multi-amenity booking?`;
+    }
     
     if (!confirm(confirmMsg)) return;
     
     buttonEl.disabled = true;
     const originalText = buttonEl.textContent;
-    buttonEl.textContent = isApprove ? 'Approving...' : 'Rejecting...';
+    buttonEl.textContent = isApprove ? 'Processing...' : 'Rejecting...';
     
-    const token = sessionStorage.getItem('token') || localStorage.getItem('token') || '';
+    const token = typeof getAuthToken === 'function' ? getAuthToken() : (sessionStorage.getItem('token') || localStorage.getItem('token') || '');
+    
+    console.log('🔐 DEBUG - handleGroupPaymentAction: Token length:', token.length, 'Token exists:', !!token, 'Action:', action);
+    
+    if (!token) {
+        showToast('Authentication token not found. Please log in again.', 'danger');
+        buttonEl.disabled = false;
+        buttonEl.textContent = originalText;
+        return;
+    }
     
     // For multi-amenity groups, the backend automatically updates ALL reservations in the group
     // when we approve/reject just ONE reservation. So we only need to call the endpoint once.
     const firstReservation = group.reservations[0];
     
     try {
-        const endpoint = isApprove
-            ? `http://localhost:3000/api/reservations/${firstReservation._id}/approve-payment`
-            : `http://localhost:3000/api/reservations/${firstReservation._id}/reject-payment`;
+        let endpoint, payload;
         
-        const payload = isApprove
-            ? { status: 'PAID' }
-            : { status: 'REJECTED', paymentStatus: 'REJECTED' };
+        if (action === 'approve-partial-group') {
+            endpoint = `http://localhost:3000/api/reservations/${firstReservation._id}/approve-partial`;
+            payload = { paymentType: 'partial' };
+        } else if (action === 'approve-full-group') {
+            endpoint = `http://localhost:3000/api/reservations/${firstReservation._id}/approve-full`;
+            payload = { paymentType: 'full' };
+        } else if (action === 'reject-group') {
+            endpoint = `http://localhost:3000/api/reservations/${firstReservation._id}/reject-payment`;
+            payload = { status: 'REJECTED', paymentStatus: 'REJECTED' };
+        } else if (action === 'approve-group') {
+            // Legacy support
+            endpoint = `http://localhost:3000/api/reservations/${firstReservation._id}/approve-payment`;
+            payload = { status: 'PAID' };
+        }
+        
+        console.log('🚀 DEBUG - Multi-Amenity Fetch:', { endpoint, method: 'PATCH', token: `Bearer ${token.substring(0, 20)}...`, payload });
         
         const response = await fetch(endpoint, {
             method: 'PATCH',
@@ -328,11 +464,28 @@ async function handleGroupPaymentAction(groupIndex, action, buttonEl) {
             body: JSON.stringify(payload)
         });
         
-        const result = await response.json();
-        if (response.ok && result.success) {
-            showToast(`All ${group.reservations.length} reservations ${isApprove ? 'approved' : 'rejected'} successfully!`, 'success');
+        let result = {};
+        try {
+            result = await response.json();
+        } catch (e) {
+            console.log('⚠️ Could not parse JSON response, using empty object');
+            result = {};
+        }
+        console.log('📡 DEBUG - Response Status:', response.status, 'Response Data:', result);
+        
+        // If status is 200 (OK), consider it a success even if response body is empty
+        if (response.ok) {
+            let actionMsg = 'processed';
+            if (action === 'approve-partial-group') actionMsg = 'partially approved';
+            else if (action === 'approve-full-group') actionMsg = 'fully approved';
+            else if (action === 'reject-group') actionMsg = 'rejected';
+            else if (action === 'approve-group') actionMsg = 'approved';
+            
+            showToast(`All ${group.reservations.length} reservations ${actionMsg} successfully!`, 'success');
         } else {
-            showToast(`Failed to ${isApprove ? 'approve' : 'reject'} reservations: ${result.message || 'Unknown error'}`, 'danger');
+            const errorMsg = result.message || 'Unknown error';
+            console.error('❌ API Error:', response.status, errorMsg);
+            showToast(`Failed to process reservations: ${errorMsg}`, 'danger');
         }
     } catch (error) {
         console.error(`Error processing multi-amenity group:`, error);
@@ -350,27 +503,51 @@ async function handleGroupPaymentAction(groupIndex, action, buttonEl) {
 }
 
 async function handlePaymentAction(reservationId, action, buttonEl) {
-    const token = sessionStorage.getItem('token') || localStorage.getItem('token') || '';
-    const isApprove = action === 'approve';
+    const token = typeof getAuthToken === 'function' ? getAuthToken() : (sessionStorage.getItem('token') || localStorage.getItem('token') || '');
+    
+    console.log('🔐 DEBUG - handlePaymentAction: Token length:', token.length, 'Token exists:', !!token, 'Reservation:', reservationId, 'Action:', action);
+    
+    if (!token) {
+        showToast('Authentication token not found. Please log in again.', 'danger');
+        return;
+    }
+    
+    const isApprove = action.startsWith('approve');
 
-    const endpoint = isApprove
-        ? `http://localhost:3000/api/reservations/${reservationId}/approve-payment`
-        : `http://localhost:3000/api/reservations/${reservationId}/reject-payment`;
+    let endpoint, payload, confirmMsg;
+    
+    if (action === 'approve-partial') {
+        endpoint = `http://localhost:3000/api/reservations/${reservationId}/approve-partial`;
+        payload = { paymentType: 'partial' };
+        confirmMsg = 'Approve this 50% down payment?';
+    } else if (action === 'approve-full') {
+        endpoint = `http://localhost:3000/api/reservations/${reservationId}/approve-full`;
+        payload = { paymentType: 'full' };
+        confirmMsg = 'Approve this full payment?';
+    } else if (action === 'reject') {
+        endpoint = `http://localhost:3000/api/reservations/${reservationId}/reject-payment`;
+        payload = { status: 'REJECTED', paymentStatus: 'REJECTED' };
+        confirmMsg = 'Reject this payment? The reservation will be marked as rejected.';
+    } else {
+        // Legacy support
+        endpoint = `http://localhost:3000/api/reservations/${reservationId}/approve-payment`;
+        payload = { status: 'PAID' };
+        confirmMsg = 'Approve this payment?';
+    }
 
-    const payload = isApprove
-        ? { status: 'PAID' }
-        : { status: 'REJECTED', paymentStatus: 'REJECTED' };
-
-    if (!isApprove) {
-        const confirmReject = confirm('Reject this payment? The reservation will be marked as rejected.');
-        if (!confirmReject) return;
+    if (!isApprove && action !== 'reject') {
+        if (!confirm(confirmMsg)) return;
+    } else if (action === 'reject') {
+        if (!confirm(confirmMsg)) return;
     }
 
     buttonEl.disabled = true;
     const originalText = buttonEl.textContent;
-    buttonEl.textContent = isApprove ? 'Approving...' : 'Rejecting...';
+    buttonEl.textContent = isApprove ? 'Processing...' : 'Rejecting...';
 
     try {
+        console.log('🚀 DEBUG - Payment Fetch:', { endpoint, method: 'PATCH', token: `Bearer ${token.substring(0, 20)}...`, payload });
+        
         const response = await fetch(endpoint, {
             method: 'PATCH',
             headers: {
@@ -380,12 +557,28 @@ async function handlePaymentAction(reservationId, action, buttonEl) {
             body: JSON.stringify(payload)
         });
 
-        const result = await response.json();
-        if (!response.ok || !result.success) {
-            throw new Error(result.message || 'Action failed');
+        let result = {};
+        try {
+            result = await response.json();
+        } catch (e) {
+            console.log('⚠️ Could not parse JSON response, using empty object');
+            result = {};
         }
-
-        showToast(isApprove ? 'Payment approved.' : 'Payment rejected.', 'success');
+        console.log('📡 DEBUG - Response Status:', response.status, 'Response Data:', result);
+        
+        // If status is 200 (OK), consider it a success even if response body is empty
+        if (response.ok) {
+            let actionText = 'processed';
+            if (action === 'approve-partial') actionText = 'partially approved (50%)';
+            else if (action === 'approve-full') actionText = 'fully approved';
+            else if (action === 'reject') actionText = 'rejected';
+            else if (action === 'approve') actionText = 'approved';
+            showToast(`Payment ${actionText} successfully!`, 'success');
+        } else {
+            const errorMsg = result.message || 'Action failed';
+            console.error('❌ API Error:', response.status, errorMsg);
+            throw new Error(errorMsg);
+        }
         
         // Refresh both tables: payment verifications and admin reservations
         renderPendingPayments();

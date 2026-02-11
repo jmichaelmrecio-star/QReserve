@@ -49,6 +49,10 @@ async function processGCashPayment(event, reservationId, reservationHash) {
     return;
   }
   
+  // Get selected payment type
+  const paymentTypeRadio = document.querySelector('input[name="paymentType"]:checked');
+  const paymentType = paymentTypeRadio ? paymentTypeRadio.value : 'downpayment';
+  
   let finalHash = reservationHash || sessionStorage.getItem("payment_reservation_hash");
 
   if (!finalHash || !window.gcashReceiptFile) {
@@ -67,7 +71,7 @@ async function processGCashPayment(event, reservationId, reservationHash) {
   formData.append("reservationHash", finalHash);
   formData.append("gcashReferenceNumber", gcashReferenceNumber);
   formData.append("receiptImage", window.gcashReceiptFile);
-  formData.append("paymentType", "downpayment");
+  formData.append("paymentType", paymentType);
 
   try {
     const response = await fetch("http://localhost:3000/api/payment/upload", {

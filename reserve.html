@@ -241,7 +241,7 @@
 	                <div class="form-row">
 	                    <div>
 	                        <label for="checkin">Check-in Date & Time:</label>
-	                        <input type="datetime-local" id="checkin" name="checkin_date" required>
+	                        <input type="datetime-local" id="checkin" name="checkin_date" required readonly style="cursor: not-allowed; background-color: #f5f5f5; opacity: 0.7;">
 	                    </div>
 	                    <div>
 	                        <label for="checkout">Check-out Date & Time: <span style="color: #999; font-size: 0.8rem;"><em>(Auto)</em></span></label>
@@ -893,12 +893,19 @@
 					}
 					
 					// Prioritize cart data over legacy checkinDate
+					console.log('🔍 DEBUG: Reading from sessionStorage:', { selectedCheckIn, selectedCheckInTime, selectedCheckOut, selectedCheckOutTime });
+					console.log('🔍 DEBUG: Actual element exists?', !!document.getElementById('checkin'));
 					if (selectedCheckIn && selectedCheckInTime && document.getElementById('checkin')) {
 						// Convert date (YYYY-MM-DD) + time (hour number) to datetime-local format (YYYY-MM-DDTHH:MM)
 						const checkinHour = String(selectedCheckInTime).padStart(2, '0');
 						const checkinDateTime = `${selectedCheckIn}T${checkinHour}:00`;
+						console.log('✅ DEBUG: Setting checkin field to:', checkinDateTime);
 						document.getElementById('checkin').value = checkinDateTime;
-					} else if (checkinFromStorage && document.getElementById('checkin')) {
+					} else {
+						console.log('⚠️ DEBUG: Conditions not met for checkin population');
+					}
+					
+					if (checkinFromStorage && document.getElementById('checkin')) {
 						document.getElementById('checkin').value = checkinFromStorage;
 					}
 					
@@ -1484,6 +1491,29 @@
 		}
 	}
 
+	function clearSelectionStateAfterSubmit() {
+		const keysToClear = [
+			'multipleAmenities',
+			'multiAmenityReservation',
+			'appliedPromo',
+			'appliedPromoCode',
+			'appliedPromoDiscount',
+			'selectedCheckIn',
+			'selectedCheckInTime',
+			'selectedCheckOut',
+			'selectedCheckOutTime',
+			'selectedDuration',
+			'selectedDurationLabel',
+			'selectedServiceId',
+			'selectedServiceName',
+			'selectedServicePrice',
+			'selectedAssetNumber',
+			'guests'
+		];
+
+		keysToClear.forEach(key => sessionStorage.removeItem(key));
+	}
+
 	// Single-Service Reservation Submission
 	async function submitSingleServiceReservation() {
 		// Validate all form fields
@@ -1505,6 +1535,13 @@
 			showModal('Incomplete Details', 
 				`<p>Please complete the following required field(s) before submitting:</p><ul>${list}</ul>`, 
 				'warning');
+			return;
+		}
+
+		// Validate terms and conditions checkbox
+		const termsCheck = document.getElementById('termsCheck')?.checked;
+		if (!termsCheck) {
+			showToast('Please agree to Terms and Conditions.', 'error');
 			return;
 		}
 
@@ -1566,7 +1603,8 @@
 
 			// Store reservation hash for payment
 			sessionStorage.setItem('payment_reservation_hash', result.reservationHash);
-			sessionStorage.setItem('selectedReservationId', result.reservationId);
+			sessionStorage.setItem('payment_reservation_id', result.reservationId);
+			clearSelectionStateAfterSubmit();
 
 			showToast('✅ Reservation created successfully! Redirecting to payment...', 'success');
 
@@ -1658,8 +1696,7 @@
 	            // Store reservation data
 	            sessionStorage.setItem('lastReservation', JSON.stringify(data));
 	            sessionStorage.setItem('payment_reservation_hash', data.reservationHash);
-	            sessionStorage.setItem('selectedReservationId', data.reservationId);
-	            
+	            sessionStorage.setItem('payment_reservation_id', data.reservationId);
 	            showToast('✅ Multi-amenity reservation created! Redirecting to payment...', 'success');
 	            
 	            // Redirect to payment
@@ -2041,37 +2078,4 @@
 	    }
 	});
 	</script>
-	<!-- Flatpickr JS -->
-	<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-	<script>
-		// Initialize Flatpickr for check-in datetime
-		const checkinInput = document.getElementById("checkin");
-		if (checkinInput) {
-			flatpickr(checkinInput, {
-				minDate: new Date(),
-				dateFormat: "Y-m-d H:i",
-				altFormat: "F j, Y H:i",
-				altInput: true,
-				enableTime: true,
-				time_24hr: true,
-				minuteIncrement: 30,
-				disableMobile: false
-			});
-		}
 
-		// Initialize Flatpickr for check-out datetime (read-only, but still styled)
-		const checkoutInput = document.getElementById("checkout");
-		if (checkoutInput) {
-			flatpickr(checkoutInput, {
-				dateFormat: "Y-m-d H:i",
-				altFormat: "F j, Y H:i",
-				altInput: true,
-				enableTime: true,
-				time_24hr: true,
-				minuteIncrement: 30,
-				disableMobile: false
-			});
-		}
-	</script>
-</body>
-</html>

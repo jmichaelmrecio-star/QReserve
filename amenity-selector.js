@@ -455,8 +455,19 @@ function proceedToReservation() {
     const appliedPromo = JSON.parse(sessionStorage.getItem('appliedPromo') || 'null');
     
     // ✅ FIX: If only 1 amenity, redirect to single-amenity mode
+    console.log('🔍 DEBUG proceedToReservation(): multipleAmenities.length =', multipleAmenities.length);
     if (multipleAmenities.length === 1) {
         const singleItem = multipleAmenities[0];
+        
+        // DEBUG: Log the entire single item to see what properties exist
+        console.log('🔍 DEBUG: singleItem properties:', {
+            serviceName: singleItem.serviceName,
+            checkIn: singleItem.checkIn,
+            checkInTime: singleItem.checkInTime,
+            checkOut: singleItem.checkOut,
+            checkOutTime: singleItem.checkOutTime,
+            allKeys: Object.keys(singleItem)
+        });
         
         // Store as single amenity reservation data
         sessionStorage.setItem('selectedServiceId', singleItem.serviceId);
@@ -469,8 +480,16 @@ function proceedToReservation() {
         // Store dates and times if provided
         if (singleItem.checkIn) sessionStorage.setItem('selectedCheckIn', singleItem.checkIn);
         if (singleItem.checkOut) sessionStorage.setItem('selectedCheckOut', singleItem.checkOut);
-        if (singleItem.checkInTime) sessionStorage.setItem('selectedCheckInTime', singleItem.checkInTime);
+        if (singleItem.checkInTime) sessionStorage.setItem('selectedCheckInTime', String(singleItem.checkInTime));
         if (singleItem.checkOutTime) sessionStorage.setItem('selectedCheckOutTime', singleItem.checkOutTime);
+        
+        // DEBUG: Log what was stored in sessionStorage
+        console.log('🔍 DEBUG: Stored in sessionStorage for single-amenity mode:', {
+            selectedCheckIn: sessionStorage.getItem('selectedCheckIn'),
+            selectedCheckInTime: sessionStorage.getItem('selectedCheckInTime'),
+            selectedCheckOut: sessionStorage.getItem('selectedCheckOut'),
+            selectedCheckOutTime: sessionStorage.getItem('selectedCheckOutTime')
+        });
         
         // Store guests if provided
         if (singleItem.guests) sessionStorage.setItem('guests', singleItem.guests);

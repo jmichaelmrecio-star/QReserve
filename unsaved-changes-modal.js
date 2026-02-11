@@ -261,16 +261,10 @@ function closeUnsavedChangesModal() {
  * Should be called after form initialization
  */
 function attachNavigationListeners() {
-    // 1. Handle browser back button and history changes
-    window.addEventListener('beforeunload', (e) => {
-        if (hasUnsavedChanges()) {
-            e.preventDefault();
-            e.returnValue = '';
-            return '';
-        }
-    });
+    // Note: beforeunload removed because browsers force system dialogs (can't use custom modals)
+    // Custom modal only works for intercepted navigation (links, back button via popstate)
 
-    // 2. Handle link clicks to navigate away
+    // 1. Handle link clicks to navigate away
     document.addEventListener('click', (e) => {
         const target = e.target.closest('a');
         if (!target) return;
@@ -300,8 +294,7 @@ function attachNavigationListeners() {
         }
     });
 
-    // 3. Handle form submission (if not the standard form submit)
-    // This allows other submit handlers to work while protecting unsaved changes
+    // 2. Handle browser back button navigation
     window.addEventListener('popstate', (e) => {
         if (hasUnsavedChanges()) {
             e.preventDefault();
