@@ -3018,6 +3018,7 @@ footer {
 
 .btn-secondary:hover {
   background-color: #5a6268;
+  color: black !important;
   transform: translateY(-2px);
   box-shadow: 0 6px 12px rgba(108, 117, 125, 0.4);
 }
@@ -3945,6 +3946,7 @@ textarea:disabled {
 
 .btn-secondary:hover {
   background-color: rgba(255, 255, 255, 0.1);
+  color: black !important;
   transform: translateY(-2px);
 }
 

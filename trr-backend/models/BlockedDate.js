@@ -35,6 +35,16 @@ const BlockedDateSchema = new mongoose.Schema({
         ref: 'Account', // Assuming 'Account' is the name of your Account model
         required: false, // Can be set as required if logging is critical
     },
+    // For Private Pool reservations: Store customer info to allow them to book amenities
+    reservedByAccountId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Account',
+        required: false,
+    },
+    reservedByEmail: {
+        type: String,
+        required: false,
+    },
     // Timestamp for tracking when the block was created
     createdAt: {
         type: Date,

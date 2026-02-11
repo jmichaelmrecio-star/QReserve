@@ -215,6 +215,9 @@ async function createPrivatePoolGlobalLock(reservation) {
             serviceName: reservation.serviceName,
             serviceType: reservation.serviceType
         });
+        
+        console.log('🔍 DEBUG - Reservation object keys:', Object.keys(reservation.toObject ? reservation.toObject() : reservation));
+        console.log('🔍 DEBUG - Reservation email field:', reservation.email, 'full_name:', reservation.full_name);
 
         // Check if this is a Private Pool Area reservation
         const isPrivatePool = reservation.serviceName && 
@@ -230,10 +233,13 @@ async function createPrivatePoolGlobalLock(reservation) {
         console.log('🔒 Creating global resort lock for Private Pool reservation:', {
             reservationId: reservation.reservationId,
             checkIn: reservation.check_in,
-            checkOut: reservation.check_out
+            checkOut: reservation.check_out,
+            accountId: reservation.accountId,
+            email: reservation.email
         });
 
         // Create a BlockedDate that blocks ALL services for this time period
+        // BUT stores the customer info so they can still book amenities
         const blockedDate = new BlockedDate({
             startDate: reservation.check_in,
             endDate: reservation.check_out,
@@ -241,7 +247,9 @@ async function createPrivatePoolGlobalLock(reservation) {
             serviceIds: [], // Empty array means all services
             appliesToAllServices: true,
             reason: `Private Pool Area Reserved (${reservation.reservationId})`,
-            blockedBy: null // Could be set to admin ID if available
+            blockedBy: null, // Could be set to admin ID if available
+            reservedByAccountId: reservation.accountId || null, // Store customer accountId
+            reservedByEmail: reservation.email || null // Store customer email
         });
 
         await blockedDate.save();
@@ -649,6 +657,20 @@ exports.createReservation = async (req, res) => {
                 
                 // Check if this is a Private Pool global lock
                 const isPrivatePoolBlock = block.reason && block.reason.includes('Private Pool Area Reserved');
+                
+                // CRITICAL: Allow the customer who booked the private pool to book amenities
+                if (isPrivatePoolBlock) {
+                    const isPoolBooker = (accountId && block.reservedByAccountId && 
+                                         accountId.toString() === block.reservedByAccountId.toString()) ||
+                                        (email && block.reservedByEmail && 
+                                         email.toLowerCase() === block.reservedByEmail.toLowerCase());
+                    
+                    if (isPoolBooker) {
+                        console.log('✅ Allowing pool booker to reserve amenities:', { accountId, email });
+                        continue; // Skip this block since they booked the pool
+                    }
+                }
+                
                 const message = isPrivatePoolBlock
                     ? `Sorry, the resort is fully booked for ${blockStartStr} to ${blockEndStr} due to a private pool reservation.`
                     : `This service is unavailable from ${blockStartStr} to ${blockEndStr}. Reason: ${block.reason || 'Maintenance/Closure'}`;
@@ -807,8 +829,8 @@ exports.createReservation = async (req, res) => {
             durationLabel: priceData.label,
             inclusions: priceData.inclusions,
             // Initial Statuses
-            status: 'CART', 
-            paymentStatus: 'CART',
+            status: 'PENDING', 
+            paymentStatus: 'PENDING',
         });
 
         console.log('💾 Saving reservation to database...');
@@ -997,6 +1019,20 @@ exports.createMultiAmenityReservation = async (req, res) => {
                     
                     // Check if this is a Private Pool global lock
                     const isPrivatePoolBlock = block.reason && block.reason.includes('Private Pool Area Reserved');
+                    
+                    // CRITICAL: Allow the customer who booked the private pool to book amenities
+                    if (isPrivatePoolBlock) {
+                        const isPoolBooker = (accountId && block.reservedByAccountId && 
+                                             accountId.toString() === block.reservedByAccountId.toString()) ||
+                                            (email && block.reservedByEmail && 
+                                             email.toLowerCase() === block.reservedByEmail.toLowerCase());
+                        
+                        if (isPoolBooker) {
+                            console.log('✅ Allowing pool booker to reserve amenities (multi):', { accountId, email });
+                            continue; // Skip this block since they booked the pool
+                        }
+                    }
+                    
                     const message = isPrivatePoolBlock
                         ? `Sorry, the resort is fully booked for ${blockStartStr} to ${blockEndStr} due to a private pool reservation.`
                         : `${amenity.serviceName || 'A service'} is unavailable from ${blockStartStr} to ${blockEndStr}. Reason: ${block.reason || 'Maintenance/Closure'}`;
@@ -1156,8 +1192,8 @@ exports.createMultiAmenityReservation = async (req, res) => {
                 selectedTimeSlot: amenity.selectedTimeSlot || null,
                 durationLabel: amenity.durationLabel || 'N/A',
                 inclusions: Array.isArray(amenity.inclusions) ? amenity.inclusions : [],
-                status: 'CART',
-                paymentStatus: 'CART',
+                status: 'PENDING',
+                paymentStatus: 'PENDING',
                 // Multi-amenity specific fields
                 isMultiAmenity: true,
                 multiAmenityGroupId: groupId,
@@ -1282,17 +1318,17 @@ exports.finalizeReservation = async (req, res) => {
         reservation.receiptFileName = receiptFileName || 'receipt.jpg';
         reservation.receiptUploadedAt = new Date();
         
-        // Handle downpayment or full payment (mark as pending verification)
+        // Set payment status based on payment type chosen by customer
         if (paymentType === 'downpayment' && downpaymentAmount) {
-            reservation.paymentStatus = 'PENDING';
+            reservation.paymentStatus = 'partial-payment'; // 50% submitted, waiting for admin approval
             reservation.totalAmount = totalAmount;
             reservation.downpaymentAmount = downpaymentAmount;
             reservation.remainingBalance = remainingBalance;
             reservation.paymentType = 'downpayment';
             reservation.status = 'PENDING'; // Awaiting admin verification
         } else {
-            reservation.paymentStatus = 'PENDING'; // Payment submitted; awaiting admin verification
-            reservation.paymentType = 'full';
+            reservation.paymentStatus = 'full-payment'; // 100% submitted, waiting for admin approval
+            reservation.paymentType = 'fullpayment';
             reservation.status = 'PENDING';
         }
         
@@ -1360,24 +1396,28 @@ exports.getReservationDetails = async (req, res) => {
         const { reservationId, hash } = req.params;
         const mongoose = require('mongoose');
 
-        // B. Robust Search Logic
-        const query = { reservationHash: hash };
+        // First, find the reservation by ID
+        let reservation;
         
         if (mongoose.isValidObjectId(reservationId)) {
-            // Priority: MongoDB Internal ID
-            query._id = reservationId;
+            // Search by MongoDB _id
+            reservation = await Reservation.findById(reservationId);
         } else {
-            // Fallback: Formal string ID (e.g. TRR-20260121-001)
-            query.reservationId = reservationId;
+            // Search by formatted reservation ID (e.g., TRR-20260121-001)
+            reservation = await Reservation.findOne({ reservationId: reservationId });
         }
 
-        const reservation = await Reservation.findOne(query);
-
+        // If reservation not found, return 404
         if (!reservation) {
+            return res.status(404).json({ message: 'Reservation not found.' });
+        }
+
+        // Verify the hash matches for security
+        if (reservation.reservationHash !== hash) {
             return res.status(404).json({ message: 'Reservation not found or invalid access.' });
         }
 
-        // 2. Return the necessary data for the summary
+        // Return the necessary data for the summary
         res.status(200).json({ 
             success: true, 
             reservation 
@@ -1953,7 +1993,7 @@ exports.getReservationByHash = async (req, res) => {
  */
 exports.checkAvailability = async (req, res) => {
     try {
-        const { serviceId, checkin_date, checkout_date } = req.body;
+        const { serviceId, checkin_date, checkout_date, email } = req.body;
         
         if (!serviceId || !checkin_date || !checkout_date) {
             return res.status(400).json({ 
@@ -1964,6 +2004,13 @@ exports.checkAvailability = async (req, res) => {
         
         const checkin = new Date(checkin_date);
         const checkout = new Date(checkout_date);
+        
+        // Get user info from request (if authenticated)
+        let accountId = null;
+        let userEmail = email; // From request body
+        if (req.user) {
+            accountId = req.user.accountId;
+        }
         
         // Tolerant service lookup
         const service = await findServiceByAnyId(serviceId);
@@ -2006,7 +2053,27 @@ exports.checkAvailability = async (req, res) => {
         });
 
         if (blockedDates.length > 0) {
-            const blockReason = blockedDates[0].reason || 'This date/time is blocked';
+            // Check if this is a Private Pool block and if the current user is the pool booker
+            const block = blockedDates[0];
+            const isPrivatePoolBlock = block.reason && block.reason.includes('Private Pool Area Reserved');
+            
+            if (isPrivatePoolBlock) {
+                const isPoolBooker = (accountId && block.reservedByAccountId && 
+                                     accountId.toString() === block.reservedByAccountId.toString()) ||
+                                    (userEmail && block.reservedByEmail && 
+                                     userEmail.toLowerCase() === block.reservedByEmail.toLowerCase());
+                
+                if (isPoolBooker) {
+                    console.log('✅ Allowing pool booker to check availability:', { accountId, userEmail });
+                    // They booked the pool, so amenities are available for them
+                    return res.json({ 
+                        available: true, 
+                        conflictingReservations: 0 
+                    });
+                }
+            }
+            
+            const blockReason = block.reason || 'This date/time is blocked';
             return res.json({
                 available: false,
                 conflictingReservations: 0,
@@ -2036,13 +2103,20 @@ exports.checkAvailability = async (req, res) => {
  */
 exports.checkServiceTypesAvailability = async (req, res) => {
     try {
-        const { checkInDate, checkInTime, checkOutDate, checkOutTime, serviceTypes } = req.body;
+        const { checkInDate, checkInTime, checkOutDate, checkOutTime, serviceTypes, email } = req.body;
         
         if (!checkInDate || !checkInTime || !checkOutDate || !serviceTypes || serviceTypes.length === 0) {
             return res.status(400).json({ 
                 message: 'Missing required fields: checkInDate, checkInTime, checkOutDate, serviceTypes', 
                 availableServices: [] 
             });
+        }
+
+        // Get user info from request (if authenticated)
+        let accountId = null;
+        let userEmail = email; // From request body
+        if (req.user) {
+            accountId = req.user.accountId;
         }
 
         // Convert dates to proper format
@@ -2131,6 +2205,17 @@ exports.checkServiceTypesAvailability = async (req, res) => {
                 if (bd.appliesToAllServices) {
                     // Check if this is a Private Pool global lock
                     if (bd.reason && bd.reason.includes('Private Pool Area Reserved')) {
+                        // CRITICAL: Allow the customer who booked the private pool to book amenities
+                        const isPoolBooker = (accountId && bd.reservedByAccountId && 
+                                             accountId.toString() === bd.reservedByAccountId.toString()) ||
+                                            (userEmail && bd.reservedByEmail && 
+                                             userEmail.toLowerCase() === bd.reservedByEmail.toLowerCase());
+                        
+                        if (isPoolBooker) {
+                            console.log(`✅ Pool booker can access service ${serviceId}:`, { accountId, userEmail });
+                            return false; // Don't block this service for the pool booker
+                        }
+                        
                         console.log(`🔒 Service ${serviceId} blocked by Private Pool reservation: ${bd.reason}`);
                     }
                     return true;
@@ -2143,12 +2228,18 @@ exports.checkServiceTypesAvailability = async (req, res) => {
             return !blockedForService;
         });
 
-        // Check if resort is fully blocked due to Private Pool reservation
-        const hasPrivatePoolBlock = blockedDates.some(bd => 
-            bd.appliesToAllServices && 
-            bd.reason && 
-            bd.reason.includes('Private Pool Area Reserved')
-        );
+        // Check if resort is fully blocked due to Private Pool reservation (for non-pool-bookers)
+        let hasPrivatePoolBlock = blockedDates.some(bd => {
+            if (bd.appliesToAllServices && bd.reason && bd.reason.includes('Private Pool Area Reserved')) {
+                // Check if current user is the pool booker
+                const isPoolBooker = (accountId && bd.reservedByAccountId && 
+                                     accountId.toString() === bd.reservedByAccountId.toString()) ||
+                                    (userEmail && bd.reservedByEmail && 
+                                     userEmail.toLowerCase() === bd.reservedByEmail.toLowerCase());
+                return !isPoolBooker; // Only block if NOT the pool booker
+            }
+            return false;
+        });
 
         res.json({ 
             availableServices: finalAvailableIds,
@@ -2216,8 +2307,14 @@ exports.getReservationsByService = async (req, res) => {
  */
 exports.getPendingPaymentVerifications = async (req, res) => {
     try {
+        // Include all reservations that need payment verification:
+        // - 'partial-payment': 50% submitted, waiting for admin to approve
+        // - 'partially-paid': 50% approved, waiting for remaining 50% payment
+        // - 'full-payment': 100% submitted, waiting for admin to approve
+        // - 'PENDING': Legacy status for old reservations
+        // Exclude 'fully-paid': Already completed payment process
         const pendingPayments = await Reservation.find({
-            paymentStatus: 'PENDING',
+            paymentStatus: { $in: ['PENDING', 'partial-payment', 'partially-paid', 'full-payment'] },
             receiptFileName: { $exists: true, $ne: null } // Ensure a receipt was uploaded
         }).sort({ receiptUploadedAt: 1 }); // Sort by upload time, oldest first
 
@@ -2331,9 +2428,10 @@ exports.rejectPayment = async (req, res) => {
             return res.status(404).json({ message: 'Reservation not found.' });
         }
 
-        // Only allow rejection if current paymentStatus is PENDING
-        if (reservation.paymentStatus !== 'PENDING') {
-            return res.status(400).json({ message: `Payment for reservation ${id} is already ${reservation.paymentStatus}.` });
+        // Allow rejection for any pending or in-progress payment status
+        const rejectableStatuses = ['PENDING', 'partial-payment', 'partially-paid', 'full-payment'];
+        if (!rejectableStatuses.includes(reservation.paymentStatus)) {
+            return res.status(400).json({ message: `Cannot reject payment for reservation ${id} with status: ${reservation.paymentStatus}` });
         }
 
         const resolvedPaymentStatus = paymentStatus || 'REJECTED';
@@ -2358,6 +2456,41 @@ exports.rejectPayment = async (req, res) => {
             await removePrivatePoolGlobalLock(r);
         }
 
+        // Send rejection notification email
+        try {
+            const emailService = require('../utils/emailService');
+            const serviceName = reservation.serviceName || 'Your Reservation';
+            const emailSubject = 'Reservation Payment Rejected - Tito Renz Resort';
+            const emailBody = `
+                <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto;">
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+                        <h1>Payment Rejected</h1>
+                    </div>
+                    <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
+                        <h2>Hi ${reservation.full_name},</h2>
+                        <p>Unfortunately, we were unable to verify your payment submission for the following reservation:</p>
+                        <div style="background: white; padding: 15px; margin: 20px 0; border-left: 4px solid #dc3545; border-radius: 5px;">
+                            <p><strong>Reservation ID:</strong> ${reservation.reservationId || 'N/A'}</p>
+                            <p><strong>Service:</strong> ${serviceName}</p>
+                            <p><strong>Check-in Date:</strong> ${new Date(reservation.check_in).toLocaleDateString()}</p>
+                            <p><strong>Amount:</strong> ₱${reservation.finalTotal?.toFixed(2) || '0.00'}</p>
+                        </div>
+                        <p><strong>Reason for Rejection:</strong></p>
+                        <p>Your payment proof did not meet our verification requirements. Please review your receipt and try again.</p>
+                        <p style="margin: 20px 0;"><a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/payment.html" style="display: inline-block; background: #dc3545; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">Resume Payment</a></p>
+                        <p>If you have questions, please contact our support team.</p>
+                        <p>Best regards,<br>The Tito Renz Resort Team</p>
+                    </div>
+                    <div style="text-align: center; margin-top: 20px; color: #888; font-size: 12px;">
+                        <p>&copy; ${new Date().getFullYear()} Tito Renz Resort. All rights reserved.</p>
+                    </div>
+                </div>
+            `;
+            await emailService.sendGenericEmail(reservation.email, emailSubject, emailBody);
+        } catch (emailError) {
+            console.error('Email sending failed for rejection notification:', emailError.message);
+        }
+
         res.status(200).json({
             success: true,
             message: `Payment for reservation ${id} rejected. Status set to ${resolvedPaymentStatus}.`,
@@ -2367,6 +2500,236 @@ exports.rejectPayment = async (req, res) => {
         console.error('SERVER ERROR rejecting payment:', error);
         res.status(500).json({
             message: 'Internal server error while rejecting payment.',
+            details: error.message
+        });
+    }
+};
+
+/**
+ * Approves the 50% partial payment (down payment) for a reservation
+ */
+exports.approvePartialPayment = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { paymentType } = req.body;
+
+        if (!id) {
+            return res.status(400).json({ message: 'Reservation ID is required.' });
+        }
+
+        const reservation = await Reservation.findById(id);
+        if (!reservation) {
+            return res.status(404).json({ message: 'Reservation not found.' });
+        }
+
+        // Only allow approval if current paymentStatus is 'partial-payment' (50% down payment submitted)
+        // or 'PENDING' for legacy reservations
+        if (!['PENDING', 'partial-payment'].includes(reservation.paymentStatus)) {
+            return res.status(400).json({ message: `Cannot approve partial payment for reservation ${id} with status: ${reservation.paymentStatus}` });
+        }
+
+        let reservationsToUpdate = [reservation];
+        if (reservation.isMultiAmenity && reservation.multiAmenityGroupId) {
+            reservationsToUpdate = await Reservation.find({
+                multiAmenityGroupId: reservation.multiAmenityGroupId
+            }).sort({ multiAmenityIndex: 1 });
+        }
+
+        for (const r of reservationsToUpdate) {
+            r.paymentStatus = 'partially-paid';
+            r.status = 'CONFIRMED';
+            r.updatedAt = new Date();
+            await r.save();
+        }
+
+        // Send partial payment approval email with QR code
+        try {
+            const emailService = require('../utils/emailService');
+            const serviceName = reservation.serviceName || 'Your Reservation';
+            const checkInDate = new Date(reservation.check_in).toLocaleDateString();
+            const remainingAmount = (reservation.finalTotal * 0.5).toFixed(2);
+            
+            const hashes = reservationsToUpdate.map(r => r.reservationHash).filter(Boolean);
+            const hashString = hashes.join(',');
+            const confirmationUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/confirmation.html?hash=${encodeURIComponent(hashString)}`;
+            const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(hashString)}`;
+
+            const emailSubject = '50% Down Payment Approved - Your QR Code is Ready';
+            const emailBody = `
+                <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto;">
+                    <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+                        <h1>✓ Down Payment Approved</h1>
+                    </div>
+                    <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
+                        <h2>Hi ${reservation.full_name},</h2>
+                        <p>Great news! Your 50% down payment has been verified and approved.</p>
+                        
+                        <div style="background: white; padding: 20px; margin: 20px 0; text-align: center; border-radius: 5px; border: 2px solid #28a745;">
+                            <p style="color: #666; margin: 0 0 15px 0; font-size: 14px;">Your Check-in QR Code</p>
+                            <img src="${qrImageUrl}" alt="Reservation QR Code" style="width: 220px; height: 220px; border-radius: 5px;" />
+                            <p style="color: #666; margin: 15px 0 0 0; font-size: 12px;">Screenshot or save this code on your phone</p>
+                        </div>
+                        
+                        <div style="background: white; padding: 20px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #28a745;">
+                            <h3 style="color: #28a745; margin-top: 0;">Reservation Details</h3>
+                            <p><strong>Reservation ID:</strong> ${reservation.reservationId || 'N/A'}</p>
+                            <p><strong>Service:</strong> ${serviceName}</p>
+                            <p><strong>Check-in Date:</strong> ${checkInDate}</p>
+                            <p><strong>Total Amount:</strong> ₱${reservation.finalTotal?.toFixed(2) || '0.00'}</p>
+                            <hr style="border: none; border-top: 1px solid #e9ecef;">
+                            <p><strong style="color: #28a745;">✓ Amount Paid (50%):</strong> ₱${(reservation.finalTotal * 0.5).toFixed(2)}</p>
+                            <p><strong style="color: #ffc107;">Remaining Due (50%):</strong> ₱${remainingAmount}</p>
+                        </div>
+                        
+                        <p>If the QR code image does not load, you can open it here:</p>
+                        <p><a href="${confirmationUrl}" style="color: #667eea; text-decoration: none; word-break: break-all;">${confirmationUrl}</a></p>
+                        
+                        <div style="background: #fff3cd; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #ffc107;">
+                            <p style="margin: 0;"><strong>⏰ Important Reminder:</strong></p>
+                            <p style="margin: 10px 0 0 0;">Please bring your QR code and pay the remaining 50% (₱${remainingAmount}) at check-in on ${checkInDate}.</p>
+                        </div>
+                        
+                        <p>Your reservation is now confirmed! We look forward to welcoming you to Tito Renz Resort.</p>
+                        <p>Best regards,<br>The Tito Renz Resort Team</p>
+                    </div>
+                    <div style="text-align: center; margin-top: 20px; color: #888; font-size: 12px;">
+                        <p>&copy; ${new Date().getFullYear()} Tito Renz Resort. All rights reserved.</p>
+                    </div>
+                </div>
+            `;
+            await emailService.sendGenericEmail(reservation.email, emailSubject, emailBody);
+        } catch (emailError) {
+            console.error('Email sending failed for partial approval:', emailError.message);
+        }
+
+        res.status(200).json({
+            success: true,
+            message: `50% down payment for reservation ${id} approved. Status set to partially-paid.`,
+            reservation: reservationsToUpdate[0]
+        });
+    } catch (error) {
+        console.error('SERVER ERROR approving partial payment:', error);
+        res.status(500).json({
+            message: 'Internal server error while approving partial payment.',
+            details: error.message
+        });
+    }
+};
+
+/**
+ * Approves the full payment (100%) for a reservation (either remaining 50% after partial, or full 100%)
+ */
+exports.approveFullPayment = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { paymentType } = req.body;
+
+        if (!id) {
+            return res.status(400).json({ message: 'Reservation ID is required.' });
+        }
+
+        const reservation = await Reservation.findById(id);
+        if (!reservation) {
+            return res.status(404).json({ message: 'Reservation not found.' });
+        }
+
+        // Allow approval if paymentStatus is either PENDING (legacy), full-payment (100% submitted), or partially-paid (remaining 50%)
+        if (!['PENDING', 'full-payment', 'partially-paid'].includes(reservation.paymentStatus)) {
+            return res.status(400).json({ message: `Cannot approve full payment for reservation ${id} with status: ${reservation.paymentStatus}` });
+        }
+
+        const isRemainingPayment = reservation.paymentStatus === 'partially-paid';
+
+        let reservationsToUpdate = [reservation];
+        if (reservation.isMultiAmenity && reservation.multiAmenityGroupId) {
+            reservationsToUpdate = await Reservation.find({
+                multiAmenityGroupId: reservation.multiAmenityGroupId
+            }).sort({ multiAmenityIndex: 1 });
+        }
+
+        for (const r of reservationsToUpdate) {
+            r.paymentStatus = 'fully-paid';
+            r.status = 'CONFIRMED';
+            r.paymentConfirmedAt = new Date();
+            r.updatedAt = new Date();
+            await r.save();
+        }
+
+        // Create private pool global lock for any private pool reservations
+        for (const r of reservationsToUpdate) {
+            await createPrivatePoolGlobalLock(r);
+        }
+
+        // Send full payment approval and QR code email
+        try {
+            const emailService = require('../utils/emailService');
+            const serviceName = reservation.serviceName || 'Your Reservation';
+            const checkInDate = new Date(reservation.check_in).toLocaleDateString();
+            
+            const hashes = reservationsToUpdate.map(r => r.reservationHash).filter(Boolean);
+            const hashString = hashes.join(',');
+            const confirmationUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/confirmation.html?hash=${encodeURIComponent(hashString)}`;
+            const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(hashString)}`;
+
+            const emailSubject = isRemainingPayment 
+                ? 'Full Payment Approved - Your QR Code is Ready' 
+                : 'Payment Approved - Your QR Code is Ready';
+            
+            const emailBody = `
+                <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto;">
+                    <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+                        <h1>✓ Payment Approved!</h1>
+                    </div>
+                    <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
+                        <h2>Hi ${reservation.full_name},</h2>
+                        <p>${isRemainingPayment ? 'Thank you for completing the remaining payment!' : 'Your full payment has been verified and approved.'}</p>
+                        <p>Your reservation is now fully paid and confirmed. Please use the QR code below for check-in.</p>
+                        
+                        <div style="background: white; padding: 20px; margin: 20px 0; text-align: center; border-radius: 5px; border: 2px solid #28a745;">
+                            <p style="color: #666; margin: 0 0 15px 0; font-size: 14px;">Your Check-in QR Code</p>
+                            <img src="${qrImageUrl}" alt="Reservation QR Code" style="width: 220px; height: 220px; border-radius: 5px;" />
+                            <p style="color: #666; margin: 15px 0 0 0; font-size: 12px;">Screenshot or save this code on your phone</p>
+                        </div>
+                        
+                        <div style="background: white; padding: 20px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #28a745;">
+                            <h3 style="color: #28a745; margin-top: 0;">Reservation Details</h3>
+                            <p><strong>Reservation ID:</strong> ${reservation.reservationId || 'N/A'}</p>
+                            <p><strong>Service:</strong> ${serviceName}</p>
+                            <p><strong>Check-in Date:</strong> ${checkInDate}</p>
+                            <p><strong>Total Amount:</strong> ₱${reservation.finalTotal?.toFixed(2) || '0.00'}</p>
+                            <p style="color: #28a745;"><strong>✓ Status: FULLY PAID</strong></p>
+                        </div>
+                        
+                        <p>If the QR code image does not load, you can open it here:</p>
+                        <p><a href="${confirmationUrl}" style="color: #667eea; text-decoration: none; word-break: break-all;">${confirmationUrl}</a></p>
+                        
+                        <div style="background: #d4edda; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #28a745;">
+                            <p style="margin: 0;"><strong>✓ What's Next?</strong></p>
+                            <p style="margin: 10px 0 0 0;">Present this QR code at check-in. We're excited to welcome you to Tito Renz Resort!</p>
+                        </div>
+                        
+                        <p>Thank you for choosing Tito Renz Resort!</p>
+                        <p>Best regards,<br>The Tito Renz Resort Team</p>
+                    </div>
+                    <div style="text-align: center; margin-top: 20px; color: #888; font-size: 12px;">
+                        <p>&copy; ${new Date().getFullYear()} Tito Renz Resort. All rights reserved.</p>
+                    </div>
+                </div>
+            `;
+            await emailService.sendGenericEmail(reservation.email, emailSubject, emailBody);
+        } catch (emailError) {
+            console.error('Email sending failed for full payment approval:', emailError.message);
+        }
+
+        res.status(200).json({
+            success: true,
+            message: `Full payment for reservation ${id} approved. Status set to fully-paid.`,
+            reservation: reservationsToUpdate[0]
+        });
+    } catch (error) {
+        console.error('SERVER ERROR approving full payment:', error);
+        res.status(500).json({
+            message: 'Internal server error while approving full payment.',
             details: error.message
         });
     }
@@ -2461,7 +2824,15 @@ exports.uploadReceipt = async (req, res) => {
                 }
             }
 
-            reservation.paymentStatus = 'PENDING';
+            // Set paymentStatus based on payment type
+            if (paymentType === 'downpayment') {
+                reservation.paymentStatus = 'partial-payment'; // 50% down payment submitted
+            } else if (paymentType === 'full') {
+                reservation.paymentStatus = 'full-payment'; // 100% full payment submitted
+            } else {
+                // Default/legacy: assume partial payment
+                reservation.paymentStatus = 'partial-payment';
+            }
             reservation.status = 'PENDING'; // Awaiting admin verification
             
             return reservation.save();
