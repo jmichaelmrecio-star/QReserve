@@ -48,6 +48,9 @@ router.get(
     reservationController.generateReports
 );// Adding the PUT routes for completeness and order:
 router.put('/update-status/:id', reservationController.updateReservationStatus);
+
+// Customer cancellation request with reason
+router.put('/request-cancel/:id', reservationController.requestCancellation);
 router.get(
     '/check-in/:reservationHash', 
     reservationController.staffCheckIn

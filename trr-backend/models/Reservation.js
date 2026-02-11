@@ -100,6 +100,12 @@ const ReservationSchema = new mongoose.Schema({
         type: Date,
         required: false,
     },
+
+    // Cancellation Details (customer-initiated)
+    cancelReason: { type: String, required: false },
+    cancelRequestedAt: { type: Date, required: false },
+    cancelRequestedBy: { type: String, required: false },
+    cancelRequestedByEmail: { type: String, required: false },
     
     // QR Code Data
     qrCodeData: { type: String },

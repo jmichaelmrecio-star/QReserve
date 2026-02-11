@@ -1042,6 +1042,15 @@ function formatReservationDetails(r) {
         ${r.paymentConfirmedAt ? `<p><strong>Payment Confirmed:</strong> ${new Date(r.paymentConfirmedAt).toLocaleString()}</p>` : ''}
         <div><strong>Receipt:</strong><br>${receiptCell}</div>
       </div>
+      ${r.cancelReason ? `
+      <div class="detail-section">
+        <h6>📝 Cancellation Details</h6>
+        <p><strong>Reason:</strong> ${escapeHtml(r.cancelReason)}</p>
+        ${r.cancelRequestedBy ? `<p><strong>Requested By:</strong> ${escapeHtml(r.cancelRequestedBy)}</p>` : ''}
+        ${r.cancelRequestedByEmail ? `<p><strong>Email:</strong> ${escapeHtml(r.cancelRequestedByEmail)}</p>` : ''}
+        ${r.cancelRequestedAt ? `<p><strong>Requested At:</strong> ${new Date(r.cancelRequestedAt).toLocaleString()}</p>` : ''}
+      </div>
+      ` : ''}
       <div class="detail-section">
         <h6>⏱️ Timeline</h6>
         <p><strong>Date Booked:</strong> ${r.dateCreated ? new Date(r.dateCreated).toLocaleString() : 'N/A'}</p>
@@ -1117,6 +1126,46 @@ async function renderAdminReservations() {
            tbody.innerHTML = '<tr><td colspan="6" class="text-center">No reservations found.</td></tr>';
            return;
          }
+
+         const cancellationList = document.getElementById('cancellation-requests-list');
+         const cancellationCountBadge = document.getElementById('cancellationCountBadge');
+         if (cancellationList && cancellationCountBadge) {
+           const cancelRequests = reservations
+             .filter(r => r.cancelReason)
+             .sort((a, b) => {
+               const dateA = a.cancelRequestedAt ? new Date(a.cancelRequestedAt).getTime() : 0;
+               const dateB = b.cancelRequestedAt ? new Date(b.cancelRequestedAt).getTime() : 0;
+               return dateB - dateA;
+             });
+
+           cancellationCountBadge.textContent = cancelRequests.length.toString();
+
+           if (cancelRequests.length === 0) {
+             cancellationList.innerHTML = '<div class="text-muted">No cancellation requests yet.</div>';
+           } else {
+             cancellationList.innerHTML = cancelRequests.slice(0, 10).map(r => {
+               const requestedAt = r.cancelRequestedAt ? new Date(r.cancelRequestedAt).toLocaleString() : 'N/A';
+               const displayName = escapeHtml(r.full_name || r.customer_name || 'Customer');
+               const displayService = escapeHtml(r.serviceName || r.serviceType || 'Reservation');
+               const displayReason = escapeHtml(r.cancelReason || 'No reason provided');
+               const displayId = escapeHtml(r.reservationId || r._id || 'N/A');
+
+               return `
+                <div style="border:1px solid #f1d4cc;border-radius:10px;padding:12px 14px;margin-bottom:10px;background:#fff7f5;">
+                  <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+                    <strong style="color:#b4533a;">${displayName}</strong>
+                    <span style="color:#6b7280;font-size:0.85rem;">${requestedAt}</span>
+                  </div>
+                  <div style="color:#374151;margin-top:4px;">
+                    <strong>${displayService}</strong> · ${displayId}
+                  </div>
+                  <div style="margin-top:6px;color:#4b5563;">${displayReason}</div>
+                </div>
+              `;
+             }).join('');
+           }
+         }
+
          tbody.innerHTML = reservations.map(r => {
            // Status badge styling
            let statusBadge = '';
