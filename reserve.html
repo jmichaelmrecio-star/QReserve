@@ -1606,7 +1606,7 @@
 			sessionStorage.setItem('payment_reservation_id', result.reservationId);
 			clearSelectionStateAfterSubmit();
 
-			showToast('✅ Reservation created successfully! Redirecting to payment...', 'success');
+			showToast('Reservation created successfully! Redirecting to payment...', 'success');
 
 			// Redirect to payment page
 			setTimeout(() => {
@@ -1615,7 +1615,7 @@
 
 		} catch (error) {
 			console.error('Reservation submission error:', error);
-			showToast('❌ ' + error.message, 'error');
+			showToast(error.message, 'error');
 		} finally {
 			if (btn) {
 				btn.disabled = false;
@@ -1697,7 +1697,7 @@
 	            sessionStorage.setItem('lastReservation', JSON.stringify(data));
 	            sessionStorage.setItem('payment_reservation_hash', data.reservationHash);
 	            sessionStorage.setItem('payment_reservation_id', data.reservationId);
-	            showToast('✅ Multi-amenity reservation created! Redirecting to payment...', 'success');
+	            showToast('Multi-amenity reservation created! Redirecting to payment...', 'success');
 	            
 	            // Redirect to payment
 	            const amount = data.finalTotal || payload.pricing.finalTotal;

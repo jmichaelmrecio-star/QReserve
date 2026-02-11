@@ -5,7 +5,7 @@
     background: linear-gradient(135deg, rgba(45, 143, 92, 0.08) 0%, rgba(212, 165, 116, 0.05) 100%);
     border-radius: var(--border-radius-lg);
     padding: 1rem;
-    margin-bottom: 2rem;
+    margin-bottom: 0.5rem;
     border: 1px solid var(--border-color);
     box-shadow: var(--shadow-sm);
     transition: all var(--transition-base) var(--transition-easing);
@@ -31,14 +31,6 @@
     transition: all var(--transition-base) var(--transition-easing);
     position: relative;
     overflow: hidden;
-}
-
-.tab-button:hover:not(.active) {
-    border-color: var(--primary-color);
-    color: var(--primary-color);
-    background-color: var(--primary-light);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
 }
 
 .tab-button.active {
@@ -109,6 +101,25 @@
     margin-bottom: 1.5rem;
 }
 
+#dashboard-area,
+#payment-verifications,
+#nav-promocodes,
+#service-management {
+    margin-top: 0;
+}
+
+#dashboard-area .card,
+#payment-verifications .card,
+#nav-promocodes .card,
+#service-management .card,
+#schedule-management .card {
+    background-color: white;
+    border: none;
+    box-shadow: none;
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+}
+
 /* --- DATA TABLE STYLING --- */
 .table {
     background: white;
@@ -140,12 +151,38 @@
     transition: background-color var(--transition-base);
 }
 
-.table tbody tr:hover {
-    background-color: var(--primary-light);
-}
-
 .table tbody tr:nth-child(even) {
     background-color: rgba(245, 244, 241, 0.5);
+}
+
+#admin-reservations-table_filter {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    flex-wrap: nowrap;
+}
+
+#admin-reservations-table_filter label {
+    margin-bottom: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.admin-reservations-filter {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.admin-reservations-refresh {
+    display: inline-flex;
+    align-items: center;
+}
+
+#report-button {
+    white-space: nowrap;
 }
 
 /* --- STATUS BADGES --- */
@@ -211,11 +248,6 @@
     box-shadow: 0 2px 8px rgba(45, 143, 92, 0.2);
 }
 
-.btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(45, 143, 92, 0.3);
-}
-
 .btn-primary:active {
     transform: translateY(0);
 }
@@ -226,20 +258,10 @@
     border: 1px solid var(--border-color);
 }
 
-.btn-secondary:hover {
-    background-color: #d4ccc4;
-    transform: translateY(-2px);
-}
-
 .btn-success {
     background: linear-gradient(135deg, #4caf50, #388e3c);
     color: white;
     box-shadow: 0 2px 8px rgba(76, 175, 80, 0.2);
-}
-
-.btn-success:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(76, 175, 80, 0.3);
 }
 
 .btn-danger {
@@ -248,20 +270,10 @@
     box-shadow: 0 2px 8px rgba(244, 67, 54, 0.2);
 }
 
-.btn-danger:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(244, 67, 54, 0.3);
-}
-
 .btn-warning {
     background: linear-gradient(135deg, #ff9800, #f57c00);
     color: white;
     box-shadow: 0 2px 8px rgba(255, 152, 0, 0.2);
-}
-
-.btn-warning:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(255, 152, 0, 0.3);
 }
 
 /* --- FORM STYLING --- */
@@ -327,13 +339,7 @@
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius-lg);
     box-shadow: var(--shadow-md);
-    transition: all var(--transition-base) var(--transition-easing);
     overflow: hidden;
-}
-
-.card:hover {
-    box-shadow: var(--shadow-lg);
-    transform: translateY(-4px);
 }
 
 .card-header {
@@ -407,9 +413,13 @@
 
 /* --- UTILITY CLASSES --- */
 .has-fixed-header-offset {
-    margin-top: var(--header-offset);
-    padding-top: 0.5rem;
+    margin-top: 0;
+    padding-top: 0;
     padding-bottom: 2rem;
+}
+
+.admin-pane-padded {
+    padding-top: 2rem;
 }
 
 .section-title {
@@ -487,11 +497,6 @@
     box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
 
-#view-active-users:hover:not(.active),
-#view-archived-users:hover:not(.active) {
-    transform: translateY(-2px);
-}
-
 /* --- HIDE REMOVED TABS --- */
 .tab-button[data-target="dining-management"],
 #dining-management,
@@ -553,15 +558,71 @@
 
 .expand-service-btn, 
 .expand-reservation-btn {
-    font-weight: bold;
-    width: 32px;
-    height: 32px;
-    padding: 0;
-    border-radius: 50%;
-    display: flex;
+    font-weight: 500;
+    border-radius: 4px;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.2rem;
+    font-size: 0.875rem;
+    white-space: nowrap;
+}
+
+/* Consistent padding for all small buttons in tables */
+.table .btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+/* Left-align DataTables pagination */
+div.dataTables_wrapper div.dataTables_paginate {
+    text-align: left !important;
+}
+
+div.dataTables_wrapper div.dataTables_paginate ul.pagination {
+    justify-content: flex-start !important;
+}
+
+/* Service table scrollable container */
+#service-management .table-responsive {
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+#service-management .table thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: var(--bs-dark);
+}
+
+/* Center align all table cells */
+#service-management .table th,
+#service-management .table td {
+    text-align: center;
+    vertical-align: middle;
+}
+
+/* Center align user management table cells */
+#user-management-container .table th,
+#user-management-container .table td {
+    text-align: center;
+    vertical-align: middle;
+}
+
+/* Center align reservations table cells */
+#admin-reservations-table th,
+#admin-reservations-table td {
+    text-align: center;
+    vertical-align: middle;
+}
+
+/* Add vertical spacing between buttons in table cells */
+.table td .btn {
+    margin-bottom: 0.5rem;
+}
+
+.table td .btn:last-child {
+    margin-bottom: 0;
 }
 
 .gallery-grid {
@@ -578,11 +639,6 @@
     cursor: pointer;
     transition: transform 0.2s;
     border: 1px solid #dee2e6;
-}
-
-.gallery-grid img:hover {
-    transform: scale(1.05);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
 }
 
 .detail-section ul {
