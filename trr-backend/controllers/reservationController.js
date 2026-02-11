@@ -1494,6 +1494,65 @@ exports.updateReservationStatus = async (req, res) => {
     }
 };
 
+// Customer cancellation request (stores reason + cancels reservation)
+exports.requestCancellation = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { reason, requestedBy, requestedByEmail } = req.body;
+
+        if (!id) {
+            return res.status(400).json({ message: 'Reservation ID is required.' });
+        }
+
+        if (!reason || !reason.toString().trim()) {
+            return res.status(400).json({ message: 'Cancellation reason is required.' });
+        }
+
+        const reservation = await Reservation.findById(id);
+        if (!reservation) {
+            return res.status(404).json({ message: 'Reservation not found.' });
+        }
+
+        let reservationsToUpdate = [reservation];
+        if (reservation.isMultiAmenity && reservation.multiAmenityGroupId) {
+            reservationsToUpdate = await Reservation.find({
+                multiAmenityGroupId: reservation.multiAmenityGroupId
+            }).sort({ multiAmenityIndex: 1 });
+        }
+
+        const cancelReason = reason.toString().trim();
+        const cancelRequestedAt = new Date();
+
+        for (const r of reservationsToUpdate) {
+            r.status = 'CANCELLED';
+            r.paymentStatus = 'REFUNDED';
+            r.cancelReason = cancelReason;
+            r.cancelRequestedAt = cancelRequestedAt;
+            r.cancelRequestedBy = requestedBy || r.full_name || null;
+            r.cancelRequestedByEmail = requestedByEmail || r.email || null;
+            r.updatedAt = new Date();
+            await r.save();
+        }
+
+        // Remove global lock if Private Pool reservation is cancelled
+        for (const r of reservationsToUpdate) {
+            await removePrivatePoolGlobalLock(r);
+        }
+
+        res.status(200).json({
+            success: true,
+            message: `Cancellation request processed for reservation ${id}.`,
+            reservation: reservationsToUpdate[0]
+        });
+    } catch (error) {
+        console.error('SERVER ERROR requesting cancellation:', error);
+        res.status(500).json({
+            message: 'Internal server error while requesting cancellation.',
+            details: error.message
+        });
+    }
+};
+
 // Function to get all reservations for a specific user email
 exports.getUserReservations = async (req, res) => {
     try {
