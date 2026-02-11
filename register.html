@@ -6,8 +6,6 @@
     <title>QReserve: Register</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link rel="stylesheet" href="style.css" />
-    <!-- Flatpickr CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   </head>
   <body>
     <header>
@@ -369,21 +367,6 @@
           });
         }
       });
-    </script>
-    <!-- Flatpickr JS -->
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script>
-      // Initialize Flatpickr for birthday field
-      const birthdayInput = document.querySelector('input[type="date"]');
-      if (birthdayInput) {
-        flatpickr(birthdayInput, {
-          dateFormat: "Y-m-d",
-          altFormat: "F j, Y",
-          altInput: true,
-          disableMobile: false,
-          maxDate: new Date() // Can't be born in the future
-        });
-      }
     </script>
   </body>
 </html>

@@ -1,37 +1,37 @@
 // --- Unified Alert Modal System ---
-function showUnifiedAlert(message, title = 'Alert', type = 'info') {
-  const modal = document.getElementById('unifiedAlertModal');
-  const header = document.getElementById('alertModalHeader');
-  const body = document.getElementById('alertModalBody');
-  const label = document.getElementById('unifiedAlertLabel');
-  
+function showUnifiedAlert(message, title = "Alert", type = "info") {
+  const modal = document.getElementById("unifiedAlertModal");
+  const header = document.getElementById("alertModalHeader");
+  const body = document.getElementById("alertModalBody");
+  const label = document.getElementById("unifiedAlertLabel");
+
   // Set title
   label.textContent = title;
-  
+
   // Set message
   body.textContent = message;
-  
+
   // Set header color based on type
-  let headerClass = 'bg-info text-white';
-  switch(type) {
-    case 'success':
-      headerClass = 'bg-success text-white';
+  let headerClass = "bg-info text-white";
+  switch (type) {
+    case "success":
+      headerClass = "bg-success text-white";
       break;
-    case 'error':
-    case 'danger':
-      headerClass = 'bg-danger text-white';
+    case "error":
+    case "danger":
+      headerClass = "bg-danger text-white";
       break;
-    case 'warning':
-      headerClass = 'bg-warning text-dark';
+    case "warning":
+      headerClass = "bg-warning text-dark";
       break;
-    case 'info':
+    case "info":
     default:
-      headerClass = 'bg-info text-white';
+      headerClass = "bg-info text-white";
   }
-  
+
   // Clear previous classes and add new one
-  header.className = 'modal-header ' + headerClass;
-  
+  header.className = "modal-header " + headerClass;
+
   // Show modal using Bootstrap
   if (modal && window.bootstrap && window.bootstrap.Modal) {
     const bsModal = new window.bootstrap.Modal(modal);
@@ -41,51 +41,52 @@ function showUnifiedAlert(message, title = 'Alert', type = 'info') {
 window.showUnifiedAlert = showUnifiedAlert;
 
 // Override alert() with unified modal
-window.alert = function(message) {
-  showUnifiedAlert(message, 'Message', 'info');
+window.alert = function (message) {
+  showUnifiedAlert(message, "Message", "info");
 };
 
 // --- Account Edit Modal Logic ---
 // --- Account Create Modal Logic ---
 // --- Modal Close Logic ---
 function closeAccountModal() {
-  const modal = document.getElementById('accountModal');
+  const modal = document.getElementById("accountModal");
   if (window.bootstrap && window.bootstrap.Modal) {
     window.bootstrap.Modal.getOrCreateInstance(modal).hide();
   } else {
-    modal.style.display = 'none';
-    modal.classList.remove('show');
-    modal.setAttribute('aria-hidden', 'true');
+    modal.style.display = "none";
+    modal.classList.remove("show");
+    modal.setAttribute("aria-hidden", "true");
   }
 }
 window.closeAccountModal = closeAccountModal;
 function openCreateAccountModal() {
   // Clear all fields
-  document.getElementById('accountModalTitle').textContent = 'Add New Account (Not Supported)';
-  document.getElementById('accountFirstName').value = '';
-  document.getElementById('accountFirstName').readOnly = true;
-  document.getElementById('accountMiddleName').value = '';
-  document.getElementById('accountMiddleName').readOnly = true;
-  document.getElementById('accountLastName').value = '';
-  document.getElementById('accountLastName').readOnly = true;
-  document.getElementById('accountEmail').value = '';
-  document.getElementById('accountEmail').readOnly = true;
-  document.getElementById('accountPhone').value = '';
-  document.getElementById('accountPhone').readOnly = true;
-  document.getElementById('accountPassword').value = '';
-  document.getElementById('accountPassword').style.display = 'none';
-  document.getElementById('accountRole').value = '';
-  delete document.getElementById('accountForm').dataset.editingId;
+  document.getElementById("accountModalTitle").textContent =
+    "Add New Account (Not Supported)";
+  document.getElementById("accountFirstName").value = "";
+  document.getElementById("accountFirstName").readOnly = true;
+  document.getElementById("accountMiddleName").value = "";
+  document.getElementById("accountMiddleName").readOnly = true;
+  document.getElementById("accountLastName").value = "";
+  document.getElementById("accountLastName").readOnly = true;
+  document.getElementById("accountEmail").value = "";
+  document.getElementById("accountEmail").readOnly = true;
+  document.getElementById("accountPhone").value = "";
+  document.getElementById("accountPhone").readOnly = true;
+  document.getElementById("accountPassword").value = "";
+  document.getElementById("accountPassword").style.display = "none";
+  document.getElementById("accountRole").value = "";
+  delete document.getElementById("accountForm").dataset.editingId;
 
   // Show modal
-  const modal = document.getElementById('accountModal');
+  const modal = document.getElementById("accountModal");
   if (window.bootstrap && window.bootstrap.Modal) {
     const bsModal = window.bootstrap.Modal.getOrCreateInstance(modal);
     bsModal.show();
   } else {
-    modal.style.display = 'block';
-    modal.classList.add('show');
-    modal.setAttribute('aria-hidden', 'false');
+    modal.style.display = "block";
+    modal.classList.add("show");
+    modal.setAttribute("aria-hidden", "false");
   }
 }
 window.openCreateAccountModal = openCreateAccountModal;
@@ -93,120 +94,137 @@ async function openEditAccountModal(userId) {
   try {
     // Find user in memory (from window._adminUsersById)
     const user = window._adminUsersById && window._adminUsersById[userId];
-    if (!user) throw new Error('User not found in memory');
+    if (!user) throw new Error("User not found in memory");
 
     // Populate modal fields (read-only except role)
-    document.getElementById('accountModalTitle').textContent = 'Edit Account Role';
-    document.getElementById('accountFirstName').value = user.first_name || '';
-    document.getElementById('accountFirstName').readOnly = true;
-    document.getElementById('accountMiddleName').value = user.middle_name || '';
-    document.getElementById('accountMiddleName').readOnly = true;
-    document.getElementById('accountLastName').value = user.last_name || '';
-    document.getElementById('accountLastName').readOnly = true;
-    document.getElementById('accountEmail').value = user.email || '';
-    document.getElementById('accountEmail').readOnly = true;
-    document.getElementById('accountPhone').value = user.phone || '';
-    document.getElementById('accountPhone').readOnly = true;
-    document.getElementById('accountPassword').value = '';
-    document.getElementById('accountPassword').style.display = 'none';
-    document.getElementById('accountRole').value = user.role_id || '';
+    document.getElementById("accountModalTitle").textContent =
+      "Edit Account Role";
+    document.getElementById("accountFirstName").value = user.first_name || "";
+    document.getElementById("accountFirstName").readOnly = true;
+    document.getElementById("accountMiddleName").value = user.middle_name || "";
+    document.getElementById("accountMiddleName").readOnly = true;
+    document.getElementById("accountLastName").value = user.last_name || "";
+    document.getElementById("accountLastName").readOnly = true;
+    document.getElementById("accountEmail").value = user.email || "";
+    document.getElementById("accountEmail").readOnly = true;
+    document.getElementById("accountPhone").value = user.phone || "";
+    document.getElementById("accountPhone").readOnly = true;
+    document.getElementById("accountPassword").value = "";
+    document.getElementById("accountPassword").style.display = "none";
+    document.getElementById("accountRole").value = user.role_id || "";
 
     // Store userId for update
-    document.getElementById('accountForm').dataset.editingId = userId;
+    document.getElementById("accountForm").dataset.editingId = userId;
 
     // Hide error message
-    const msg = document.getElementById('accountFormMessage');
-    if (msg) { msg.classList.add('d-none'); msg.textContent = ''; }
+    const msg = document.getElementById("accountFormMessage");
+    if (msg) {
+      msg.classList.add("d-none");
+      msg.textContent = "";
+    }
 
     // Show modal (Bootstrap 5)
-    const modal = document.getElementById('accountModal');
+    const modal = document.getElementById("accountModal");
     if (window.bootstrap && window.bootstrap.Modal) {
       const bsModal = window.bootstrap.Modal.getOrCreateInstance(modal);
       bsModal.show();
     } else {
-      modal.style.display = 'block';
-      modal.classList.add('show');
-      modal.setAttribute('aria-hidden', 'false');
+      modal.style.display = "block";
+      modal.classList.add("show");
+      modal.setAttribute("aria-hidden", "false");
     }
   } catch (e) {
-    showAlert('Failed to load user for editing.', 'danger');
+    showAlert("Failed to load user for editing.", "danger");
   }
 }
 // --- Account Edit Modal Logic ---
 function openEditAccountModal(userId) {
   try {
     const user = window._adminUsersById && window._adminUsersById[userId];
-    if (!user) throw new Error('User not found in memory');
+    if (!user) throw new Error("User not found in memory");
 
     // Populate modal fields
-    document.getElementById('accountModalTitle').textContent = 'Edit Account';
-    document.getElementById('accountFirstName').value = user.first_name || '';
-    document.getElementById('accountMiddleName').value = user.middle_name || '';
-    document.getElementById('accountLastName').value = user.last_name || '';
-    document.getElementById('accountEmail').value = user.email || '';
-    document.getElementById('accountPhone').value = user.phone || '';
-    document.getElementById('accountPassword').value = '';
-    document.getElementById('accountRole').value = user.role_id || '';
+    document.getElementById("accountModalTitle").textContent = "Edit Account";
+    document.getElementById("accountFirstName").value = user.first_name || "";
+    document.getElementById("accountMiddleName").value = user.middle_name || "";
+    document.getElementById("accountLastName").value = user.last_name || "";
+    document.getElementById("accountEmail").value = user.email || "";
+    document.getElementById("accountPhone").value = user.phone || "";
+    document.getElementById("accountPassword").value = "";
+    document.getElementById("accountRole").value = user.role_id || "";
 
     // Store userId for update
-    document.getElementById('accountForm').dataset.editingId = userId;
+    document.getElementById("accountForm").dataset.editingId = userId;
 
     // Hide error message
-    const msg = document.getElementById('accountFormMessage');
-    if (msg) { msg.classList.add('d-none'); msg.textContent = ''; }
+    const msg = document.getElementById("accountFormMessage");
+    if (msg) {
+      msg.classList.add("d-none");
+      msg.textContent = "";
+    }
 
     // Show modal (Bootstrap 5)
-    const modal = document.getElementById('accountModal');
+    const modal = document.getElementById("accountModal");
     if (window.bootstrap && window.bootstrap.Modal) {
       const bsModal = window.bootstrap.Modal.getOrCreateInstance(modal);
       bsModal.show();
     } else {
-      modal.style.display = 'block';
-      modal.classList.add('show');
-      modal.setAttribute('aria-hidden', 'false');
+      modal.style.display = "block";
+      modal.classList.add("show");
+      modal.setAttribute("aria-hidden", "false");
     }
   } catch (e) {
-    showAlert('Failed to load user for editing.', 'danger');
+    showAlert("Failed to load user for editing.", "danger");
   }
 }
 
 // Patch form submit to handle edit mode
-const accountForm = document.getElementById('accountForm');
+const accountForm = document.getElementById("accountForm");
 if (accountForm) {
-  accountForm.addEventListener('submit', async function(e) {
+  accountForm.addEventListener("submit", async function (e) {
     e.preventDefault();
     const editingId = accountForm.dataset.editingId;
     // Only allow role update if editing
     if (editingId) {
-      const newRoleName = accountForm.accountRole.options[accountForm.accountRole.selectedIndex].text;
+      const newRoleName =
+        accountForm.accountRole.options[accountForm.accountRole.selectedIndex]
+          .text;
       try {
-        const response = await fetch(`http://localhost:3000/api/users/${editingId}/role`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getAuthToken()}` },
-          body: JSON.stringify({ newRoleName })
-        });
+        const response = await fetch(
+          `http://localhost:3000/api/users/${editingId}/role`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${getAuthToken()}`,
+            },
+            body: JSON.stringify({ newRoleName }),
+          },
+        );
         if (response.ok) {
-          showAlert('Account role updated.', 'success');
-          if (typeof renderUsersList === 'function') renderUsersList();
+          showAlert("Account role updated.", "success");
+          if (typeof renderUsersList === "function") renderUsersList();
           if (window.bootstrap && window.bootstrap.Modal) {
-            window.bootstrap.Modal.getOrCreateInstance(document.getElementById('accountModal')).hide();
+            window.bootstrap.Modal.getOrCreateInstance(
+              document.getElementById("accountModal"),
+            ).hide();
           } else {
-            document.getElementById('accountModal').style.display = 'none';
+            document.getElementById("accountModal").style.display = "none";
           }
           accountForm.reset();
           delete accountForm.dataset.editingId;
         } else {
-          const msg = document.getElementById('accountFormMessage');
+          const msg = document.getElementById("accountFormMessage");
           if (msg) {
-            msg.classList.remove('d-none');
-            msg.textContent = 'Failed to update account role.';
+            msg.classList.remove("d-none");
+            msg.textContent = "Failed to update account role.";
           }
         }
       } catch (err) {
-        const msg = document.getElementById('accountFormMessage');
+        const msg = document.getElementById("accountFormMessage");
         if (msg) {
-          msg.classList.remove('d-none');
-          msg.textContent = 'Error updating account role.';
+          msg.classList.remove("d-none");
+          msg.textContent = "Error updating account role.";
         }
       }
     }
@@ -215,24 +233,24 @@ if (accountForm) {
 
 window.openEditAccountModal = openEditAccountModal;
 // Show QR code modal for admin reservation
-window.showReservationQRModal = function(reservationId) {
+window.showReservationQRModal = function (reservationId) {
   // Show modal (Bootstrap 5)
-  const modal = document.getElementById('qrCodeModal');
+  const modal = document.getElementById("qrCodeModal");
   if (!modal) return;
   // Set reservation ID in modal
-  const idSpan = document.getElementById('qrCodeModalReservationId');
+  const idSpan = document.getElementById("qrCodeModalReservationId");
   if (idSpan) idSpan.textContent = `Reservation ID: ${reservationId}`;
   // Clear previous QR
-  const qrContainer = document.getElementById('admin-qr-code-container');
-  if (qrContainer) qrContainer.innerHTML = '';
+  const qrContainer = document.getElementById("admin-qr-code-container");
+  if (qrContainer) qrContainer.innerHTML = "";
   // Generate QR code
   if (qrContainer && window.QRCode) {
     new QRCode(qrContainer, {
       text: reservationId,
       width: 200,
       height: 200,
-      colorDark: '#000000',
-      colorLight: '#ffffff',
+      colorDark: "#000000",
+      colorLight: "#ffffff",
     });
   }
   // Show modal using Bootstrap
@@ -241,33 +259,36 @@ window.showReservationQRModal = function(reservationId) {
     bsModal.show();
   } else {
     // Fallback: show modal by setting display
-    modal.style.display = 'block';
+    modal.style.display = "block";
   }
 };
 // --- Universal Promo Code CRUD (Admin & Manager) ---
 async function renderPromoCodeTable() {
-  const tbody = document.getElementById('promoCodeTableBody');
+  const tbody = document.getElementById("promoCodeTableBody");
   if (!tbody) return;
-  tbody.innerHTML = '<tr><td colspan="7" class="text-center p-4">Loading promo codes...</td></tr>';
+  tbody.innerHTML =
+    '<tr><td colspan="7" class="text-center p-4">Loading promo codes...</td></tr>';
   try {
-    const response = await fetch('http://localhost:3000/api/promocodes/all');
+    const response = await fetch("http://localhost:3000/api/promocodes/all");
     const codes = await response.json();
     if (!Array.isArray(codes) || codes.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" class="text-center p-4">No promo codes found.</td></tr>';
+      tbody.innerHTML =
+        '<tr><td colspan="7" class="text-center p-4">No promo codes found.</td></tr>';
       return;
     }
-    tbody.innerHTML = codes.map(code => {
-      const isExpired = new Date(code.expirationDate) < new Date();
-      const isUsedUp = code.timesUsed >= code.usageLimit;
-      let statusBadge = '';
-      if (isExpired) {
-        statusBadge = '<span class="badge bg-danger">Expired</span>';
-      } else if (isUsedUp) {
-        statusBadge = '<span class="badge bg-warning">Used Up</span>';
-      } else {
-        statusBadge = '<span class="badge bg-success">Active</span>';
-      }
-      return `<tr>
+    tbody.innerHTML = codes
+      .map((code) => {
+        const isExpired = new Date(code.expirationDate) < new Date();
+        const isUsedUp = code.timesUsed >= code.usageLimit;
+        let statusBadge = "";
+        if (isExpired) {
+          statusBadge = '<span class="badge bg-danger">Expired</span>';
+        } else if (isUsedUp) {
+          statusBadge = '<span class="badge bg-warning">Used Up</span>';
+        } else {
+          statusBadge = '<span class="badge bg-success">Active</span>';
+        }
+        return `<tr>
         <td>${escapeHtml(code.code)}</td>
         <td>${Math.round((code.discountPercentage || 0) * 100)}%</td>
         <td>${formatDate(code.expirationDate)}</td>
@@ -276,76 +297,109 @@ async function renderPromoCodeTable() {
         <td>${statusBadge}</td>
         <td><button class="btn btn-danger btn-sm" onclick="deletePromoCode('${code._id}')">Delete</button></td>
       </tr>`;
-    }).join('');
+      })
+      .join("");
     // DataTable
     if (window.$ && window.$.fn && window.$.fn.DataTable) {
       setTimeout(() => {
-        const table = $(tbody).closest('table');
+        const table = $(tbody).closest("table");
         if (table.length && !$.fn.dataTable.isDataTable(table[0])) {
           table.DataTable({ order: [], pageLength: 10, destroy: true });
         }
       }, 100);
     }
   } catch (e) {
-    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Error loading promo codes.</td></tr>';
+    tbody.innerHTML =
+      '<tr><td colspan="7" class="text-center text-danger">Error loading promo codes.</td></tr>';
   }
 }
 
 async function createPromoCode(e) {
   e.preventDefault();
-  const code = document.getElementById('newPromoCodeInput')?.value.trim();
-  const discount = parseFloat(document.getElementById('discountPercentageInput')?.value);
-  const expiration = document.getElementById('expirationDateInput')?.value;
-  const minPurchase = parseFloat(document.getElementById('minPurchaseAmountInput')?.value) || 0;
-  const usageLimit = parseInt(document.getElementById('usageLimitInput')?.value) || 50;
-  const msgDiv = document.getElementById('createPromoCodeMessage');
+  const code = document.getElementById("newPromoCodeInput")?.value.trim();
+  const discount = parseFloat(
+    document.getElementById("discountPercentageInput")?.value,
+  );
+  const expiration = document.getElementById("expirationDateInput")?.value;
+  const minPurchase =
+    parseFloat(document.getElementById("minPurchaseAmountInput")?.value) || 0;
+  const usageLimit =
+    parseInt(document.getElementById("usageLimitInput")?.value) || 50;
+  const msgDiv = document.getElementById("createPromoCodeMessage");
   if (!code || !discount || !expiration) {
-    msgDiv.textContent = 'Please fill in all required fields.';
-    msgDiv.className = 'text-danger';
+    msgDiv.textContent = "Please fill in all required fields.";
+    msgDiv.className = "text-danger";
     return;
   }
   try {
-    const response = await fetch('http://localhost:3000/api/promocodes/create', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        code,
-        discountPercentage: discount / 100,
-        expirationDate: expiration,
-        minPurchaseAmount: minPurchase,
-        usageLimit
-      })
-    });
+    const response = await fetch(
+      "http://localhost:3000/api/promocodes/create",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code,
+          discountPercentage: discount / 100,
+          expirationDate: expiration,
+          minPurchaseAmount: minPurchase,
+          usageLimit,
+        }),
+      },
+    );
     const data = await response.json();
     if (response.ok && data.code) {
-      msgDiv.textContent = 'Promo code created!';
-      msgDiv.className = 'text-success';
+      msgDiv.textContent = "Promo code created!";
+      msgDiv.className = "text-success";
       e.target.reset();
       renderPromoCodeTable();
     } else {
-      msgDiv.textContent = data.message || 'Failed to create promo code.';
-      msgDiv.className = 'text-danger';
+      msgDiv.textContent = data.message || "Failed to create promo code.";
+      msgDiv.className = "text-danger";
     }
   } catch (err) {
-    msgDiv.textContent = 'Error creating promo code.';
-    msgDiv.className = 'text-danger';
+    msgDiv.textContent = "Error creating promo code.";
+    msgDiv.className = "text-danger";
   }
 }
 
-async function deletePromoCode(id) {
-  if (!confirm('Delete this promo code?')) return;
-  try {
-    const response = await fetch(`http://localhost:3000/api/promocodes/${id}`, { method: 'DELETE' });
-    const data = await response.json();
-    if (response.ok) {
-      showAlert('Promo code deleted.', 'success');
-      renderPromoCodeTable();
+function requireConfirmModal(title, message, onConfirm, options = {}) {
+  if (typeof window.showConfirm !== "function") {
+    if (typeof showToast === "function") {
+      showToast(
+        "Confirmation dialog is unavailable. Please refresh and try again.",
+        "warning",
+      );
     } else {
-      showAlert(data.message || 'Failed to delete promo code.', 'error');
+      console.warn("Confirmation dialog is unavailable.");
     }
-  } catch (err) {
-    showAlert('Error deleting promo code.', 'error');
+    return;
   }
+  window.showConfirm(title, message, onConfirm, options);
+}
+
+async function deletePromoCode(id) {
+  requireConfirmModal(
+    "Confirm Deletion",
+    "Delete this promo code?",
+    async function () {
+      try {
+        const response = await fetch(
+          `http://localhost:3000/api/promocodes/${id}`,
+          { method: "DELETE" },
+        );
+        const data = await response.json();
+        if (response.ok) {
+          showAlert("Promo code deleted.", "success");
+          renderPromoCodeTable();
+        } else {
+          showAlert(data.message || "Failed to delete promo code.", "error");
+        }
+      } catch (err) {
+        showAlert("Error deleting promo code.", "error");
+      }
+    },
+    { confirmText: "Delete", cancelText: "Cancel", type: "danger" },
+  );
 }
 
 window.renderPromoCodeTable = renderPromoCodeTable;
@@ -353,47 +407,49 @@ window.createPromoCode = createPromoCode;
 window.deletePromoCode = deletePromoCode;
 // --- Blocked Dates Form Submission (Universal) ---
 function setupBlockDateForm() {
-  const form = document.getElementById('blockDateForm');
+  const form = document.getElementById("blockDateForm");
   if (!form) return;
-  form.addEventListener('submit', async (e) => {
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const startDate = document.getElementById('blockStartDate')?.value;
-    const endDate = document.getElementById('blockEndDate')?.value;
-    const reason = document.getElementById('blockReason')?.value;
+    const startDate = document.getElementById("blockStartDate")?.value;
+    const endDate = document.getElementById("blockEndDate")?.value;
+    const reason = document.getElementById("blockReason")?.value;
     // Service checkboxes (optional)
     let serviceIds = [];
-    const serviceCheckboxes = document.querySelectorAll('#serviceCheckboxes input[type="checkbox"]:checked');
-    serviceCheckboxes.forEach(cb => serviceIds.push(cb.value));
+    const serviceCheckboxes = document.querySelectorAll(
+      '#serviceCheckboxes input[type="checkbox"]:checked',
+    );
+    serviceCheckboxes.forEach((cb) => serviceIds.push(cb.value));
     const appliesToAll = serviceIds.length === 0;
     if (!startDate || !endDate || !reason) {
-      showAlert('Please fill in all required fields.', 'error');
+      showAlert("Please fill in all required fields.", "error");
       return;
     }
     try {
-      const response = await fetch('http://localhost:3000/api/blocked-dates', {
-        method: 'POST',
+      const response = await fetch("http://localhost:3000/api/blocked-dates", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${typeof getAuthToken === 'function' ? getAuthToken() : (window.getAuthToken && window.getAuthToken()) || ''}`
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${typeof getAuthToken === "function" ? getAuthToken() : (window.getAuthToken && window.getAuthToken()) || ""}`,
         },
         body: JSON.stringify({
           startDate,
           endDate,
           reason,
           serviceIds,
-          appliesToAll
-        })
+          appliesToAll,
+        }),
       });
       const data = await response.json();
       if (data.success) {
-        showAlert('Blocked date added.', 'success');
+        showAlert("Blocked date added.", "success");
         form.reset();
-        if (typeof loadBlockedDates === 'function') loadBlockedDates();
+        if (typeof loadBlockedDates === "function") loadBlockedDates();
       } else {
-        showAlert(data.message || 'Failed to block date.', 'error');
+        showAlert(data.message || "Failed to block date.", "error");
       }
     } catch (err) {
-      showAlert('Error blocking date.', 'error');
+      showAlert("Error blocking date.", "error");
     }
   });
 }
@@ -403,23 +459,25 @@ window.setupBlockDateForm = setupBlockDateForm;
 // --- Blocked Dates (Universal) ---
 async function loadBlockedDates() {
   // Support both admin (blockedDatesList) and manager (blocked-dates-list) IDs
-  const list = document.getElementById("blocked-dates-list") || document.getElementById("blockedDatesList");
+  const list =
+    document.getElementById("blocked-dates-list") ||
+    document.getElementById("blockedDatesList");
   if (!list) return;
   try {
     const response = await fetch("http://localhost:3000/api/blocked-dates");
     const data = await response.json();
-    
+
     if (data.success && data.blockedDates.length > 0) {
       // Fetch services to map IDs to names
-      const servicesResponse = await fetch('/api/services/admin/all');
+      const servicesResponse = await fetch("/api/services/admin/all");
       const services = await servicesResponse.json();
       const serviceMap = {};
       if (Array.isArray(services)) {
-        services.forEach(s => {
+        services.forEach((s) => {
           serviceMap[s._id] = s.name;
         });
       }
-      
+
       // Create table format
       let html = `
         <table class="table table-bordered table-hover" style="width: 100%; margin-top: 1rem;">
@@ -433,12 +491,15 @@ async function loadBlockedDates() {
           </thead>
           <tbody>
       `;
-      
-      data.blockedDates.forEach(bd => {
-        const servicesList = (bd.serviceIds && bd.serviceIds.length > 0 && !bd.appliesToAllServices) 
-          ? bd.serviceIds.map(sid => serviceMap[sid] || 'Unknown').join(', ')
-          : '<em>All Services</em>';
-        
+
+      data.blockedDates.forEach((bd) => {
+        const servicesList =
+          bd.serviceIds && bd.serviceIds.length > 0 && !bd.appliesToAllServices
+            ? bd.serviceIds
+                .map((sid) => serviceMap[sid] || "Unknown")
+                .join(", ")
+            : "<em>All Services</em>";
+
         html += `
           <tr>
             <td>${formatDate(bd.startDate)}</td>
@@ -450,37 +511,50 @@ async function loadBlockedDates() {
           </tr>
         `;
       });
-      
+
       html += `
           </tbody>
         </table>
       `;
-      
+
       list.innerHTML = html;
     } else {
-      list.innerHTML = '<div class="alert alert-info">No blocked dates yet.</div>';
+      list.innerHTML =
+        '<div class="alert alert-info">No blocked dates yet.</div>';
     }
-  } catch(e) {
-    list.innerHTML = '<div class="alert alert-danger">Error loading blocked dates.</div>';
+  } catch (e) {
+    list.innerHTML =
+      '<div class="alert alert-danger">Error loading blocked dates.</div>';
   }
 }
 
 async function unblockDate(blockedDateId) {
-  if (!confirm("Remove this blocked date?")) return;
-  try {
-    const response = await fetch(`http://localhost:3000/api/blocked-dates/${blockedDateId}`, {
-      method: "DELETE",
-      headers: { "Authorization": `Bearer ${typeof getAuthToken === 'function' ? getAuthToken() : (window.getAuthToken && window.getAuthToken()) || ''}` }
-    });
-    if (response.ok) {
-      showAlert("Blocked date removed.", "success");
-      loadBlockedDates();
-    } else {
-      showAlert("Failed to remove blocked date.", "error");
-    }
-  } catch (e) {
-    showAlert("Error removing blocked date.", "error");
-  }
+  requireConfirmModal(
+    "Confirm Removal",
+    "Remove this blocked date?",
+    async function () {
+      try {
+        const response = await fetch(
+          `http://localhost:3000/api/blocked-dates/${blockedDateId}`,
+          {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${typeof getAuthToken === "function" ? getAuthToken() : (window.getAuthToken && window.getAuthToken()) || ""}`,
+            },
+          },
+        );
+        if (response.ok) {
+          showAlert("Blocked date removed.", "success");
+          loadBlockedDates();
+        } else {
+          showAlert("Failed to remove blocked date.", "error");
+        }
+      } catch (e) {
+        showAlert("Error removing blocked date.", "error");
+      }
+    },
+    { confirmText: "Remove", cancelText: "Cancel", type: "danger" },
+  );
 }
 
 // Expose for global use
@@ -510,9 +584,7 @@ const navLinks = {
     { text: "Reviews", href: "feedback.html" },
     { text: "Contact Us", href: "contact.html" },
   ],
-  admin: [
-    { text: "Admin Dashboard", href: "/admin/admin-dashboard.html" },
-  ],
+  admin: [{ text: "Admin Dashboard", href: "/admin/admin-dashboard.html" }],
   manager: [
     { text: "Manager Dashboard", href: "/manager/manager-dashboard.html" },
   ],
@@ -577,7 +649,11 @@ function showAlert(message, type = "info") {
   if (typeof showToast === "function") {
     showToast(message, typeMap[type] || "info");
   } else if (typeof showModal === "function") {
-    showModal(type.charAt(0).toUpperCase() + type.slice(1), `<p>${message}</p>`, typeMap[type] || "info");
+    showModal(
+      type.charAt(0).toUpperCase() + type.slice(1),
+      `<p>${message}</p>`,
+      typeMap[type] || "info",
+    );
   }
 }
 
@@ -603,7 +679,9 @@ async function fetchServices() {
 }
 
 function getAuthToken() {
-  return sessionStorage.getItem("token") || sessionStorage.getItem("authToken") || "";
+  return (
+    sessionStorage.getItem("token") || sessionStorage.getItem("authToken") || ""
+  );
 }
 
 function getLoggedInUser() {
@@ -658,9 +736,16 @@ function renderNavigation() {
   const currentPath = window.location.pathname;
 
   // Role enforcement for admin pages
-  if (currentPath.includes("admin-dashboard.html") || currentPath.includes("user-management.html")) {
+  if (
+    currentPath.includes("admin-dashboard.html") ||
+    currentPath.includes("user-management.html")
+  ) {
     if (roleFromStorage !== "public") currentRoleToUse = "admin";
-  } else if ((currentPath.includes("login.html") || currentPath.includes("register.html")) && roleFromStorage !== "public") {
+  } else if (
+    (currentPath.includes("login.html") ||
+      currentPath.includes("register.html")) &&
+    roleFromStorage !== "public"
+  ) {
     window.location.href = "index.html";
     return;
   }
@@ -700,11 +785,13 @@ function renderNavigation() {
     if (roleFromStorage !== "public") {
       const profileDiv = document.createElement("div");
       profileDiv.classList.add("profile-dropdown");
-      
+
       // Get logged-in user's full name
-      const loggedInUserStr = sessionStorage.getItem('loggedInUser');
-      const userName = loggedInUserStr ? JSON.parse(loggedInUserStr).full_name || 'User' : 'User';
-      
+      const loggedInUserStr = sessionStorage.getItem("loggedInUser");
+      const userName = loggedInUserStr
+        ? JSON.parse(loggedInUserStr).full_name || "User"
+        : "User";
+
       profileDiv.innerHTML = `
         <button id="profile-icon" class="icon-button" aria-expanded="false" aria-controls="profile-menu">
           <span style="font-size: 1.5rem;">👤</span>
@@ -747,12 +834,12 @@ function renderFooterQuickLinks() {
 
 // Render complete footer for all pages
 function renderCompleteFooter() {
-  const footer = document.querySelector('footer');
+  const footer = document.querySelector("footer");
   if (!footer) return;
-  
+
   const role = getCurrentRole();
   const quickLinks = footerQuickLinks[role] || footerQuickLinks.public;
-  
+
   footer.innerHTML = `
     <div class="footer-content">
       <div class="footer-section contact-info">
@@ -766,7 +853,7 @@ function renderCompleteFooter() {
       <div class="footer-section quick-links">
         <h3>Quick Links</h3>
         <ul>
-          ${quickLinks.map(link => `<li><a href="${link.href}">${link.text}</a></li>`).join('')}
+          ${quickLinks.map((link) => `<li><a href="${link.href}">${link.text}</a></li>`).join("")}
         </ul>
       </div>
 
@@ -785,14 +872,18 @@ function renderCompleteFooter() {
       </p>
     </div>
   `;
-  
+
   // Attach terms link handler
   setTimeout(() => {
-    const termsLink = document.getElementById('termsLinkFooter');
-    if (termsLink && typeof showModal === 'function') {
-      termsLink.addEventListener('click', function(e) {
+    const termsLink = document.getElementById("termsLinkFooter");
+    if (termsLink && typeof showModal === "function") {
+      termsLink.addEventListener("click", function (e) {
         e.preventDefault();
-        showModal('Terms and Conditions', '<img src="images/terms.png" alt="Terms and Conditions" style="max-width:100%;height:auto;display:block;margin:0 auto;">', 'info');
+        showModal(
+          "Terms and Conditions",
+          '<img src="images/terms.png" alt="Terms and Conditions" style="max-width:100%;height:auto;display:block;margin:0 auto;">',
+          "info",
+        );
       });
     }
   }, 0);
@@ -808,7 +899,10 @@ function attachDropdownToggle() {
       profileButton.setAttribute("aria-expanded", !isExpanded);
     });
     window.addEventListener("click", (event) => {
-      if (!event.target.matches("#profile-icon") && !event.target.closest(".profile-dropdown")) {
+      if (
+        !event.target.matches("#profile-icon") &&
+        !event.target.closest(".profile-dropdown")
+      ) {
         if (profileMenu.classList.contains("show-dropdown")) {
           profileMenu.classList.remove("show-dropdown");
           profileButton.setAttribute("aria-expanded", "false");
@@ -825,7 +919,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   window.__carouselInitialized = true;
 
   await fetchServices();
-  
+
   // Password toggle
   const passwordToggles = document.querySelectorAll(".password-toggle");
   passwordToggles.forEach((button) => {
@@ -858,7 +952,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       sectionButtons.forEach((btn) => btn.classList.remove("active"));
       carousels.forEach((carousel) => carousel.classList.remove("active"));
       button.classList.add("active");
-      const activeCarousel = document.querySelector(`.amenities-carousel[data-section="${sectionName}"]`);
+      const activeCarousel = document.querySelector(
+        `.amenities-carousel[data-section="${sectionName}"]`,
+      );
       if (activeCarousel) {
         activeCarousel.classList.add("active");
         const slides = activeCarousel.querySelectorAll(".carousel-slide");
@@ -904,12 +1000,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 function navigateCarousel(carousel, direction) {
   const slides = carousel.querySelectorAll(".carousel-slide");
   if (slides.length === 0) return;
-  let currentIndex = Array.from(slides).findIndex((slide) => slide.classList.contains("active"));
+  let currentIndex = Array.from(slides).findIndex((slide) =>
+    slide.classList.contains("active"),
+  );
   const newIndex = (currentIndex + direction + slides.length) % slides.length;
-  
+
   // Prevent navigation if already animating
   if (carousel.getAttribute("data-animating") === "true") return;
-  
+
   carousel.setAttribute("data-animating", "true");
   slides.forEach((slide) => slide.classList.remove("active"));
   slides[newIndex].classList.add("active");
@@ -920,48 +1018,51 @@ function navigateCarousel(carousel, direction) {
 
 // Expose globals
 // Open Send Email Modal
-window.openSendEmailModal = function(reservationId, email) {
-  const modal = document.getElementById('sendEmailModal');
+window.openSendEmailModal = function (reservationId, email) {
+  const modal = document.getElementById("sendEmailModal");
   if (!modal) return;
-  document.getElementById('emailReservationId').value = reservationId;
-  document.getElementById('emailSubject').value = '';
-  document.getElementById('emailBody').value = '';
-  document.getElementById('sendEmailStatus').textContent = '';
+  document.getElementById("emailReservationId").value = reservationId;
+  document.getElementById("emailSubject").value = "";
+  document.getElementById("emailBody").value = "";
+  document.getElementById("sendEmailStatus").textContent = "";
   if (window.bootstrap && window.bootstrap.Modal) {
     const bsModal = window.bootstrap.Modal.getOrCreateInstance(modal);
     bsModal.show();
   } else {
-    modal.style.display = 'block';
+    modal.style.display = "block";
   }
 };
 
 // Send Email Handler
-document.addEventListener('DOMContentLoaded', function() {
-  const sendEmailForm = document.getElementById('sendEmailForm');
+document.addEventListener("DOMContentLoaded", function () {
+  const sendEmailForm = document.getElementById("sendEmailForm");
   if (sendEmailForm) {
-    sendEmailForm.addEventListener('submit', async function(e) {
+    sendEmailForm.addEventListener("submit", async function (e) {
       e.preventDefault();
-      const reservationId = document.getElementById('emailReservationId').value;
-      const subject = document.getElementById('emailSubject').value;
-      const body = document.getElementById('emailBody').value;
-      const statusDiv = document.getElementById('sendEmailStatus');
-      statusDiv.textContent = 'Sending...';
+      const reservationId = document.getElementById("emailReservationId").value;
+      const subject = document.getElementById("emailSubject").value;
+      const body = document.getElementById("emailBody").value;
+      const statusDiv = document.getElementById("sendEmailStatus");
+      statusDiv.textContent = "Sending...";
       try {
-        const res = await fetch('http://localhost:3000/api/reservations/send-email', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${getAuthToken()}`
+        const res = await fetch(
+          "http://localhost:3000/api/reservations/send-email",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${getAuthToken()}`,
+            },
+            body: JSON.stringify({ reservationId, subject, body }),
           },
-          body: JSON.stringify({ reservationId, subject, body })
-        });
+        );
         if (res.ok) {
-          statusDiv.textContent = 'Email sent successfully!';
+          statusDiv.textContent = "Email sent successfully!";
         } else {
-          statusDiv.textContent = 'Failed to send email.';
+          statusDiv.textContent = "Failed to send email.";
         }
       } catch (err) {
-        statusDiv.textContent = 'Error sending email.';
+        statusDiv.textContent = "Error sending email.";
       }
     });
   }
@@ -987,82 +1088,92 @@ function formatReservationDetails(r) {
   const receiptCell = r.receiptFileName
     ? `<a href="trr-backend/uploads/${r.receiptFileName}" target="_blank"><img src="trr-backend/uploads/${r.receiptFileName}" alt="Receipt" style="max-width:200px;max-height:200px;border-radius:4px;"></a>`
     : '<span class="text-muted">No receipt uploaded</span>';
-  
+
   // QR Code
   const qrCodeHTML = `
     <div style="text-align:center;">
       <button class="btn btn-outline-primary btn-sm" onclick="showReservationQRModal('${r.reservationId || r._id}')">View QR Code</button>
     </div>
   `;
-  
+
   // Financial breakdown
   const basePrice = r.basePrice || r.finalTotal || 0;
   const discount = r.discountValue || 0;
   const downpayment = r.downpaymentAmount || 0;
   const remainingBalance = r.remainingBalance || 0;
-  
+
   // Multi-amenity info
-  const multiAmenityInfo = r.isMultiAmenity 
+  const multiAmenityInfo = r.isMultiAmenity
     ? `<p style="background:#fff3cd; padding:10px; border-radius:4px;"><strong>⚠️ Multi-Amenity Group:</strong> Item ${(r.multiAmenityIndex || 0) + 1} of ${r.multiAmenityTotal || 1}</p>`
-    : '';
-  
+    : "";
+
   return `
     <div class="details-container">
       ${multiAmenityInfo}
       <div class="detail-section">
         <h6>👤 Guest Details</h6>
-        <p><strong>Name:</strong> ${escapeHtml(r.full_name || r.customer_name || 'N/A')}</p>
-        <p><strong>Email:</strong> ${escapeHtml(r.email || 'N/A')}</p>
-        <p><strong>Phone:</strong> ${escapeHtml(r.phone || r.phoneNumber || 'N/A')}</p>
-        <p><strong>Address:</strong> ${escapeHtml(r.address || 'N/A')}</p>
+        <p><strong>Name:</strong> ${escapeHtml(r.full_name || r.customer_name || "N/A")}</p>
+        <p><strong>Email:</strong> ${escapeHtml(r.email || "N/A")}</p>
+        <p><strong>Phone:</strong> ${escapeHtml(r.phone || r.phoneNumber || "N/A")}</p>
+        <p><strong>Address:</strong> ${escapeHtml(r.address || "N/A")}</p>
       </div>
       <div class="detail-section">
         <h6>🏨 Service Details</h6>
-        <p><strong>Service Type:</strong> ${escapeHtml(r.serviceType || 'N/A')}</p>
-        <p><strong>Service Name:</strong> ${escapeHtml(r.serviceName || r.serviceId || 'N/A')}</p>
-        <p><strong>Duration:</strong> ${escapeHtml(r.durationLabel || r.timeSlotLabel || 'N/A')}</p>
-        <p><strong>Number of Guests:</strong> ${r.guests || r.numberOfGuests || 'N/A'}</p>
-        ${r.checkInTimeSlot ? `<p><strong>Check-in Time Slot:</strong> ${escapeHtml(r.checkInTimeSlot)}</p>` : ''}
-        ${r.checkOutTimeSlot ? `<p><strong>Check-out Time Slot:</strong> ${escapeHtml(r.checkOutTimeSlot)}</p>` : ''}
+        <p><strong>Service Type:</strong> ${escapeHtml(r.serviceType || "N/A")}</p>
+        <p><strong>Service Name:</strong> ${escapeHtml(r.serviceName || r.serviceId || "N/A")}</p>
+        <p><strong>Duration:</strong> ${escapeHtml(r.durationLabel || r.timeSlotLabel || "N/A")}</p>
+        <p><strong>Number of Guests:</strong> ${r.guests || r.numberOfGuests || "N/A"}</p>
+        ${r.checkInTimeSlot ? `<p><strong>Check-in Time Slot:</strong> ${escapeHtml(r.checkInTimeSlot)}</p>` : ""}
+        ${r.checkOutTimeSlot ? `<p><strong>Check-out Time Slot:</strong> ${escapeHtml(r.checkOutTimeSlot)}</p>` : ""}
       </div>
       <div class="detail-section">
         <h6>💰 Financial Breakdown</h6>
         <p><strong>Base Price:</strong> ₱${parseFloat(basePrice).toLocaleString()}</p>
-        <p><strong>Discount Code:</strong> ${escapeHtml(r.discountCode || 'None')}</p>
+        <p><strong>Discount Code:</strong> ${escapeHtml(r.discountCode || "None")}</p>
         <p><strong>Discount Value:</strong> -₱${parseFloat(discount).toLocaleString()}</p>
         <p><strong>Final Total:</strong> <span style="font-size:1.2em;color:#28a745;">₱${parseFloat(r.finalTotal || 0).toLocaleString()}</span></p>
-        ${r.downpaymentAmount ? `<p><strong>Downpayment Amount Paid (50%):</strong> <span style="color:#007bff;">₱${parseFloat(r.downpaymentAmount).toLocaleString()}</span></p>` : ''}
-        ${r.remainingBalance ? `<p><strong>Remaining Balance Due at Check-in (50%):</strong> <span style="color:#ffc107;">₱${parseFloat(r.remainingBalance).toLocaleString()}</span></p>` : ''}
-        <p><strong>Payment Type:</strong> ${escapeHtml(r.paymentType || 'downpayment')}</p>
+        ${r.downpaymentAmount ? `<p><strong>Downpayment Amount Paid (50%):</strong> <span style="color:#007bff;">₱${parseFloat(r.downpaymentAmount).toLocaleString()}</span></p>` : ""}
+        ${r.remainingBalance ? `<p><strong>Remaining Balance Due at Check-in (50%):</strong> <span style="color:#ffc107;">₱${parseFloat(r.remainingBalance).toLocaleString()}</span></p>` : ""}
+        <p><strong>Payment Type:</strong> ${escapeHtml(r.paymentType || "downpayment")}</p>
       </div>
       <div class="detail-section">
         <h6>💳 Payment Details</h6>
-        <p><strong>GCash Ref #:</strong> ${escapeHtml(r.gcashReferenceNumber || 'N/A')}</p>
-        <p><strong>Payment Status:</strong> <span class="badge bg-${r.paymentStatus === 'PAID' ? 'success' : r.paymentStatus === 'PENDING' ? 'warning' : 'danger'}">${escapeHtml(r.paymentStatus || r.status || 'N/A')}</span></p>
-        ${r.paymentConfirmedAt ? `<p><strong>Payment Confirmed:</strong> ${new Date(r.paymentConfirmedAt).toLocaleString()}</p>` : ''}
+        <p><strong>GCash Ref #:</strong> ${escapeHtml(r.gcashReferenceNumber || "N/A")}</p>
+        <p><strong>Payment Status:</strong> <span class="badge bg-${r.paymentStatus === "PAID" ? "success" : r.paymentStatus === "PENDING" ? "warning" : "danger"}">${escapeHtml(r.paymentStatus || r.status || "N/A")}</span></p>
+        ${r.paymentConfirmedAt ? `<p><strong>Payment Confirmed:</strong> ${new Date(r.paymentConfirmedAt).toLocaleString()}</p>` : ""}
         <div><strong>Receipt:</strong><br>${receiptCell}</div>
       </div>
-      ${r.cancelReason ? `
+      ${
+        r.cancelReason
+          ? `
       <div class="detail-section">
         <h6>📝 Cancellation Details</h6>
         <p><strong>Reason:</strong> ${escapeHtml(r.cancelReason)}</p>
-        ${r.cancelRequestedBy ? `<p><strong>Requested By:</strong> ${escapeHtml(r.cancelRequestedBy)}</p>` : ''}
-        ${r.cancelRequestedByEmail ? `<p><strong>Email:</strong> ${escapeHtml(r.cancelRequestedByEmail)}</p>` : ''}
-        ${r.cancelRequestedAt ? `<p><strong>Requested At:</strong> ${new Date(r.cancelRequestedAt).toLocaleString()}</p>` : ''}
+        ${r.cancelRequestedBy ? `<p><strong>Requested By:</strong> ${escapeHtml(r.cancelRequestedBy)}</p>` : ""}
+        ${r.cancelRequestedByEmail ? `<p><strong>Email:</strong> ${escapeHtml(r.cancelRequestedByEmail)}</p>` : ""}
+        ${r.cancelRequestedAt ? `<p><strong>Requested At:</strong> ${new Date(r.cancelRequestedAt).toLocaleString()}</p>` : ""}
       </div>
-      ` : ''}
+      `
+          : ""
+      }
       <div class="detail-section">
         <h6>⏱️ Timeline</h6>
-        <p><strong>Date Booked:</strong> ${r.dateCreated ? new Date(r.dateCreated).toLocaleString() : 'N/A'}</p>
-        <p><strong>Check-in:</strong> ${r.check_in ? new Date(r.check_in).toLocaleString() : 'N/A'}</p>
-        <p><strong>Check-out:</strong> ${r.check_out ? new Date(r.check_out).toLocaleString() : 'N/A'}</p>
-        ${r.checkoutPerformedBy ? `<p><strong>Checked out by:</strong> ${escapeHtml(r.checkoutPerformedBy)}</p>` : ''}
+        <p><strong>Date Booked:</strong> ${r.dateCreated ? new Date(r.dateCreated).toLocaleString() : "N/A"}</p>
+        <p><strong>Check-in:</strong> ${r.check_in ? new Date(r.check_in).toLocaleString() : "N/A"}</p>
+        <p><strong>Check-out:</strong> ${r.check_out ? new Date(r.check_out).toLocaleString() : "N/A"}</p>
+        ${r.checkoutPerformedBy ? `<p><strong>Checked out by:</strong> ${escapeHtml(r.checkoutPerformedBy)}</p>` : ""}
       </div>
       <div class="detail-section">
         <h6>🎁 Inclusions</h6>
-        ${Array.isArray(r.inclusions) && r.inclusions.length > 0 
-          ? '<ul class="mb-0">' + r.inclusions.map(inc => `<li>${escapeHtml(inc)}</li>`).join('') + '</ul>'
-          : '<p class="text-muted">No inclusions listed</p>'}
+        ${
+          Array.isArray(r.inclusions) && r.inclusions.length > 0
+            ? '<ul class="mb-0">' +
+              r.inclusions
+                .map((inc) => `<li>${escapeHtml(inc)}</li>`)
+                .join("") +
+              "</ul>"
+            : '<p class="text-muted">No inclusions listed</p>'
+        }
       </div>
       <div class="detail-section">
         <h6>🔖 QR Code</h6>
@@ -1073,191 +1184,286 @@ function formatReservationDetails(r) {
 }
 
 function toggleReservationDetails(btn, reservationId) {
-  const row = btn.closest('tr');
+  const row = btn.closest("tr");
   const nextRow = row.nextElementSibling;
-  
+
   // If already expanded, collapse it
-  if (nextRow && nextRow.classList.contains('reservation-details-row')) {
+  if (nextRow && nextRow.classList.contains("reservation-details-row")) {
     nextRow.remove();
-    btn.textContent = '+';
-    btn.classList.remove('btn-danger');
-    btn.classList.add('btn-outline-primary');
+    btn.textContent = "View More";
+    btn.classList.remove("btn-danger");
+    btn.classList.add("btn-outline-primary");
   } else {
     // Expand: find reservation data and insert detail row
-    const reservation = reservationsData.find(res => (res._id || res.reservationId) === reservationId);
+    const reservation = reservationsData.find(
+      (res) => (res._id || res.reservationId) === reservationId,
+    );
     if (reservation) {
       const detailHTML = formatReservationDetails(reservation);
-      const detailRow = document.createElement('tr');
-      detailRow.className = 'reservation-details-row';
+      const detailRow = document.createElement("tr");
+      detailRow.className = "reservation-details-row";
       detailRow.innerHTML = `<td colspan="6">${detailHTML}</td>`;
       row.after(detailRow);
-      btn.textContent = '−';
-      btn.classList.remove('btn-outline-primary');
-      btn.classList.add('btn-danger');
+      btn.textContent = "Hide";
+      btn.classList.remove("btn-outline-primary");
+      btn.classList.add("btn-danger");
     }
   }
 }
 
 async function renderAdminReservations() {
-    const tbody = document.getElementById("admin-reservation-list");
-    if (!tbody) return;
-    tbody.innerHTML = '<tr><td colspan="6" class="text-center">Loading reservations...</td></tr>';
-       try {
-         // Fetch all reservations for admin
-         const response = await fetch("http://localhost:3000/api/reservations/allreservation");
-         const data = await response.json();
-         const allReservations = Array.isArray(data.reservations) ? data.reservations : [];
-         // Filter out CART items - only show paid/confirmed reservations
-         const reservations = allReservations.filter(res => 
-             res.status && res.status.toUpperCase() !== 'CART'
-         );
-         
-         // Store globally for expand functionality
-         reservationsData = reservations;
-         
-         // Sort by check_in date - most recent first
-         reservations.sort((a, b) => {
-           const dateA = a.check_in ? new Date(a.check_in).getTime() : 0;
-           const dateB = b.check_in ? new Date(b.check_in).getTime() : 0;
-           return dateB - dateA; // Descending order (most recent first)
-         });
-         
-         if (reservations.length === 0) {
-           tbody.innerHTML = '<tr><td colspan="6" class="text-center">No reservations found.</td></tr>';
-           return;
-         }
+  const tbody = document.getElementById("admin-reservation-list");
+  if (!tbody) return;
+  tbody.innerHTML =
+    '<tr><td colspan="6" class="text-center">Loading reservations...</td></tr>';
 
-         const cancellationList = document.getElementById('cancellation-requests-list');
-         const cancellationCountBadge = document.getElementById('cancellationCountBadge');
-         if (cancellationList && cancellationCountBadge) {
-           const cancelRequests = reservations
-             .filter(r => r.cancelReason)
-             .sort((a, b) => {
-               const dateA = a.cancelRequestedAt ? new Date(a.cancelRequestedAt).getTime() : 0;
-               const dateB = b.cancelRequestedAt ? new Date(b.cancelRequestedAt).getTime() : 0;
-               return dateB - dateA;
-             });
+  function moveReservationFilters() {
+    const statusWrapper = document.getElementById(
+      "reservation-status-filter-wrapper",
+    );
+    const refreshWrapper = document.getElementById(
+      "reservation-refresh-wrapper",
+    );
+    const filterContainer = document.getElementById(
+      "admin-reservations-table_filter",
+    );
+    if (!filterContainer) return;
+    if (statusWrapper && !filterContainer.contains(statusWrapper)) {
+      filterContainer.prepend(statusWrapper);
+    }
+    if (refreshWrapper) {
+      const searchInput = filterContainer.querySelector('input[type="search"]');
+      const searchLabel = searchInput ? searchInput.closest("label") : null;
+      if (!filterContainer.contains(refreshWrapper)) {
+        if (searchLabel) {
+          searchLabel.insertAdjacentElement("afterend", refreshWrapper);
+        } else {
+          filterContainer.appendChild(refreshWrapper);
+        }
+      }
+    }
+    if (statusWrapper) {
+      statusWrapper.classList.remove("d-none");
+    }
+    if (refreshWrapper) {
+      refreshWrapper.classList.remove("d-none");
+    }
+  }
 
-           cancellationCountBadge.textContent = cancelRequests.length.toString();
+  try {
+    // Fetch all reservations for admin
+    const response = await fetch(
+      "http://localhost:3000/api/reservations/allreservation",
+    );
+    const data = await response.json();
+    const allReservations = Array.isArray(data.reservations)
+      ? data.reservations
+      : [];
 
-           if (cancelRequests.length === 0) {
-             cancellationList.innerHTML = '<div class="text-muted">No cancellation requests yet.</div>';
-           } else {
-             cancellationList.innerHTML = cancelRequests.slice(0, 10).map(r => {
-               const requestedAt = r.cancelRequestedAt ? new Date(r.cancelRequestedAt).toLocaleString() : 'N/A';
-               const displayName = escapeHtml(r.full_name || r.customer_name || 'Customer');
-               const displayService = escapeHtml(r.serviceName || r.serviceType || 'Reservation');
-               const displayReason = escapeHtml(r.cancelReason || 'No reason provided');
-               const displayId = escapeHtml(r.reservationId || r._id || 'N/A');
+    // Get filter value
+    const filterSelect = document.getElementById("reservation-status-filter");
+    const filterValue = filterSelect ? filterSelect.value : "all";
 
-               return `
-                <div style="border:1px solid #f1d4cc;border-radius:10px;padding:12px 14px;margin-bottom:10px;background:#fff7f5;">
-                  <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-                    <strong style="color:#b4533a;">${displayName}</strong>
-                    <span style="color:#6b7280;font-size:0.85rem;">${requestedAt}</span>
-                  </div>
-                  <div style="color:#374151;margin-top:4px;">
-                    <strong>${displayService}</strong> · ${displayId}
-                  </div>
-                  <div style="margin-top:6px;color:#4b5563;">${displayReason}</div>
+    // Filter out CART items - only show paid/confirmed reservations
+    let reservations = allReservations.filter(
+      (res) => res.status && res.status.toUpperCase() !== "CART",
+    );
+
+    // Apply status filter
+    if (filterValue !== "all") {
+      reservations = reservations.filter((res) => {
+        const status = res.status ? res.status.toUpperCase() : "";
+        const paymentStatus = res.paymentStatus
+          ? res.paymentStatus.toUpperCase()
+          : "";
+
+        // Handle PAID filter (includes both fully paid and partially paid/downpayment)
+        if (filterValue === "PAID") {
+          return (
+            paymentStatus === "PAID" || paymentStatus === "DOWNPAYMENT_PAID"
+          );
+        }
+
+        return status === filterValue.toUpperCase();
+      });
+    }
+
+    // Store globally for expand functionality
+    reservationsData = reservations;
+
+    // Sort by check_in date - most recent first
+    reservations.sort((a, b) => {
+      const dateA = a.check_in ? new Date(a.check_in).getTime() : 0;
+      const dateB = b.check_in ? new Date(b.check_in).getTime() : 0;
+      return dateB - dateA; // Descending order (most recent first)
+    });
+
+    const cancellationList = document.getElementById(
+      "cancellation-requests-list",
+    );
+    const cancellationCountBadge = document.getElementById(
+      "cancellationCountBadge",
+    );
+    if (cancellationList && cancellationCountBadge) {
+      const cancelRequests = reservations
+        .filter((r) => r.cancelReason)
+        .sort((a, b) => {
+          const dateA = a.cancelRequestedAt
+            ? new Date(a.cancelRequestedAt).getTime()
+            : 0;
+          const dateB = b.cancelRequestedAt
+            ? new Date(b.cancelRequestedAt).getTime()
+            : 0;
+          return dateB - dateA;
+        });
+
+      cancellationCountBadge.textContent = cancelRequests.length.toString();
+
+      if (cancelRequests.length === 0) {
+        cancellationList.innerHTML =
+          '<div class="text-muted">No cancellation requests yet.</div>';
+      } else {
+        cancellationList.innerHTML = cancelRequests
+          .slice(0, 10)
+          .map((r) => {
+            const requestedAt = r.cancelRequestedAt
+              ? new Date(r.cancelRequestedAt).toLocaleString()
+              : "N/A";
+            const displayName = escapeHtml(
+              r.full_name || r.customer_name || "Customer",
+            );
+            const displayService = escapeHtml(
+              r.serviceName || r.serviceType || "Reservation",
+            );
+            const displayReason = escapeHtml(
+              r.cancelReason || "No reason provided",
+            );
+            const displayId = escapeHtml(r.reservationId || r._id || "N/A");
+
+            return `
+              <div style="border:1px solid #f1d4cc;border-radius:10px;padding:12px 14px;margin-bottom:10px;background:#fff7f5;">
+                <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+                  <strong style="color:#b4533a;">${displayName}</strong>
+                  <span style="color:#6b7280;font-size:0.85rem;">${requestedAt}</span>
                 </div>
-              `;
-             }).join('');
-           }
-         }
+                <div style="color:#374151;margin-top:4px;">
+                  <strong>${displayService}</strong> · ${displayId}
+                </div>
+                <div style="margin-top:6px;color:#4b5563;">${displayReason}</div>
+              </div>
+            `;
+          })
+          .join("");
+      }
+    }
 
-         tbody.innerHTML = reservations.map(r => {
-           // Status badge styling
-           let statusBadge = '';
-           // Check paymentStatus first for pending payments, otherwise use status
-           const displayStatus = r.paymentStatus === 'PENDING' ? 'PENDING_PAYMENT' : r.status;
-           
-           switch(displayStatus) {
-             case 'PENDING_PAYMENT':
-               statusBadge = '<span class="badge bg-warning">PENDING PAYMENT</span>';
-               break;
-             case 'PAID':
-               statusBadge = '<span class="badge bg-warning">PAID</span>';
-               break;
-             case 'CONFIRMED':
-               statusBadge = '<span class="badge bg-info">CONFIRMED</span>';
-               break;
-             case 'CHECKED_IN':
-               statusBadge = '<span class="badge bg-primary">CHECKED IN</span>';
-               break;
-             case 'COMPLETED':
-               statusBadge = '<span class="badge bg-success">COMPLETED</span>';
-               break;
-             case 'CANCELLED':
-               statusBadge = '<span class="badge bg-danger">CANCELLED</span>';
-               break;
-             case 'REJECTED':
-               statusBadge = '<span class="badge bg-danger">REJECTED</span>';
-               break;
-             default:
-               statusBadge = `<span class="badge bg-secondary">${displayStatus}</span>`;
-           }
-           
-           let actions = '';
-           // Multi-amenity indicator in actions
-           if (r.isMultiAmenity) {
-             actions += `<span class="badge bg-info me-2" title="This is part of a multi-amenity group">Multi-Item ${r.multiAmenityIndex + 1}/${r.multiAmenityTotal}</span>`;
-           }
-           
-           // Only show Accept if status is PAID and not already confirmed/completed/cancelled
-           if (r.status === 'PAID') {
-             actions += `<button class="btn btn-success btn-sm me-1" onclick="confirmReservation('${r._id}', '${escapeHtml(r.email || '')}', '${escapeHtml(r.full_name || r.customer_name || '')}')">Accept</button>`;
-           }
-           if (r.status === 'CONFIRMED') {
-             actions += `<button class="btn btn-warning btn-sm me-1" onclick="checkInReservation('${r._id}', '${escapeHtml(r.email || '')}', '${escapeHtml(r.full_name || r.customer_name || '')}')">Check-in</button>`;
-           }
-           if (r.status === 'CHECKED_IN') {
-             actions += `<button class="btn btn-secondary btn-sm me-1" onclick="checkoutReservation('${r._id}', '${escapeHtml(r.email || '')}', '${escapeHtml(r.full_name || r.customer_name || '')}')">Checkout</button>`;
-           }
-           if (r.status !== 'CANCELLED' && r.status !== 'COMPLETED') {
-             actions += `<button class="btn btn-danger btn-sm me-1" onclick="cancelReservation('${r._id}')">Cancel</button>`;
-           }
-          
-          // Add expand button to actions column
-          actions += `<button class="btn btn-sm btn-outline-primary expand-reservation-btn" onclick="toggleReservationDetails(this, '${r._id}')">+</button>`;
-          
-          return `<tr>
-            <td><strong>${r.reservationId || r._id}</strong>${r.isMultiAmenity ? `<br><small class="text-muted">Item ${r.multiAmenityIndex + 1}/${r.multiAmenityTotal}</small>` : ''}</td>
-            <td>${escapeHtml(r.full_name || r.customer_name || '')}</td>
-            <td>${r.check_in ? new Date(r.check_in).toLocaleString() : ''}</td>
+    if (reservations.length === 0) {
+      tbody.innerHTML =
+        '<tr><td colspan="6" class="text-center">No reservations found.</td></tr>';
+      moveReservationFilters();
+      return;
+    }
+
+    tbody.innerHTML = reservations
+      .map((r) => {
+        // Status badge styling
+        let statusBadge = "";
+        // Check paymentStatus first for pending payments, otherwise use status
+        const displayStatus =
+          r.paymentStatus === "PENDING" ? "PENDING_PAYMENT" : r.status;
+
+        switch (displayStatus) {
+          case "PENDING_PAYMENT":
+            statusBadge =
+              '<span class="badge bg-warning">PENDING PAYMENT</span>';
+            break;
+          case "PAID":
+            statusBadge = '<span class="badge bg-warning">PAID</span>';
+            break;
+          case "CONFIRMED":
+            statusBadge = '<span class="badge bg-info">CONFIRMED</span>';
+            break;
+          case "CHECKED_IN":
+            statusBadge = '<span class="badge bg-primary">CHECKED IN</span>';
+            break;
+          case "COMPLETED":
+            statusBadge = '<span class="badge bg-success">COMPLETED</span>';
+            break;
+          case "CANCELLED":
+            statusBadge = '<span class="badge bg-danger">CANCELLED</span>';
+            break;
+          case "REJECTED":
+            statusBadge = '<span class="badge bg-danger">REJECTED</span>';
+            break;
+          default:
+            statusBadge = `<span class="badge bg-secondary">${displayStatus}</span>`;
+        }
+
+        let actions = "";
+
+        // Only show Accept if status is PAID and not already confirmed/completed/cancelled
+        if (r.status === "PAID") {
+          actions += `<button class="btn btn-success btn-sm me-1" onclick="confirmReservation('${r._id}', '${escapeHtml(r.email || "")}', '${escapeHtml(r.full_name || r.customer_name || "")}')">Accept</button>`;
+        }
+        if (r.status === "CONFIRMED") {
+          actions += `<button class="btn btn-warning btn-sm me-1" onclick="checkInReservation('${r._id}', '${escapeHtml(r.email || "")}', '${escapeHtml(r.full_name || r.customer_name || "")}')">Check-in</button>`;
+        }
+        if (r.status === "CHECKED_IN") {
+          actions += `<button class="btn btn-secondary btn-sm me-1" onclick="checkoutReservation('${r._id}', '${escapeHtml(r.email || "")}', '${escapeHtml(r.full_name || r.customer_name || "")}')">Checkout</button>`;
+        }
+        if (r.status !== "CANCELLED" && r.status !== "COMPLETED") {
+          actions += `<button class="btn btn-danger btn-sm me-1" onclick="cancelReservation('${r._id}')">Cancel</button>`;
+        }
+
+        // Add expand button to actions column
+        actions += `<button class="btn btn-sm btn-outline-primary expand-reservation-btn" onclick="toggleReservationDetails(this, '${r._id}')">View More</button>`;
+
+        return `<tr>
+            <td><strong>${r.reservationId || r._id}</strong>${r.isMultiAmenity ? `<br><span class="badge bg-info" title="This is part of a multi-amenity group">Multi-Item ${r.multiAmenityIndex + 1}/${r.multiAmenityTotal}</span>` : ""}</td>
+            <td>${escapeHtml(r.full_name || r.customer_name || "")}</td>
+            <td>${r.check_in ? new Date(r.check_in).toLocaleString() : ""}</td>
             <td>₱${parseFloat(r.finalTotal || 0).toLocaleString()}</td>
             <td>${statusBadge}</td>
             <td>${actions}</td>
           </tr>`;
-        }).join("");
-      // Initialize DataTable after rendering
-      if (window.$ && window.$.fn && window.$.fn.DataTable) {
-        setTimeout(() => {
-          const table = $(tbody).closest('table');
-          if (table.length && !$.fn.dataTable.isDataTable(table[0])) {
-            table.DataTable({
-              order: [],
-              pageLength: 10,
-              destroy: true
-            });
-          }
-        }, 100);
-      }
-    } catch (e) {
-      tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">Error loading reservations.</td></tr>';
+      })
+      .join("");
+
+    // Initialize DataTable after rendering
+    if (window.$ && window.$.fn && window.$.fn.DataTable) {
+      setTimeout(() => {
+        const table = $(tbody).closest("table");
+        if (table.length && !$.fn.dataTable.isDataTable(table[0])) {
+          table.DataTable({
+            order: [],
+            pageLength: 10,
+            destroy: true,
+          });
+        }
+        moveReservationFilters();
+      }, 100);
+    } else {
+      moveReservationFilters();
     }
+  } catch (e) {
+    tbody.innerHTML =
+      '<tr><td colspan="6" class="text-center text-danger">Error loading reservations.</td></tr>';
+    moveReservationFilters();
+  }
+}
+
 // DataTable for users table
 function renderUsersListDataTable() {
   const tbody = document.getElementById("users-table-body");
   if (!tbody) return;
   if (window.$ && window.$.fn && window.$.fn.DataTable) {
     setTimeout(() => {
-      const table = $(tbody).closest('table');
+      const table = $(tbody).closest("table");
       if (table.length && !$.fn.dataTable.isDataTable(table[0])) {
         table.DataTable({
           order: [],
           pageLength: 10,
-          destroy: true
+          destroy: true,
         });
       }
     }, 100);
@@ -1270,7 +1476,7 @@ function renderServicesListDataTable() {
   if (!tbody) return;
   if (window.$ && window.$.fn && window.$.fn.DataTable) {
     setTimeout(() => {
-      const table = $(tbody).closest('table');
+      const table = $(tbody).closest("table");
       if (table.length) {
         if ($.fn.dataTable.isDataTable(table[0])) {
           table.DataTable().clear().destroy();
@@ -1279,9 +1485,6 @@ function renderServicesListDataTable() {
           order: [],
           pageLength: 10,
           destroy: true,
-          scrollX: true,
-          scrollY: '500px',
-          scrollCollapse: true
         });
       }
     }, 100);
@@ -1289,248 +1492,320 @@ function renderServicesListDataTable() {
 }
 
 // Expose for global use
-window.renderUsersListDataTable = renderUsersListDataTable;
-window.renderServicesListDataTable = renderServicesListDataTable;
-}
-
-// Expose globally
 window.renderAdminReservations = renderAdminReservations;
 window.toggleReservationDetails = toggleReservationDetails;
-
-/**
- * admin-system.js
- * Handles Admin and Manager Dashboard functionality.
- */
+window.renderUsersListDataTable = renderUsersListDataTable;
+window.renderServicesListDataTable = renderServicesListDataTable;
 
 // --- User Management ---
 
 // Store current view mode for users list
-let usersListViewMode = 'active'; // 'active' or 'archived'
+let usersListViewMode = "active"; // 'active' or 'archived'
 
-async function renderUsersList(viewMode = 'active') {
+async function renderUsersList(viewMode = "active") {
   const tbody = document.getElementById("users-table-body");
   if (!tbody) return;
 
   // Update view mode
   usersListViewMode = viewMode;
-  
+
   try {
     // Static role ID to name mapping
     const roleMap = {
-      '6911d923e3fb923eed25f44d': 'admin',
-      '6911d910e3fb923eed25f44c': 'manager',
-      '6911d7b841d151b05bf687c7': 'customer'
+      "6911d923e3fb923eed25f44d": "admin",
+      "6911d910e3fb923eed25f44c": "manager",
+      "6911d7b841d151b05bf687c7": "customer",
     };
 
     // Build query parameters based on view mode
-    const queryParam = viewMode === 'archived' ? '?archived=true' : '?archived=false';
-    
-    const response = await fetch(`http://localhost:3000/api/users${queryParam}`, {
-      headers: { "Authorization": `Bearer ${getAuthToken()}` }
-    });
+    const queryParam =
+      viewMode === "archived" ? "?archived=true" : "?archived=false";
+
+    const response = await fetch(
+      `http://localhost:3000/api/users${queryParam}`,
+      {
+        headers: { Authorization: `Bearer ${getAuthToken()}` },
+      },
+    );
     const users = await response.json();
     if (Array.isArray(users)) {
       // Build a map for quick lookup by ID for editing
       window._adminUsersById = {};
-      
+
       if (users.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted">${viewMode === 'archived' ? 'No archived users.' : 'No active users.'}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted">${viewMode === "archived" ? "No archived users." : "No active users."}</td></tr>`;
         return;
       }
-      
-      tbody.innerHTML = users.map(user => {
-        window._adminUsersById[user._id] = user;
-        // Compose full name
-        const name = [user.first_name, user.middle_name, user.last_name].filter(Boolean).join(' ');
-        // Status
-        const status = user.isActive ? '<span class="badge bg-success">Active</span>' : '<span class="badge bg-secondary">Inactive</span>';
-        // Role name
-        const roleName = roleMap[user.role_id] || user.role_id || '';
-        
-        // Different buttons based on view mode
-        let actionButtons = '';
-        if (viewMode === 'archived') {
-          actionButtons = `<button class="btn btn-sm btn-primary" onclick="restoreUser('${user._id}', '${escapeHtml(name)}')">Restore</button>`;
-        } else {
-          actionButtons = `
-            ${user.isActive 
-              ? `<button class="btn btn-sm btn-warning" onclick="deactivateUser('${user._id}', '${escapeHtml(name)}')">Deactivate</button>`
-              : `<button class="btn btn-sm btn-success" onclick="reactivateUser('${user._id}', '${escapeHtml(name)}')">Reactivate</button>`
+
+      tbody.innerHTML = users
+        .map((user) => {
+          window._adminUsersById[user._id] = user;
+          // Compose full name
+          const name = [user.first_name, user.middle_name, user.last_name]
+            .filter(Boolean)
+            .join(" ");
+          // Status
+          const status = user.isActive
+            ? '<span class="badge bg-success">Active</span>'
+            : '<span class="badge bg-secondary">Inactive</span>';
+          // Role name
+          const roleName = roleMap[user.role_id] || user.role_id || "";
+
+          // Different buttons based on view mode
+          let actionButtons = "";
+          if (viewMode === "archived") {
+            actionButtons = `<button class="btn btn-sm btn-primary" onclick="restoreUser('${user._id}', '${escapeHtml(name)}')">Restore</button>`;
+          } else {
+            actionButtons = `
+            ${
+              user.isActive
+                ? `<button class="btn btn-sm btn-warning" onclick="deactivateUser('${user._id}', '${escapeHtml(name)}')">Deactivate</button>`
+                : `<button class="btn btn-sm btn-success" onclick="reactivateUser('${user._id}', '${escapeHtml(name)}')">Reactivate</button>`
             }
             <button class="btn btn-sm btn-danger" onclick="archiveUser('${user._id}', '${escapeHtml(name)}')">Archive</button>
           `;
-        }
-        
-        return `
+          }
+
+          return `
           <tr>
             <td>${escapeHtml(user._id)}</td>
             <td>${escapeHtml(name)}</td>
             <td>${escapeHtml(user.email)}</td>
-            <td>${escapeHtml(user.phone || '')}</td>
+            <td>${escapeHtml(user.phone || "")}</td>
             <td>${escapeHtml(roleName)}</td>
             <td>${status}</td>
             <td>${actionButtons}</td>
           </tr>
         `;
-      }).join("");
-      if (typeof renderUsersListDataTable === 'function') {
+        })
+        .join("");
+      if (typeof renderUsersListDataTable === "function") {
         setTimeout(() => renderUsersListDataTable(), 100);
       }
     } else {
-      tbody.innerHTML = '<tr><td colspan="7" class="text-danger">Failed to load users.</td></tr>';
+      tbody.innerHTML =
+        '<tr><td colspan="7" class="text-danger">Failed to load users.</td></tr>';
     }
   } catch (error) {
     console.error("Error fetching users:", error);
-    tbody.innerHTML = '<tr><td colspan="7" class="text-danger">Error loading users.</td></tr>';
+    tbody.innerHTML =
+      '<tr><td colspan="7" class="text-danger">Error loading users.</td></tr>';
   }
 }
 
 async function deleteUser(userId) {
-  if (!confirm("Are you sure you want to delete this user?")) return;
-  try {
-    const response = await fetch(`http://localhost:3000/api/users/${userId}`, {
-      method: "DELETE",
-      headers: { "Authorization": `Bearer ${getAuthToken()}` }
-    });
-    if (response.ok) {
-      showAlert("User deleted.", "success");
-      renderUsersList();
-    }
-  } catch (error) {
-    showAlert("Error deleting user.", "error");
-  }
+  requireConfirmModal(
+    "Confirm Deletion",
+    "Are you sure you want to delete this user?",
+    async function () {
+      try {
+        const response = await fetch(
+          `http://localhost:3000/api/users/${userId}`,
+          {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${getAuthToken()}` },
+          },
+        );
+        if (response.ok) {
+          showAlert("User deleted.", "success");
+          renderUsersList();
+        }
+      } catch (error) {
+        showAlert("Error deleting user.", "error");
+      }
+    },
+    { confirmText: "Delete", cancelText: "Cancel", type: "danger" },
+  );
 }
 
 async function deactivateUser(userId, userName) {
-  if (!confirm(`Are you sure you want to deactivate ${userName}? They will no longer be able to log in.`)) return;
-  try {
-    const response = await fetch(`http://localhost:3000/api/auth/admin/accounts/${userId}/deactivate`, {
-      method: "PUT",
-      headers: { 
-        "Authorization": `Bearer ${getAuthToken()}`,
-        "Content-Type": "application/json"
+  requireConfirmModal(
+    "Confirm Deactivation",
+    `Are you sure you want to deactivate ${userName}? They will no longer be able to log in.`,
+    async function () {
+      try {
+        const response = await fetch(
+          `http://localhost:3000/api/auth/admin/accounts/${userId}/deactivate`,
+          {
+            method: "PUT",
+            headers: {
+              Authorization: `Bearer ${getAuthToken()}`,
+              "Content-Type": "application/json",
+            },
+          },
+        );
+        if (response.ok) {
+          showAlert(`${userName} has been deactivated.`, "success");
+          renderUsersList(usersListViewMode);
+        } else {
+          showAlert("Failed to deactivate user.", "error");
+        }
+      } catch (error) {
+        showAlert("Error deactivating user.", "error");
       }
-    });
-    if (response.ok) {
-      showAlert(`${userName} has been deactivated.`, "success");
-      renderUsersList(usersListViewMode);
-    } else {
-      showAlert("Failed to deactivate user.", "error");
-    }
-  } catch (error) {
-    showAlert("Error deactivating user.", "error");
-  }
+    },
+    { confirmText: "Deactivate", cancelText: "Cancel", type: "warning" },
+  );
 }
 
 async function reactivateUser(userId, userName) {
-  if (!confirm(`Are you sure you want to reactivate ${userName}?`)) return;
-  try {
-    const response = await fetch(`http://localhost:3000/api/auth/admin/accounts/${userId}/activate`, {
-      method: "PUT",
-      headers: { 
-        "Authorization": `Bearer ${getAuthToken()}`,
-        "Content-Type": "application/json"
+  requireConfirmModal(
+    "Confirm Reactivation",
+    `Are you sure you want to reactivate ${userName}?`,
+    async function () {
+      try {
+        const response = await fetch(
+          `http://localhost:3000/api/auth/admin/accounts/${userId}/activate`,
+          {
+            method: "PUT",
+            headers: {
+              Authorization: `Bearer ${getAuthToken()}`,
+              "Content-Type": "application/json",
+            },
+          },
+        );
+        if (response.ok) {
+          showAlert(`${userName} has been reactivated.`, "success");
+          renderUsersList(usersListViewMode);
+        } else {
+          showAlert("Failed to reactivate user.", "error");
+        }
+      } catch (error) {
+        showAlert("Error reactivating user.", "error");
       }
-    });
-    if (response.ok) {
-      showAlert(`${userName} has been reactivated.`, "success");
-      renderUsersList(usersListViewMode);
-    } else {
-      showAlert("Failed to reactivate user.", "error");
-    }
-  } catch (error) {
-    showAlert("Error reactivating user.", "error");
-  }
+    },
+    { confirmText: "Reactivate", cancelText: "Cancel", type: "info" },
+  );
 }
 
 async function archiveUser(userId, userName) {
-  if (!confirm(`Are you sure you want to archive ${userName}? Their data will be retained for historic records and can be restored later. They will be automatically deactivated and unable to login.`)) return;
-  try {
-    const response = await fetch(`http://localhost:3000/api/auth/admin/accounts/${userId}`, {
-      method: "PUT",
-      headers: { 
-        "Authorization": `Bearer ${getAuthToken()}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ isArchived: true, isActive: false })
-    });
-    if (response.ok) {
-      showAlert(`${userName} has been archived and moved to storage. They have been automatically deactivated and cannot login.`, "success");
-      renderUsersList(usersListViewMode);
-    } else {
-      const errorData = await response.json();
-      showAlert(errorData.message || "Failed to archive user.", "error");
-    }
-  } catch (error) {
-    showAlert("Error archiving user.", "error");
-  }
+  requireConfirmModal(
+    "Confirm Archive",
+    `Are you sure you want to archive ${userName}? Their data will be retained for historic records and can be restored later. They will be automatically deactivated and unable to login.`,
+    async function () {
+      try {
+        const response = await fetch(
+          `http://localhost:3000/api/auth/admin/accounts/${userId}`,
+          {
+            method: "PUT",
+            headers: {
+              Authorization: `Bearer ${getAuthToken()}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ isArchived: true, isActive: false }),
+          },
+        );
+        if (response.ok) {
+          showAlert(
+            `${userName} has been archived and moved to storage. They have been automatically deactivated and cannot login.`,
+            "success",
+          );
+          renderUsersList(usersListViewMode);
+        } else {
+          const errorData = await response.json();
+          showAlert(errorData.message || "Failed to archive user.", "error");
+        }
+      } catch (error) {
+        showAlert("Error archiving user.", "error");
+      }
+    },
+    { confirmText: "Archive", cancelText: "Cancel", type: "warning" },
+  );
 }
 
 async function restoreUser(userId, userName) {
-  if (!confirm(`Are you sure you want to restore ${userName} from the archive?`)) return;
-  try {
-    const response = await fetch(`http://localhost:3000/api/auth/admin/accounts/${userId}`, {
-      method: "PUT",
-      headers: { 
-        "Authorization": `Bearer ${getAuthToken()}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ isArchived: false, isActive: true })
-    });
-    if (response.ok) {
-      showAlert(`${userName} has been restored from the archive and reactivated.`, "success");
-      renderUsersList(usersListViewMode);
-    } else {
-      const errorData = await response.json();
-      showAlert(errorData.message || "Failed to restore user.", "error");
-    }
-  } catch (error) {
-    showAlert("Error restoring user.", "error");
-  }
+  requireConfirmModal(
+    "Confirm Restore",
+    `Are you sure you want to restore ${userName} from the archive?`,
+    async function () {
+      try {
+        const response = await fetch(
+          `http://localhost:3000/api/auth/admin/accounts/${userId}`,
+          {
+            method: "PUT",
+            headers: {
+              Authorization: `Bearer ${getAuthToken()}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ isArchived: false, isActive: true }),
+          },
+        );
+        if (response.ok) {
+          showAlert(
+            `${userName} has been restored from the archive and reactivated.`,
+            "success",
+          );
+          renderUsersList(usersListViewMode);
+        } else {
+          const errorData = await response.json();
+          showAlert(errorData.message || "Failed to restore user.", "error");
+        }
+      } catch (error) {
+        showAlert("Error restoring user.", "error");
+      }
+    },
+    { confirmText: "Restore", cancelText: "Cancel", type: "info" },
+  );
 }
 
 // --- Service Management ---
 // --- Service Edit/Deactivate Logic ---
 async function editService(serviceId) {
-  if (typeof openEditServiceModal === 'function') {
+  if (typeof openEditServiceModal === "function") {
     openEditServiceModal(serviceId);
   } else {
-    if (typeof showModal === 'function') {
-      showModal('Not Ready', '<p>Edit modal is not yet loaded. Please refresh the page.</p>', 'warning');
+    if (typeof showModal === "function") {
+      showModal(
+        "Not Ready",
+        "<p>Edit modal is not yet loaded. Please refresh the page.</p>",
+        "warning",
+      );
     }
   }
 }
 async function deactivateServiceAndRefresh(serviceId) {
-  if (!confirm('Are you sure you want to deactivate this service?')) return;
-  try {
-    const response = await fetch(`http://localhost:3000/api/services/${serviceId}/deactivate`, {
-      method: 'PUT',
-      headers: { 'Authorization': `Bearer ${getAuthToken()}` }
-    });
-    if (response.ok) {
-      showAlert('Service deactivated.', 'success');
-      if (typeof renderServiceTable === 'function') renderServiceTable();
-    } else {
-      showAlert('Failed to deactivate service.', 'danger');
-    }
-  } catch (e) {
-    showAlert('Error deactivating service.', 'danger');
-  }
+  requireConfirmModal(
+    "Confirm Deactivation",
+    "Are you sure you want to deactivate this service?",
+    async function () {
+      try {
+        const response = await fetch(
+          `http://localhost:3000/api/services/${serviceId}/deactivate`,
+          {
+            method: "PUT",
+            headers: { Authorization: `Bearer ${getAuthToken()}` },
+          },
+        );
+        if (response.ok) {
+          showAlert("Service deactivated.", "success");
+          if (typeof renderServiceTable === "function") renderServiceTable();
+        } else {
+          showAlert("Failed to deactivate service.", "danger");
+        }
+      } catch (e) {
+        showAlert("Error deactivating service.", "danger");
+      }
+    },
+    { confirmText: "Deactivate", cancelText: "Cancel", type: "warning" },
+  );
 }
 async function activateServiceAndRefresh(serviceId) {
   try {
-    const response = await fetch(`http://localhost:3000/api/services/${serviceId}/activate`, {
-      method: 'PUT',
-      headers: { 'Authorization': `Bearer ${getAuthToken()}` }
-    });
+    const response = await fetch(
+      `http://localhost:3000/api/services/${serviceId}/activate`,
+      {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${getAuthToken()}` },
+      },
+    );
     if (response.ok) {
-      showAlert('Service activated.', 'success');
-      if (typeof renderServiceTable === 'function') renderServiceTable();
+      showAlert("Service activated.", "success");
+      if (typeof renderServiceTable === "function") renderServiceTable();
     } else {
-      showAlert('Failed to activate service.', 'danger');
+      showAlert("Failed to activate service.", "danger");
     }
   } catch (e) {
-    showAlert('Error activating service.', 'danger');
+    showAlert("Error activating service.", "danger");
   }
 }
 window.editService = editService;
@@ -1539,9 +1814,12 @@ window.activateServiceAndRefresh = activateServiceAndRefresh;
 
 async function fetchAllServicesAdmin() {
   try {
-    const response = await fetch("http://localhost:3000/api/services/admin/all", {
-      headers: { "Authorization": `Bearer ${getAuthToken()}` }
-    });
+    const response = await fetch(
+      "http://localhost:3000/api/services/admin/all",
+      {
+        headers: { Authorization: `Bearer ${getAuthToken()}` },
+      },
+    );
     return await response.json();
   } catch (error) {
     console.error("Admin service fetch error:", error);
@@ -1555,55 +1833,71 @@ let servicesData = [];
 function formatServiceDetails(service) {
   // Fix image URLs
   let mainImgUrl = service.image;
-  if (mainImgUrl && mainImgUrl.startsWith('/uploads/')) {
-    mainImgUrl = mainImgUrl.replace(/^\//, '');
+  if (mainImgUrl && mainImgUrl.startsWith("/uploads/")) {
+    mainImgUrl = mainImgUrl.replace(/^\//, "");
   }
-  
+
   // Gallery images
-  let galleryHTML = '';
+  let galleryHTML = "";
   if (Array.isArray(service.gallery) && service.gallery.length > 0) {
-    galleryHTML = '<div class="gallery-grid">' + service.gallery.map(img => {
-      let imgUrl = img;
-      if (imgUrl && imgUrl.startsWith('/uploads/')) {
-        imgUrl = imgUrl.replace(/^\//, '');
-      }
-      return `<a href="${imgUrl}" target="_blank"><img src="${imgUrl}" alt="Gallery Image" /></a>`;
-    }).join('') + '</div>';
+    galleryHTML =
+      '<div class="gallery-grid">' +
+      service.gallery
+        .map((img) => {
+          let imgUrl = img;
+          if (imgUrl && imgUrl.startsWith("/uploads/")) {
+            imgUrl = imgUrl.replace(/^\//, "");
+          }
+          return `<a href="${imgUrl}" target="_blank"><img src="${imgUrl}" alt="Gallery Image" /></a>`;
+        })
+        .join("") +
+      "</div>";
   } else {
     galleryHTML = '<p class="text-muted">No gallery images</p>';
   }
-  
+
   // Inclusions
-  let inclusionsHTML = '';
+  let inclusionsHTML = "";
   if (Array.isArray(service.inclusions) && service.inclusions.length > 0) {
-    inclusionsHTML = '<ul class="mb-0">' + service.inclusions.map(inc => `<li>${escapeHtml(inc)}</li>`).join('') + '</ul>';
+    inclusionsHTML =
+      '<ul class="mb-0">' +
+      service.inclusions.map((inc) => `<li>${escapeHtml(inc)}</li>`).join("") +
+      "</ul>";
   } else {
     inclusionsHTML = '<p class="text-muted">No inclusions listed</p>';
   }
-  
+
   // Durations table
-  let durationsHTML = '';
+  let durationsHTML = "";
   if (Array.isArray(service.durations) && service.durations.length > 0) {
-    durationsHTML = '<table class="table table-sm table-bordered"><thead><tr><th>Duration</th><th>Hours</th><th>Price</th></tr></thead><tbody>';
-    durationsHTML += service.durations.map(d => 
-      `<tr><td>${escapeHtml(d.label)}</td><td>${d.hours || ''}</td><td>₱${d.price ? parseFloat(d.price).toLocaleString() : ''}</td></tr>`
-    ).join('');
-    durationsHTML += '</tbody></table>';
+    durationsHTML =
+      '<table class="table table-sm table-bordered"><thead><tr><th>Duration</th><th>Hours</th><th>Price</th></tr></thead><tbody>';
+    durationsHTML += service.durations
+      .map(
+        (d) =>
+          `<tr><td>${escapeHtml(d.label)}</td><td>${d.hours || ""}</td><td>₱${d.price ? parseFloat(d.price).toLocaleString() : ""}</td></tr>`,
+      )
+      .join("");
+    durationsHTML += "</tbody></table>";
   } else if (Array.isArray(service.timeSlots) && service.timeSlots.length > 0) {
-    durationsHTML = '<table class="table table-sm table-bordered"><thead><tr><th>Time Slot</th><th>Price</th></tr></thead><tbody>';
-    durationsHTML += service.timeSlots.map(ts => 
-      `<tr><td>${escapeHtml(ts.label)}</td><td>₱${ts.price ? parseFloat(ts.price).toLocaleString() : ''}</td></tr>`
-    ).join('');
-    durationsHTML += '</tbody></table>';
+    durationsHTML =
+      '<table class="table table-sm table-bordered"><thead><tr><th>Time Slot</th><th>Price</th></tr></thead><tbody>';
+    durationsHTML += service.timeSlots
+      .map(
+        (ts) =>
+          `<tr><td>${escapeHtml(ts.label)}</td><td>₱${ts.price ? parseFloat(ts.price).toLocaleString() : ""}</td></tr>`,
+      )
+      .join("");
+    durationsHTML += "</tbody></table>";
   } else {
     durationsHTML = '<p class="text-muted">No durations/time slots defined</p>';
   }
-  
+
   return `
     <div class="details-container">
       <div class="detail-section">
         <h6>📋 Description</h6>
-        <p>${escapeHtml(service.description || 'No description available')}</p>
+        <p>${escapeHtml(service.description || "No description available")}</p>
       </div>
       <div class="detail-section">
         <h6>🖼️ Main Image</h6>
@@ -1623,34 +1917,34 @@ function formatServiceDetails(service) {
       </div>
       <div class="detail-section">
         <h6>📝 Notes</h6>
-        <p>${escapeHtml(service.notes || 'No additional notes')}</p>
+        <p>${escapeHtml(service.notes || "No additional notes")}</p>
       </div>
     </div>
   `;
 }
 
 function toggleServiceDetails(btn, serviceId) {
-  const row = btn.closest('tr');
+  const row = btn.closest("tr");
   const nextRow = row.nextElementSibling;
-  
+
   // If already expanded, collapse it
-  if (nextRow && nextRow.classList.contains('service-details-row')) {
+  if (nextRow && nextRow.classList.contains("service-details-row")) {
     nextRow.remove();
-    btn.textContent = '+';
-    btn.classList.remove('btn-danger');
-    btn.classList.add('btn-outline-primary');
+    btn.textContent = "View More";
+    btn.classList.remove("btn-danger");
+    btn.classList.add("btn-outline-primary");
   } else {
     // Expand: find service data and insert detail row
-    const service = servicesData.find(s => (s._id || s.id) === serviceId);
+    const service = servicesData.find((s) => (s._id || s.id) === serviceId);
     if (service) {
       const detailHTML = formatServiceDetails(service);
-      const detailRow = document.createElement('tr');
-      detailRow.className = 'service-details-row';
-      detailRow.innerHTML = `<td colspan="8">${detailHTML}</td>`;
+      const detailRow = document.createElement("tr");
+      detailRow.className = "service-details-row";
+      detailRow.innerHTML = `<td colspan="7">${detailHTML}</td>`;
       row.after(detailRow);
-      btn.textContent = '−';
-      btn.classList.remove('btn-outline-primary');
-      btn.classList.add('btn-danger');
+      btn.textContent = "Hide";
+      btn.classList.remove("btn-outline-primary");
+      btn.classList.add("btn-danger");
     }
   }
 }
@@ -1661,87 +1955,112 @@ async function renderServiceTable() {
 
   const data = await fetchAllServicesAdmin();
   // Handle both array response and {success: true, services: []} response
-  const services = Array.isArray(data) ? data : (data.success && Array.isArray(data.services) ? data.services : []);
-  
+  const services = Array.isArray(data)
+    ? data
+    : data.success && Array.isArray(data.services)
+      ? data.services
+      : [];
+
   // Store globally for expand functionality
   servicesData = services;
-  
+
   if (services.length > 0) {
-    tbody.innerHTML = services.map(service => {
+    tbody.innerHTML = services
+      .map((service) => {
         return `
           <tr>
-            <td><button class="btn btn-sm btn-outline-primary expand-service-btn" onclick="toggleServiceDetails(this, '${service._id || service.id}')">+</button></td>
             <td>${escapeHtml(service.id || service._id)}</td>
             <td>${escapeHtml(service.name)}</td>
             <td>${escapeHtml(service.type)}</td>
-            <td>${escapeHtml(service.category)}</td>
-            <td>${service.max_guests || ''}</td>
+            <td>${service.max_guests || ""}</td>
             <td>${service.isActive ? '<span class="badge bg-success">Active</span>' : '<span class="badge bg-secondary">Inactive</span>'}</td>
             <td>
               <button class="btn btn-sm btn-primary" onclick="editService('${service._id}')">Edit</button>
-              <button class="btn btn-sm ${service.isActive ? 'btn-danger' : 'btn-success'}" 
-                      onclick="${service.isActive ? 'deactivate' : 'activate'}ServiceAndRefresh('${service._id}')">
-                ${service.isActive ? 'Deactivate' : 'Reactivate'}
+              <button class="btn btn-sm ${service.isActive ? "btn-danger" : "btn-success"}" 
+                      onclick="${service.isActive ? "deactivate" : "activate"}ServiceAndRefresh('${service._id}')">
+                ${service.isActive ? "Deactivate" : "Reactivate"}
               </button>
+              <button class="btn btn-sm btn-outline-primary expand-service-btn" onclick="toggleServiceDetails(this, '${service._id || service.id}')">View More</button>
             </td>
           </tr>
         `;
-      }).join("");
-    } else {
-      tbody.innerHTML = '<tr><td colspan="8" class="text-center">No services found.</td></tr>';
-    }
+      })
+      .join("");
+  } else {
+    tbody.innerHTML =
+      '<tr><td colspan="6" class="text-center">No services found.</td></tr>';
+  }
 }
 
 // Expose functions globally
 window.toggleServiceDetails = toggleServiceDetails;
 
-
 // --- Reservation Actions ---
 // --- Check-in and Checkout Actions ---
 async function checkInReservation(reservationId, email, name) {
-  if (!confirm(`Check in reservation for ${name || 'this guest'}?`)) return;
-  try {
-    // The backend expects a PUT to /api/reservations/update-status/:id with status: 'CHECKED_IN'
-    const response = await fetch(`http://localhost:3000/api/reservations/update-status/${reservationId}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${getAuthToken()}`
-      },
-      body: JSON.stringify({ status: 'CHECKED_IN' })
-    });
-    if (response.ok) {
-      showAlert('Guest checked in.', 'success');
-      if (typeof renderAdminReservations === 'function') renderAdminReservations();
-    } else {
-      showAlert('Failed to check in guest.', 'danger');
-    }
-  } catch (e) {
-    showAlert('Error during check-in.', 'danger');
-  }
+  requireConfirmModal(
+    "Confirm Check-in",
+    `Check in reservation for ${name || "this guest"}?`,
+    async function () {
+      try {
+        // The backend expects a PUT to /api/reservations/update-status/:id with status: 'CHECKED_IN'
+        const response = await fetch(
+          `http://localhost:3000/api/reservations/update-status/${reservationId}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${getAuthToken()}`,
+            },
+            body: JSON.stringify({ status: "CHECKED_IN" }),
+          },
+        );
+        if (response.ok) {
+          showAlert("Guest checked in.", "success");
+          if (typeof renderAdminReservations === "function")
+            renderAdminReservations();
+        } else {
+          showAlert("Failed to check in guest.", "danger");
+        }
+      } catch (e) {
+        showAlert("Error during check-in.", "danger");
+      }
+    },
+    { confirmText: "Check In", cancelText: "Cancel", type: "info" },
+  );
 }
 
 async function checkoutReservation(reservationId, email, name) {
-  if (!confirm(`Checkout reservation for ${name || 'this guest'}?`)) return;
-  try {
-    // Use the public update-status route to set status to COMPLETED
-    const response = await fetch(`http://localhost:3000/api/reservations/update-status/${reservationId}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${getAuthToken()}`
-      },
-      body: JSON.stringify({ status: 'COMPLETED' })
-    });
-    if (response.ok) {
-      showAlert('Guest checked out.', 'success');
-      if (typeof renderAdminReservations === 'function') renderAdminReservations();
-    } else {
-      showAlert('Failed to checkout guest.', 'danger');
-    }
-  } catch (e) {
-    showAlert('Error during checkout.', 'danger');
-  }
+  requireConfirmModal(
+    "Confirm Checkout",
+    `Checkout reservation for ${name || "this guest"}?`,
+    async function () {
+      try {
+        // Use the public update-status route to set status to COMPLETED
+        const response = await fetch(
+          `http://localhost:3000/api/reservations/update-status/${reservationId}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${getAuthToken()}`,
+            },
+            body: JSON.stringify({ status: "COMPLETED" }),
+          },
+        );
+        if (response.ok) {
+          showAlert("Guest checked out.", "success");
+          if (typeof renderAdminReservations === "function")
+            renderAdminReservations();
+        } else {
+          showAlert("Failed to checkout guest.", "danger");
+        }
+      } catch (e) {
+        showAlert("Error during checkout.", "danger");
+      }
+    },
+    { confirmText: "Checkout", cancelText: "Cancel", type: "info" },
+  );
 }
 
 window.checkInReservation = checkInReservation;
@@ -1749,65 +2068,102 @@ window.checkoutReservation = checkoutReservation;
 
 async function confirmReservation(id) {
   try {
-    const response = await fetch(`http://localhost:3000/api/reservations/update-status/${id}`, {
-      method: "PUT",
-      headers: { 
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${getAuthToken()}`
+    const response = await fetch(
+      `http://localhost:3000/api/reservations/update-status/${id}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getAuthToken()}`,
+        },
+        body: JSON.stringify({ status: "CONFIRMED" }),
       },
-      body: JSON.stringify({ status: "CONFIRMED" })
-    });
+    );
     if (response.ok) {
       showAlert("Reservation confirmed.", "success");
-      if (typeof renderAdminReservations === "function") renderAdminReservations();
+      if (typeof renderAdminReservations === "function")
+        renderAdminReservations();
     }
-  } catch(e) {}
+  } catch (e) {}
 }
 
 async function cancelReservation(id) {
-  if (!confirm("Cancel this reservation?")) return;
-  try {
-    const response = await fetch(`http://localhost:3000/api/reservations/update-status/${id}`, {
-      method: "PUT",
-      headers: { 
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${getAuthToken()}`
-      },
-      body: JSON.stringify({ status: "CANCELLED" })
-    });
-    if (response.ok) {
-      showAlert("Reservation cancelled.", "success");
-      if (typeof renderAdminReservations === "function") renderAdminReservations();
-    }
-  } catch(e) {}
+  requireConfirmModal(
+    "Confirm Cancellation",
+    "Cancel this reservation?",
+    async function () {
+      try {
+        const response = await fetch(
+          `http://localhost:3000/api/reservations/update-status/${id}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${getAuthToken()}`,
+            },
+            body: JSON.stringify({ status: "CANCELLED" }),
+          },
+        );
+        if (response.ok) {
+          showAlert("Reservation cancelled.", "success");
+          if (typeof renderAdminReservations === "function")
+            renderAdminReservations();
+        }
+      } catch (e) {}
+    },
+    { confirmText: "Cancel Reservation", cancelText: "Cancel", type: "danger" },
+  );
 }
 
 // Initialization
 document.addEventListener("DOMContentLoaded", () => {
-    if (document.getElementById("users-table-body")) {
-        renderUsersList();
-    }
-    if (document.getElementById("admin-services-table-body")) {
-        renderServiceTable();
-    }
-    if (document.getElementById("blocked-dates-list")) {
-        loadBlockedDates();
-    }
+  if (document.getElementById("users-table-body")) {
+    renderUsersList();
+  }
+  if (document.getElementById("admin-services-table-body")) {
+    renderServiceTable();
+  }
+  if (document.getElementById("blocked-dates-list")) {
+    loadBlockedDates();
+  }
+
+  const cancellationToggleBtn = document.getElementById(
+    "cancellationToggleBtn",
+  );
+  const cancellationList = document.getElementById(
+    "cancellation-requests-list",
+  );
+  if (cancellationToggleBtn && cancellationList) {
+    cancellationToggleBtn.addEventListener("click", () => {
+      const isHidden = cancellationList.classList.toggle("d-none");
+      cancellationToggleBtn.textContent = isHidden ? "Expand" : "Collapse";
+      cancellationToggleBtn.setAttribute("aria-expanded", String(!isHidden));
+    });
+  }
 });
 
 // Expose globals
 
 // Utility: escapeHtml
 function escapeHtml(text) {
-  if (!text) return '';
+  if (!text) return "";
   return text.replace(/[&<>"']/g, function (c) {
-    return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;','\'':'&#39;'}[c]||c;
+    return (
+      { "&": "&amp;", "<": "&lt;", ">": "&gt;", '\"': "&quot;", "'": "&#39;" }[
+        c
+      ] || c
+    );
   });
 }
 
 // Utility: getAuthToken
 function getAuthToken() {
-  return sessionStorage.getItem('token') || sessionStorage.getItem('authToken') || sessionStorage.getItem('qreserve_token') || '';
+  return (
+    sessionStorage.getItem("token") ||
+    sessionStorage.getItem("authToken") ||
+    sessionStorage.getItem("qreserve_token") ||
+    ""
+  );
 }
 
 window.deleteUser = deleteUser;

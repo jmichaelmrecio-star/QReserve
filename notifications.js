@@ -2,13 +2,13 @@
  * =====================================================
  * NOTIFICATION SYSTEM - Professional Modal & Toast Handler
  * =====================================================
- * 
+ *
  * Replaces all browser alert(), confirm(), and prompt() with:
  * - Modal dialogs for confirmations and errors (blocking)
  * - Toast notifications for success/info (non-blocking, auto-dismiss)
- * 
+ *
  * Uses existing CSS classes: .modal, .modal-content, .close-button
- * Color scheme: Green (.status-confirmed) = success, Red (.status-cancelled) = error, 
+ * Color scheme: Green (.status-confirmed) = success, Red (.status-cancelled) = error,
  *              Amber (.status-pending) = warning/info
  */
 
@@ -17,10 +17,10 @@
 // =====================================================
 
 const NotificationConfig = {
-    toastDuration: 4000,      // Toast auto-dismiss time (milliseconds)
-    animationDuration: 300,   // Animation duration (milliseconds)
-    maxToasts: 3,             // Maximum toasts visible at once
-    soundEnabled: false       // Optional: enable notification sounds
+  toastDuration: 4000, // Toast auto-dismiss time (milliseconds)
+  animationDuration: 300, // Animation duration (milliseconds)
+  maxToasts: 3, // Maximum toasts visible at once
+  soundEnabled: false, // Optional: enable notification sounds
 };
 
 // =====================================================
@@ -30,18 +30,22 @@ const NotificationConfig = {
 /**
  * Shows a toast notification (non-blocking, auto-dismisses)
  * Best for: Success confirmations, info messages, quick feedback
- * 
+ *
  * @param {string} message - The notification message
  * @param {string} type - 'success' (green), 'error' (red), 'info' (blue), 'warning' (amber)
  * @param {number} duration - Optional: override auto-dismiss duration (ms)
  */
-function showToast(message, type = 'info', duration = NotificationConfig.toastDuration) {
-    // Ensure toast container exists
-    let container = document.getElementById('toast-container');
-    if (!container) {
-        container = document.createElement('div');
-        container.id = 'toast-container';
-        container.style.cssText = `
+function showToast(
+  message,
+  type = "info",
+  duration = NotificationConfig.toastDuration,
+) {
+  // Ensure toast container exists
+  let container = document.getElementById("toast-container");
+  if (!container) {
+    container = document.createElement("div");
+    container.id = "toast-container";
+    container.style.cssText = `
             position: fixed;
             top: 20px;
             right: 20px;
@@ -51,35 +55,36 @@ function showToast(message, type = 'info', duration = NotificationConfig.toastDu
             gap: 10px;
             pointer-events: none;
         `;
-        document.body.appendChild(container);
-    }
+    document.body.appendChild(container);
+  }
 
-    // Enforce max toasts
-    const existingToasts = container.querySelectorAll('.toast');
-    if (existingToasts.length >= NotificationConfig.maxToasts) {
-        existingToasts[0].remove();
-    }
+  // Enforce max toasts
+  const existingToasts = container.querySelectorAll(".toast");
+  if (existingToasts.length >= NotificationConfig.maxToasts) {
+    existingToasts[0].remove();
+  }
 
-    // Determine color based on type
-    const colorMap = {
-        'success': '#2f8f2f',    // Deep green (confirmed)
-        'error': '#d63b45',      // Red (cancelled)
-        'warning': '#f4c542',    // Amber (pending)
-        'info': '#1f7ed0'        // Rich blue (info / checked-in)
-    };
+  // Determine color based on type
+  const colorMap = {
+    success: "#2f8f2f", // Deep green (confirmed)
+    error: "#d63b45", // Red (cancelled)
+    warning: "#f4c542", // Amber (pending)
+    info: "#1f7ed0", // Rich blue (info / checked-in)
+  };
 
-    const backgroundColor = colorMap[type] || colorMap['info'];
-    const icon = {
-        'success': '✓',
-        'error': '✕',
-        'warning': '⚠',
-        'info': 'ℹ'
-    }[type] || 'ℹ';
+  const backgroundColor = colorMap[type] || colorMap["info"];
+  const icon =
+    {
+      success: "✓",
+      error: "✕",
+      warning: "⚠",
+      info: "ℹ",
+    }[type] || "ℹ";
 
-    // Create toast element
-    const toast = document.createElement('div');
-    toast.className = 'toast';
-    toast.style.cssText = `
+  // Create toast element
+  const toast = document.createElement("div");
+  toast.className = "toast";
+  toast.style.cssText = `
         background-color: ${backgroundColor};
         color: white;
         padding: 16px 20px;
@@ -97,9 +102,9 @@ function showToast(message, type = 'info', duration = NotificationConfig.toastDu
         font-size: 0.95rem;
     `;
 
-    toast.innerHTML = `
-        <span style="font-size: 1.3rem; font-weight: bold; flex-shrink: 0;">${icon}</span>
-        <span style="flex: 1;">${message}</span>
+  toast.innerHTML = `
+        <span style="font-size: 1.3rem; font-weight: bold; flex-shrink: 0; color: white;">${icon}</span>
+        <span style="flex: 1; color: white;">${message}</span>
         <button onclick="this.closest('.toast').remove()" style="
             background: none;
             border: none;
@@ -115,26 +120,26 @@ function showToast(message, type = 'info', duration = NotificationConfig.toastDu
         </button>
     `;
 
-    container.appendChild(toast);
+  container.appendChild(toast);
 
-    // Auto-dismiss after duration
-    const timeoutId = setTimeout(() => {
+  // Auto-dismiss after duration
+  const timeoutId = setTimeout(() => {
+    if (toast.parentNode) {
+      toast.style.animation = "slideOutRight 0.3s ease-in";
+      setTimeout(() => {
         if (toast.parentNode) {
-            toast.style.animation = 'slideOutRight 0.3s ease-in';
-            setTimeout(() => {
-                if (toast.parentNode) {
-                    toast.remove();
-                }
-            }, NotificationConfig.animationDuration);
+          toast.remove();
         }
-    }, duration);
+      }, NotificationConfig.animationDuration);
+    }
+  }, duration);
 
-    // Allow manual dismissal to cancel timeout
-    toast.addEventListener('click', (e) => {
-        if (e.target.closest('button')) {
-            clearTimeout(timeoutId);
-        }
-    });
+  // Allow manual dismissal to cancel timeout
+  toast.addEventListener("click", (e) => {
+    if (e.target.closest("button")) {
+      clearTimeout(timeoutId);
+    }
+  });
 }
 
 // =====================================================
@@ -144,7 +149,7 @@ function showToast(message, type = 'info', duration = NotificationConfig.toastDu
 /**
  * Shows a modal dialog (blocking, requires user action)
  * Best for: Errors, important information, confirmations
- * 
+ *
  * @param {string} title - Modal title
  * @param {string} message - Modal message (supports HTML)
  * @param {string} type - 'info', 'success', 'error', 'warning'
@@ -152,40 +157,37 @@ function showToast(message, type = 'info', duration = NotificationConfig.toastDu
  *   - buttonText: "OK" (default for single button)
  *   - onClose: callback function
  */
-function showModal(title, message, type = 'info', options = {}) {
-    const {
-        buttonText = 'OK',
-        onClose = null
-    } = options;
+function showModal(title, message, type = "info", options = {}) {
+  const { buttonText = "OK", onClose = null } = options;
 
-    const colorMap = {
-        'success': '#28a745',
-        'error': '#dc3545',
-        'warning': '#ffc107',
-        'info': '#17a2b8'
-    };
+  const colorMap = {
+    success: "#28a745",
+    error: "#dc3545",
+    warning: "#ffc107",
+    info: "#17a2b8",
+  };
 
-    const iconMap = {
-        'success': '✓',
-        'error': '✕',
-        'warning': '⚠',
-        'info': 'ℹ'
-    };
+  const iconMap = {
+    success: "✓",
+    error: "✕",
+    warning: "⚠",
+    info: "ℹ",
+  };
 
-    const borderColor = colorMap[type] || colorMap['info'];
-    const icon = iconMap[type] || '•';
+  const borderColor = colorMap[type] || colorMap["info"];
+  const icon = iconMap[type] || "•";
 
-    // Remove existing modal if any
-    const existingModal = document.getElementById('notification-modal');
-    if (existingModal) {
-        existingModal.remove();
-    }
+  // Remove existing modal if any
+  const existingModal = document.getElementById("notification-modal");
+  if (existingModal) {
+    existingModal.remove();
+  }
 
-    // Create modal HTML
-    const modal = document.createElement('div');
-    modal.id = 'notification-modal';
-    modal.className = 'modal';
-    modal.style.cssText = `
+  // Create modal HTML
+  const modal = document.createElement("div");
+  modal.id = "notification-modal";
+  modal.className = "modal show";
+  modal.style.cssText = `
         display: flex;
         position: fixed;
         z-index: 2000;
@@ -199,7 +201,7 @@ function showModal(title, message, type = 'info', options = {}) {
         justify-content: center;
     `;
 
-    modal.innerHTML = `
+  modal.innerHTML = `
         <div class="modal-content modal-${type}" style="
             max-width: 500px;
             border-top: 5px solid ${borderColor};
@@ -294,31 +296,31 @@ function showModal(title, message, type = 'info', options = {}) {
         </div>
     `;
 
-    document.body.appendChild(modal);
+  document.body.appendChild(modal);
 
-    // Close on backdrop click
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            modal.remove();
-        }
-    });
-
-    // Call onClose callback when modal is removed
-    if (onClose && typeof onClose === 'function') {
-        const observer = new MutationObserver(() => {
-            if (!document.getElementById('notification-modal')) {
-                onClose();
-                observer.disconnect();
-            }
-        });
-        observer.observe(document.body, { childList: true });
+  // Close on backdrop click
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) {
+      modal.remove();
     }
+  });
+
+  // Call onClose callback when modal is removed
+  if (onClose && typeof onClose === "function") {
+    const observer = new MutationObserver(() => {
+      if (!document.getElementById("notification-modal")) {
+        onClose();
+        observer.disconnect();
+      }
+    });
+    observer.observe(document.body, { childList: true });
+  }
 }
 
 /**
  * Shows a confirmation dialog (modal, requires user choice)
  * Best for: Destructive actions (delete, clear), important decisions
- * 
+ *
  * @param {string} title - Dialog title
  * @param {string} message - Dialog message (supports HTML)
  * @param {function} onConfirm - Callback if user clicks "Confirm"
@@ -329,32 +331,32 @@ function showModal(title, message, type = 'info', options = {}) {
  *   - onCancel: callback if user clicks "Cancel"
  */
 function showConfirm(title, message, onConfirm, options = {}) {
-    const {
-        confirmText = 'Confirm',
-        cancelText = 'Cancel',
-        type = 'warning',
-        onCancel = null
-    } = options;
+  const {
+    confirmText = "Confirm",
+    cancelText = "Cancel",
+    type = "warning",
+    onCancel = null,
+  } = options;
 
-    const colorMap = {
-        'danger': '#dc3545',
-        'warning': '#ffc107',
-        'info': '#17a2b8'
-    };
+  const colorMap = {
+    danger: "#dc3545",
+    warning: "#ffc107",
+    info: "#17a2b8",
+  };
 
-    const borderColor = colorMap[type] || colorMap['warning'];
+  const borderColor = colorMap[type] || colorMap["warning"];
 
-    // Remove existing modal if any
-    const existingModal = document.getElementById('notification-modal');
-    if (existingModal) {
-        existingModal.remove();
-    }
+  // Remove existing modal if any
+  const existingModal = document.getElementById("notification-modal");
+  if (existingModal) {
+    existingModal.remove();
+  }
 
-    // Create modal HTML
-    const modal = document.createElement('div');
-    modal.id = 'notification-modal';
-    modal.className = 'modal';
-    modal.style.cssText = `
+  // Create modal HTML
+  const modal = document.createElement("div");
+  modal.id = "notification-modal";
+  modal.className = "modal show";
+  modal.style.cssText = `
         display: flex;
         position: fixed;
         z-index: 2000;
@@ -368,9 +370,12 @@ function showConfirm(title, message, onConfirm, options = {}) {
         justify-content: center;
     `;
 
-    modal.innerHTML = `
+  modal.innerHTML = `
         <div class="modal-content" style="
             max-width: 500px;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow: visible;
             border-top: 5px solid ${borderColor};
             animation: slideDown 0.3s ease-out;
         ">
@@ -436,27 +441,27 @@ function showConfirm(title, message, onConfirm, options = {}) {
         </div>
     `;
 
-    document.body.appendChild(modal);
+  document.body.appendChild(modal);
 
-    // Store callbacks globally for closure access
-    window.notificationConfirmCallback = onConfirm;
-    window.notificationCancelCallback = onCancel;
+  // Store callbacks globally for closure access
+  window.notificationConfirmCallback = onConfirm;
+  window.notificationCancelCallback = onCancel;
 
-    // Close on backdrop click (calls cancel)
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            modal.remove();
-            if (onCancel && typeof onCancel === 'function') {
-                onCancel();
-            }
-        }
-    });
+  // Close on backdrop click (calls cancel)
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) {
+      modal.remove();
+      if (onCancel && typeof onCancel === "function") {
+        onCancel();
+      }
+    }
+  });
 }
 
 /**
  * Shows a login confirmation dialog (modal, gives user choice)
  * Best for: Asking users if they want to log in before proceeding
- * 
+ *
  * @param {string} title - Dialog title
  * @param {string} message - Dialog message (supports HTML)
  * @param {function} onLoginClick - Callback if user clicks "Continue to Login"
@@ -466,25 +471,25 @@ function showConfirm(title, message, onConfirm, options = {}) {
  *   - onBrowseClick: callback if user clicks "Keep Browsing"
  */
 function showLoginConfirm(title, message, onLoginClick, options = {}) {
-    const {
-        loginText = 'Continue to Login',
-        browseText = 'Keep Browsing',
-        onBrowseClick = null
-    } = options;
+  const {
+    loginText = "Continue to Login",
+    browseText = "Keep Browsing",
+    onBrowseClick = null,
+  } = options;
 
-    const borderColor = '#28a745'; // Green for login action
+  const borderColor = "#28a745"; // Green for login action
 
-    // Remove existing modal if any
-    const existingModal = document.getElementById('notification-modal');
-    if (existingModal) {
-        existingModal.remove();
-    }
+  // Remove existing modal if any
+  const existingModal = document.getElementById("notification-modal");
+  if (existingModal) {
+    existingModal.remove();
+  }
 
-    // Create modal HTML
-    const modal = document.createElement('div');
-    modal.id = 'notification-modal';
-    modal.className = 'modal';
-    modal.style.cssText = `
+  // Create modal HTML
+  const modal = document.createElement("div");
+  modal.id = "notification-modal";
+  modal.className = "modal show";
+  modal.style.cssText = `
         display: flex;
         position: fixed;
         z-index: 2000;
@@ -498,7 +503,7 @@ function showLoginConfirm(title, message, onLoginClick, options = {}) {
         justify-content: center;
     `;
 
-    modal.innerHTML = `
+  modal.innerHTML = `
         <div class="modal-content" style="
             max-width: 500px;
             border-top: 5px solid ${borderColor};
@@ -614,27 +619,27 @@ function showLoginConfirm(title, message, onLoginClick, options = {}) {
         </div>
     `;
 
-    document.body.appendChild(modal);
+  document.body.appendChild(modal);
 
-    // Store callbacks globally for closure access
-    window.notificationLoginCallback = onLoginClick;
-    window.notificationBrowseCallback = onBrowseClick;
+  // Store callbacks globally for closure access
+  window.notificationLoginCallback = onLoginClick;
+  window.notificationBrowseCallback = onBrowseClick;
 
-    // Close on backdrop click (calls browse/cancel)
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            modal.remove();
-            if (onBrowseClick && typeof onBrowseClick === 'function') {
-                onBrowseClick();
-            }
-        }
-    });
+  // Close on backdrop click (calls browse/cancel)
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) {
+      modal.remove();
+      if (onBrowseClick && typeof onBrowseClick === "function") {
+        onBrowseClick();
+      }
+    }
+  });
 }
 
 /**
  * Shows a prompt dialog (modal, requires text input)
  * Best for: Getting user input without page navigation
- * 
+ *
  * @param {string} title - Dialog title
  * @param {string} message - Dialog message
  * @param {function} onSubmit - Callback with input value: onSubmit(inputValue)
@@ -647,26 +652,26 @@ function showLoginConfirm(title, message, onLoginClick, options = {}) {
  *   - inputType: "text" (default) or "email", "number", etc.
  */
 function showPrompt(title, message, onSubmit, options = {}) {
-    const {
-        placeholder = 'Enter text...',
-        defaultValue = '',
-        submitText = 'Submit',
-        cancelText = 'Cancel',
-        onCancel = null,
-        inputType = 'text'
-    } = options;
+  const {
+    placeholder = "Enter text...",
+    defaultValue = "",
+    submitText = "Submit",
+    cancelText = "Cancel",
+    onCancel = null,
+    inputType = "text",
+  } = options;
 
-    // Remove existing modal if any
-    const existingModal = document.getElementById('notification-modal');
-    if (existingModal) {
-        existingModal.remove();
-    }
+  // Remove existing modal if any
+  const existingModal = document.getElementById("notification-modal");
+  if (existingModal) {
+    existingModal.remove();
+  }
 
-    // Create modal HTML
-    const modal = document.createElement('div');
-    modal.id = 'notification-modal';
-    modal.className = 'modal';
-    modal.style.cssText = `
+  // Create modal HTML
+  const modal = document.createElement("div");
+  modal.id = "notification-modal";
+  modal.className = "modal show";
+  modal.style.cssText = `
         display: flex;
         position: fixed;
         z-index: 2000;
@@ -680,9 +685,9 @@ function showPrompt(title, message, onSubmit, options = {}) {
         justify-content: center;
     `;
 
-    const inputId = 'prompt-input-' + Date.now();
+  const inputId = "prompt-input-" + Date.now();
 
-    modal.innerHTML = `
+  modal.innerHTML = `
         <div class="modal-content" style="
             max-width: 500px;
             border-top: 5px solid #17a2b8;
@@ -762,29 +767,29 @@ function showPrompt(title, message, onSubmit, options = {}) {
         </div>
     `;
 
-    document.body.appendChild(modal);
+  document.body.appendChild(modal);
 
-    // Store callback globally
-    window.notificationPromptCallback = onSubmit;
+  // Store callback globally
+  window.notificationPromptCallback = onSubmit;
 
-    // Focus input field
-    setTimeout(() => {
-        const input = document.getElementById(inputId);
-        if (input) {
-            input.focus();
-            input.select();
-        }
-    }, 100);
+  // Focus input field
+  setTimeout(() => {
+    const input = document.getElementById(inputId);
+    if (input) {
+      input.focus();
+      input.select();
+    }
+  }, 100);
 
-    // Close on backdrop click (calls cancel)
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            modal.remove();
-            if (onCancel && typeof onCancel === 'function') {
-                onCancel();
-            }
-        }
-    });
+  // Close on backdrop click (calls cancel)
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) {
+      modal.remove();
+      if (onCancel && typeof onCancel === "function") {
+        onCancel();
+      }
+    }
+  });
 }
 
 // =====================================================
@@ -797,10 +802,10 @@ function showPrompt(title, message, onSubmit, options = {}) {
  * @returns {string} - Escaped text
  */
 function escapeHtml(text) {
-    if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+  if (!text) return "";
+  const div = document.createElement("div");
+  div.textContent = text;
+  return div.innerHTML;
 }
 
 /**
@@ -808,10 +813,10 @@ function escapeHtml(text) {
  * @param {string} message - Loading message
  * @returns {object} - Object with close() method
  */
-function showLoading(message = 'Processing...') {
-    const modal = document.createElement('div');
-    modal.id = 'loading-modal';
-    modal.style.cssText = `
+function showLoading(message = "Processing...") {
+  const modal = document.createElement("div");
+  modal.id = "loading-modal";
+  modal.style.cssText = `
         display: flex;
         position: fixed;
         z-index: 2500;
@@ -825,7 +830,7 @@ function showLoading(message = 'Processing...') {
         justify-content: center;
     `;
 
-    modal.innerHTML = `
+  modal.innerHTML = `
         <div style="
             background: white;
             padding: 40px;
@@ -849,20 +854,20 @@ function showLoading(message = 'Processing...') {
         </div>
     `;
 
-    document.body.appendChild(modal);
+  document.body.appendChild(modal);
 
-    return {
-        close: () => {
-            if (modal.parentNode) {
-                modal.style.animation = 'fadeOut 0.3s ease-out';
-                setTimeout(() => {
-                    if (modal.parentNode) {
-                        modal.remove();
-                    }
-                }, 300);
-            }
-        }
-    };
+  return {
+    close: () => {
+      if (modal.parentNode) {
+        modal.style.animation = "fadeOut 0.3s ease-out";
+        setTimeout(() => {
+          if (modal.parentNode) {
+            modal.remove();
+          }
+        }, 300);
+      }
+    },
+  };
 }
 
 // =====================================================
@@ -876,15 +881,22 @@ function showLoading(message = 'Processing...') {
  * @returns {string} - Adjusted hex color
  */
 function adjustBrightness(color, percent) {
-    const num = parseInt(color.replace("#",""), 16);
-    const amt = Math.round(2.55 * percent * 100);
-    const R = (num >> 16) + amt;
-    const G = (num >> 8 & 0x00FF) + amt;
-    const B = (num & 0x0000FF) + amt;
-    return "#" + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
-        (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
-        (B < 255 ? B < 1 ? 0 : B : 255))
-        .toString(16).slice(1);
+  const num = parseInt(color.replace("#", ""), 16);
+  const amt = Math.round(2.55 * percent * 100);
+  const R = (num >> 16) + amt;
+  const G = ((num >> 8) & 0x00ff) + amt;
+  const B = (num & 0x0000ff) + amt;
+  return (
+    "#" +
+    (
+      0x1000000 +
+      (R < 255 ? (R < 1 ? 0 : R) : 255) * 0x10000 +
+      (G < 255 ? (G < 1 ? 0 : G) : 255) * 0x100 +
+      (B < 255 ? (B < 1 ? 0 : B) : 255)
+    )
+      .toString(16)
+      .slice(1)
+  );
 }
 
 // =====================================================

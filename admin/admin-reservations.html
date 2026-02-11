@@ -3,7 +3,25 @@
     <div class="card p-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2 class="mb-0">Reservation Management</h2>
-            <button id="report-button" class="btn btn-primary btn-sm" style="min-width:110px;max-width:150px;">Generate Report</button>
+            <div class="d-flex gap-2 align-items-center">
+                <button id="report-button" class="btn btn-primary btn-sm" style="min-width:110px;max-width:150px;">Generate Report</button>
+            </div>
+        </div>
+        <div id="reservation-status-filter-wrapper" class="admin-reservations-filter d-none">
+            <label for="reservation-status-filter" class="mb-0">Filter:</label>
+            <select id="reservation-status-filter" class="form-select form-select-sm" style="width: auto; min-width: 200px;">
+                <option value="all">All Reservations</option>
+                <option value="PENDING">Pending</option>
+                <option value="PAID">Paid/Partially Paid</option>
+                <option value="CONFIRMED">Confirmed</option>
+                <option value="CHECKED_IN">Checked-In</option>
+                <option value="COMPLETED">Completed</option>
+                <option value="CANCELLED">Cancelled</option>
+            </select>
+        </div>
+        <div id="reservation-refresh-wrapper" class="admin-reservations-refresh d-none">
+            <button id="refresh-reservations" class="btn btn-outline-primary btn-sm">Refresh</button>
+        </div>
         <!-- Report Generation Modal -->
         <div class="modal fade" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
@@ -66,9 +84,13 @@
                     <h5 class="mb-1" style="color:#d97757;">Canceled Reservations</h5>
                     <p class="mb-0 text-muted" style="font-size:0.9rem;">Latest customer cancellation reasons.</p>
                 </div>
-                <span id="cancellationCountBadge" class="badge bg-danger">0</span>
+                <div class="d-flex align-items-center gap-2">
+                    <button id="cancellationToggleBtn" class="btn btn-sm btn-outline-danger" type="button" aria-expanded="false" aria-controls="cancellation-requests-list">Expand</button>
+                    <button id="cancellationClearBtn" class="btn btn-sm btn-outline-secondary" type="button">Clear</button>
+                    <span id="cancellationCountBadge" class="badge bg-danger">0</span>
+                </div>
             </div>
-            <div id="cancellation-requests-list" class="mt-3">
+            <div id="cancellation-requests-list" class="mt-3 d-none">
                 <div class="text-muted">No cancellation requests yet.</div>
             </div>
         </div>
@@ -147,6 +169,28 @@
 (function initReservations() {
     if (typeof renderAdminReservations === 'function') {
         renderAdminReservations();
+    }
+
+    const cancellationToggleBtn = document.getElementById('cancellationToggleBtn');
+    const cancellationClearBtn = document.getElementById('cancellationClearBtn');
+    const cancellationList = document.getElementById('cancellation-requests-list');
+    const cancellationCountBadge = document.getElementById('cancellationCountBadge');
+    if (cancellationToggleBtn && cancellationList && !cancellationToggleBtn.dataset.bound) {
+        cancellationToggleBtn.dataset.bound = 'true';
+        cancellationToggleBtn.addEventListener('click', function () {
+            const isHidden = cancellationList.classList.toggle('d-none');
+            cancellationToggleBtn.textContent = isHidden ? 'Expand' : 'Collapse';
+            cancellationToggleBtn.setAttribute('aria-expanded', String(!isHidden));
+        });
+    }
+    if (cancellationClearBtn && cancellationList && !cancellationClearBtn.dataset.bound) {
+        cancellationClearBtn.dataset.bound = 'true';
+        cancellationClearBtn.addEventListener('click', function () {
+            cancellationList.innerHTML = '<div class="text-muted">No cancellation requests yet.</div>';
+            if (cancellationCountBadge) {
+                cancellationCountBadge.textContent = '0';
+            }
+        });
     }
     
     // Report button handler
@@ -300,6 +344,29 @@
             } catch (err) {
                 console.error('Email sending error:', err);
                 statusDiv.innerHTML = '<div class="alert alert-danger">Error sending email. Please try again.</div>';
+            }
+        });
+    }
+    
+    // Add event listener for status filter
+    const statusFilter = document.getElementById('reservation-status-filter');
+    if (statusFilter) {
+        statusFilter.addEventListener('change', function() {
+            console.log('🔍 Filter changed to:', this.value);
+            // Re-render reservations with the new filter
+            if (typeof renderAdminReservations === 'function') {
+                renderAdminReservations();
+            }
+        });
+    }
+    
+    // Add event listener for refresh button
+    const refreshBtn = document.getElementById('refresh-reservations');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', function() {
+            console.log('🔄 Refreshing reservations...');
+            if (typeof renderAdminReservations === 'function') {
+                renderAdminReservations();
             }
         });
     }

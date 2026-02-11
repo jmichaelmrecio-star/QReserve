@@ -10,15 +10,14 @@
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="/admin/admin-dashboard.css">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <!-- Flatpickr CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    
 </head>
 <body>
     <!-- Header navigation removed for admin pages -->
 
     <header id="admin-header" style="position: sticky; top: 0; z-index: 1000; background-color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
         <!-- Shared Admin Actions Component (Navigation/Tabs) -->
-        <section id="admin-actions" class="container" style="margin-top: 0; padding: 10px 0;">
+        <section id="admin-actions" class="container-fluid" style="margin-top: 0; padding: 10px 20px;">
             <!-- Component will be loaded here -->
         </section>
     </header>
@@ -168,7 +167,9 @@
 
     function guardCustomerAccess() {
         const role = getEffectiveRole();
-        if (role === 'customer') {
+        // Only allow admin and manager roles - redirect everyone else
+        if (role !== 'admin' && role !== 'manager') {
+            console.warn('Access denied: Admin dashboard requires admin or manager role. Current role:', role);
             window.location.replace('/index.html');
             return true;
         }
@@ -197,8 +198,6 @@
 
     // Initialize role-based UI visibility
     function initializeRoleBasedUI() {
-        // DEBUG: Show current role in debug-info
-        const debugDiv = document.getElementById('debug-info');
         // Only declare userRole ONCE
         var userRole = sessionStorage.getItem('qreserve_user_role');
       
@@ -210,48 +209,35 @@
         
         console.log('Initializing role-based UI. User role:', userRole);
         
-        // Show admin-only tabs if user is admin (not manager)
-        if (userRole === 'admin' || userRole === 'manager') {
-            adminOnlyElements.forEach(el => {
-                el.style.display = userRole === 'admin' ? '' : 'none';
-            });
-            managerOnlyElements.forEach(el => {
-                el.style.display = userRole === 'manager' || userRole === 'admin' ? '' : 'none';
-            });
-          
-            // Update role badge
-            if (roleBadge && roleText) {
-                if (userRole === 'admin') {
-                    roleText.textContent = '👑 Administrator - Full Access';
-                    roleBadge.className = 'badge rounded-pill mb-2 bg-warning text-dark';
-                } else {
-                    roleText.textContent = '👔 Manager - Limited Access';
-                    roleBadge.className = 'badge rounded-pill mb-2 bg-primary';
-                }
-            }
-            // Show/hide manager info box
-            if (managerInfoBox) {
-                managerInfoBox.style.display = userRole === 'manager' ? 'block' : 'none';
-            }
-            console.log(userRole === 'admin' ? '✅ Admin tabs visible (Users, Services, Promo Codes, Payment Verifications, but My Reservations hidden)' : 'ℹ️ Manager view: Limited tabs (Schedule, Reservations, Check-in, Payment Verifications)');
-        } else {
-            // Customer view - hide admin-only and manager-only tabs, show customer view
-            adminOnlyElements.forEach(el => {
-                el.style.display = 'none';
-            });
-            managerOnlyElements.forEach(el => {
-                el.style.display = 'none';
-            });
-            // Update role badge for customers
-            if (roleBadge && roleText) {
-                roleText.textContent = '👤 Customer View';
-                roleBadge.className = 'badge rounded-pill mb-2 bg-success';
-            }
-            if (managerInfoBox) {
-                managerInfoBox.style.display = 'none';
-            }
-            console.log('👤 Customer view enabled');
+        // Only initialize for admin or manager roles
+        if (userRole !== 'admin' && userRole !== 'manager') {
+            console.error('Unauthorized role detected in initializeRoleBasedUI:', userRole);
+            return;
         }
+        
+        // Show admin-only tabs if user is admin (not manager)
+        adminOnlyElements.forEach(el => {
+            el.style.display = userRole === 'admin' ? '' : 'none';
+        });
+        managerOnlyElements.forEach(el => {
+            el.style.display = userRole === 'manager' || userRole === 'admin' ? '' : 'none';
+        });
+      
+        // Update role badge
+        if (roleBadge && roleText) {
+            if (userRole === 'admin') {
+                roleText.textContent = '👑 Administrator - Full Access';
+                roleBadge.className = 'badge rounded-pill mb-2 bg-warning text-dark';
+            } else {
+                roleText.textContent = '👔 Manager - Limited Access';
+                roleBadge.className = 'badge rounded-pill mb-2 bg-primary';
+            }
+        }
+        // Show/hide manager info box
+        if (managerInfoBox) {
+            managerInfoBox.style.display = userRole === 'manager' ? 'block' : 'none';
+        }
+        console.log(userRole === 'admin' ? '✅ Admin tabs visible (Users, Services, Promo Codes, Payment Verifications, but My Reservations hidden)' : 'ℹ️ Manager view: Limited tabs (Schedule, Reservations, Check-in, Payment Verifications)');
     }
 
     // Make functions globally available
@@ -352,83 +338,6 @@
             console.log('✅ Admin Dashboard initialized successfully');
         }, 100);
     });
-    </script>
-    <!-- Flatpickr JS -->
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script>
-        // Initialize Flatpickr for all date inputs in admin dashboard
-        function initializeFlatpickr() {
-            // Report date range pickers
-            const reportStartDate = document.getElementById("reportStartDate");
-            if (reportStartDate) {
-                flatpickr(reportStartDate, {
-                    dateFormat: "Y-m-d",
-                    altFormat: "F j, Y",
-                    altInput: true,
-                    disableMobile: false
-                });
-            }
-
-            const reportEndDate = document.getElementById("reportEndDate");
-            if (reportEndDate) {
-                flatpickr(reportEndDate, {
-                    dateFormat: "Y-m-d",
-                    altFormat: "F j, Y",
-                    altInput: true,
-                    disableMobile: false
-                });
-            }
-
-            // Schedule/Block dates pickers
-            const blockStartDate = document.getElementById("blockStartDate");
-            if (blockStartDate) {
-                flatpickr(blockStartDate, {
-                    minDate: new Date(),
-                    dateFormat: "Y-m-d",
-                    altFormat: "F j, Y",
-                    altInput: true,
-                    disableMobile: false
-                });
-            }
-
-            const blockEndDate = document.getElementById("blockEndDate");
-            if (blockEndDate) {
-                flatpickr(blockEndDate, {
-                    minDate: new Date(),
-                    dateFormat: "Y-m-d",
-                    altFormat: "F j, Y",
-                    altInput: true,
-                    disableMobile: false
-                });
-            }
-
-            // Promo code expiration date
-            const expirationDateInput = document.getElementById("expirationDateInput");
-            if (expirationDateInput) {
-                flatpickr(expirationDateInput, {
-                    minDate: new Date(),
-                    dateFormat: "Y-m-d",
-                    altFormat: "F j, Y",
-                    altInput: true,
-                    disableMobile: false
-                });
-            }
-        }
-
-        // Initialize on document ready and whenever content is loaded
-        document.addEventListener('DOMContentLoaded', initializeFlatpickr);
-        document.addEventListener('contentLoaded', initializeFlatpickr);
-
-        // Re-initialize after dynamic content is loaded (for component loader)
-        const originalFetch = window.fetch;
-        window.fetch = function(...args) {
-            return originalFetch.apply(this, args).then(response => {
-                if (response.ok) {
-                    setTimeout(initializeFlatpickr, 100);
-                }
-                return response;
-            });
-        };
     </script>
 </body>
 </html>

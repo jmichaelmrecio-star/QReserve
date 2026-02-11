@@ -18,14 +18,16 @@ function formatAmenityDateTime(dateStr, timeStr) {
     displayDate = new Date(dateStr).toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
-      year: "numeric"
+      year: "numeric",
     });
   } catch (e) {
     displayDate = dateStr;
   }
 
   if (!timeStr) return displayDate;
-  const normalizedTime = String(timeStr).includes(":") ? timeStr : formatTime24To12(parseInt(timeStr));
+  const normalizedTime = String(timeStr).includes(":")
+    ? timeStr
+    : formatTime24To12(parseInt(timeStr));
   return `${displayDate} ${normalizedTime}`;
 }
 
@@ -41,22 +43,33 @@ async function processGCashPayment(event, reservationId, reservationHash) {
   event.preventDefault();
   if (paymentSubmissionInProgress) return;
 
-  const gcashReferenceNumber = document.getElementById("gcashReferenceNumber").value.trim();
-  
+  const gcashReferenceNumber = document
+    .getElementById("gcashReferenceNumber")
+    .value.trim();
+
   // Validate GCash reference number format (must be 10-13 digits only)
   if (!/^\d{10,13}$/.test(gcashReferenceNumber)) {
-    showAlert("Invalid GCash reference number. Please enter 10-13 digits only.", "error");
+    showAlert(
+      "Invalid GCash reference number. Please enter 10-13 digits only.",
+      "error",
+    );
     return;
   }
-  
+
   // Get selected payment type
-  const paymentTypeRadio = document.querySelector('input[name="paymentType"]:checked');
-  const paymentType = paymentTypeRadio ? paymentTypeRadio.value : 'downpayment';
-  
-  let finalHash = reservationHash || sessionStorage.getItem("payment_reservation_hash");
+  const paymentTypeRadio = document.querySelector(
+    'input[name="paymentType"]:checked',
+  );
+  const paymentType = paymentTypeRadio ? paymentTypeRadio.value : "downpayment";
+
+  let finalHash =
+    reservationHash || sessionStorage.getItem("payment_reservation_hash");
 
   if (!finalHash || !window.gcashReceiptFile) {
-    showAlert("Please provide the reference number and upload the receipt.", "warning");
+    showAlert(
+      "Please provide the reference number and upload the receipt.",
+      "warning",
+    );
     return;
   }
 
@@ -76,14 +89,17 @@ async function processGCashPayment(event, reservationId, reservationHash) {
   try {
     const response = await fetch("http://localhost:3000/api/payment/upload", {
       method: "POST",
-      body: formData
+      body: formData,
     });
 
     const result = await response.json();
     if (response.ok) {
-      showAlert("Payment submitted. Awaiting admin verification. Your QR code will be emailed after approval.", "success");
+      showAlert(
+        "Payment submitted. Awaiting admin verification. Your QR code will be emailed after approval.",
+        "success",
+      );
       setTimeout(() => {
-        window.location.href = "customer-dashboard.html";
+        window.location.href = "my-reservations.html";
       }, 1500);
     } else {
       showAlert(result.message || "Payment submission failed.", "error");
@@ -125,13 +141,19 @@ function renderMultiAmenityItems(amenities) {
     card.style.marginBottom = "0.75rem";
 
     const checkInText = formatAmenityDateTime(item.checkIn, item.checkInTime);
-    const checkOutText = formatAmenityDateTime(item.checkOut, item.checkOutTime);
+    const checkOutText = formatAmenityDateTime(
+      item.checkOut,
+      item.checkOutTime,
+    );
     const inclusionsId = `inclusions-${index}`;
     const toggleBtnId = `toggle-inclusions-${index}`;
-    
-    const hasInclusions = Array.isArray(item.inclusions) && item.inclusions.length > 0;
-    const inclusionsHTML = hasInclusions 
-      ? item.inclusions.map(inc => `<li style="margin: 0.25rem 0;">${inc}</li>`).join('')
+
+    const hasInclusions =
+      Array.isArray(item.inclusions) && item.inclusions.length > 0;
+    const inclusionsHTML = hasInclusions
+      ? item.inclusions
+          .map((inc) => `<li style="margin: 0.25rem 0;">${inc}</li>`)
+          .join("")
       : '<li style="margin: 0.25rem 0; color: #999;">No inclusions listed</li>';
 
     card.innerHTML = `
@@ -151,7 +173,9 @@ function renderMultiAmenityItems(amenities) {
         <span style="font-weight: 700;">Check-in and Check-out date and time:</span> ${checkInText} → ${checkOutText}
       </div>
       
-      ${hasInclusions ? `
+      ${
+        hasInclusions
+          ? `
       <div style="margin-bottom: 1rem;">
         <div style="font-weight: 700; color: #333; font-size: 0.95rem; margin-bottom: 0.5rem;">Inclusions:</div>
         <button type="button" id="${toggleBtnId}" style="
@@ -167,7 +191,7 @@ function renderMultiAmenityItems(amenities) {
           gap: 0.5rem;
         ">
           <span style="display: inline-block; transition: transform 0.3s;">▶</span>
-          <span>${item.inclusions.length} item${item.inclusions.length !== 1 ? 's' : ''}</span>
+          <span>${item.inclusions.length} item${item.inclusions.length !== 1 ? "s" : ""}</span>
         </button>
         <div id="${inclusionsId}" style="
           display: none;
@@ -188,7 +212,9 @@ function renderMultiAmenityItems(amenities) {
           </ul>
         </div>
       </div>
-      ` : ''}
+      `
+          : ""
+      }
       
       <div style="
         margin-top: 1rem;
@@ -208,13 +234,13 @@ function renderMultiAmenityItems(amenities) {
     if (hasInclusions) {
       const toggleBtn = document.getElementById(toggleBtnId);
       const inclusionsContent = document.getElementById(inclusionsId);
-      const arrow = toggleBtn.querySelector('span:first-child');
+      const arrow = toggleBtn.querySelector("span:first-child");
 
-      toggleBtn.addEventListener('click', function(e) {
+      toggleBtn.addEventListener("click", function (e) {
         e.preventDefault();
-        const isHidden = inclusionsContent.style.display === 'none';
-        inclusionsContent.style.display = isHidden ? 'block' : 'none';
-        arrow.style.transform = isHidden ? 'rotate(90deg)' : 'rotate(0deg)';
+        const isHidden = inclusionsContent.style.display === "none";
+        inclusionsContent.style.display = isHidden ? "block" : "none";
+        arrow.style.transform = isHidden ? "rotate(90deg)" : "rotate(0deg)";
       });
     }
   });
@@ -223,8 +249,10 @@ function renderMultiAmenityItems(amenities) {
 function populateSummaryFromMultiAmenity(multiAmenityReservation) {
   const amenities = multiAmenityReservation?.amenities || [];
   const originalTotal = multiAmenityReservation?.originalTotal || 0;
-  const discountAmount = multiAmenityReservation?.appliedPromo?.discountAmount || 0;
-  const finalTotal = multiAmenityReservation?.finalTotal || (originalTotal - discountAmount);
+  const discountAmount =
+    multiAmenityReservation?.appliedPromo?.discountAmount || 0;
+  const finalTotal =
+    multiAmenityReservation?.finalTotal || originalTotal - discountAmount;
 
   const reservationTypeEl = document.getElementById("reservationTypeDisplay");
   const amenitiesListEl = document.getElementById("amenitiesListDisplay");
@@ -237,55 +265,78 @@ function populateSummaryFromMultiAmenity(multiAmenityReservation) {
 
   // Set reservation type
   if (reservationTypeEl) {
-    reservationTypeEl.textContent = amenities.length > 1 ? "Multi-Amenity" : "Single Amenity";
+    reservationTypeEl.textContent =
+      amenities.length > 1 ? "Multi-Amenity" : "Single Amenity";
   }
 
   // Set amenities list (only for multi-amenity)
   if (amenities.length > 1 && amenitiesListEl && amenitiesListRow) {
-    const amenityNames = amenities.map(item => item.serviceName || "Service").join(", ");
+    const amenityNames = amenities
+      .map((item) => item.serviceName || "Service")
+      .join(", ");
     amenitiesListEl.textContent = amenityNames;
     amenitiesListRow.style.display = "flex";
   }
 
   if (nameEl) {
-    const user = (typeof getLoggedInUser === "function") ? getLoggedInUser() : null;
-    nameEl.textContent = user?.full_name || user?.email || nameEl.textContent || "";
+    const user =
+      typeof getLoggedInUser === "function" ? getLoggedInUser() : null;
+    nameEl.textContent =
+      user?.full_name || user?.email || nameEl.textContent || "";
   }
 
   const totalValue = parseFloat(finalTotal || 0);
   const downPayment = totalValue * 0.5;
 
-  if (totalEl) totalEl.textContent = totalValue.toLocaleString(undefined, { minimumFractionDigits: 2 });
-  if (payEl) payEl.textContent = downPayment.toLocaleString(undefined, { minimumFractionDigits: 2 });
-  if (paySmallEl) paySmallEl.textContent = downPayment.toLocaleString(undefined, { minimumFractionDigits: 2 });
-  if (remainingEl) remainingEl.textContent = (totalValue - downPayment).toLocaleString(undefined, { minimumFractionDigits: 2 });
+  if (totalEl)
+    totalEl.textContent = totalValue.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+    });
+  if (payEl)
+    payEl.textContent = downPayment.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+    });
+  if (paySmallEl)
+    paySmallEl.textContent = downPayment.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+    });
+  if (remainingEl)
+    remainingEl.textContent = (totalValue - downPayment).toLocaleString(
+      undefined,
+      { minimumFractionDigits: 2 },
+    );
 
   renderMultiAmenityItems(amenities);
 }
 
 function populateSummaryFromSingleAmenity() {
   // Get single-amenity data from sessionStorage
-  const serviceName = sessionStorage.getItem('selectedServiceName') || 'Service';
-  const servicePrice = parseFloat(sessionStorage.getItem('selectedServicePrice')) || 0;
-  const durationLabel = sessionStorage.getItem('selectedDurationLabel') || sessionStorage.getItem('selectedDuration') || 'N/A';
-  const guests = parseInt(sessionStorage.getItem('guests')) || 1;
-  const checkIn = sessionStorage.getItem('selectedCheckIn');
-  const checkInTime = sessionStorage.getItem('selectedCheckInTime');
-  const checkOut = sessionStorage.getItem('selectedCheckOut');
-  const checkOutTime = sessionStorage.getItem('selectedCheckOutTime');
-  
+  const serviceName =
+    sessionStorage.getItem("selectedServiceName") || "Service";
+  const servicePrice =
+    parseFloat(sessionStorage.getItem("selectedServicePrice")) || 0;
+  const durationLabel =
+    sessionStorage.getItem("selectedDurationLabel") ||
+    sessionStorage.getItem("selectedDuration") ||
+    "N/A";
+  const guests = parseInt(sessionStorage.getItem("guests")) || 1;
+  const checkIn = sessionStorage.getItem("selectedCheckIn");
+  const checkInTime = sessionStorage.getItem("selectedCheckInTime");
+  const checkOut = sessionStorage.getItem("selectedCheckOut");
+  const checkOutTime = sessionStorage.getItem("selectedCheckOutTime");
+
   // Retrieve inclusions from sessionStorage (stored during service selection)
   let inclusions = [];
-  const inclusionsJSON = sessionStorage.getItem('serviceInclusions');
+  const inclusionsJSON = sessionStorage.getItem("serviceInclusions");
   if (inclusionsJSON) {
     try {
       inclusions = JSON.parse(inclusionsJSON);
     } catch (e) {
-      console.warn('Failed to parse serviceInclusions from sessionStorage:', e);
+      console.warn("Failed to parse serviceInclusions from sessionStorage:", e);
       inclusions = [];
     }
   }
-  
+
   const reservationTypeEl = document.getElementById("reservationTypeDisplay");
   const nameEl = document.getElementById("summaryCustomerName");
   const totalEl = document.getElementById("totalReservationCost");
@@ -314,7 +365,8 @@ function populateSummaryFromSingleAmenity() {
 
   // Set customer name
   if (nameEl) {
-    const user = (typeof getLoggedInUser === "function") ? getLoggedInUser() : null;
+    const user =
+      typeof getLoggedInUser === "function" ? getLoggedInUser() : null;
     nameEl.textContent = user?.full_name || user?.email || "";
   }
 
@@ -322,10 +374,23 @@ function populateSummaryFromSingleAmenity() {
   const totalValue = servicePrice;
   const downPayment = totalValue * 0.5;
 
-  if (totalEl) totalEl.textContent = totalValue.toLocaleString(undefined, { minimumFractionDigits: 2 });
-  if (payEl) payEl.textContent = downPayment.toLocaleString(undefined, { minimumFractionDigits: 2 });
-  if (paySmallEl) paySmallEl.textContent = downPayment.toLocaleString(undefined, { minimumFractionDigits: 2 });
-  if (remainingEl) remainingEl.textContent = (totalValue - downPayment).toLocaleString(undefined, { minimumFractionDigits: 2 });
+  if (totalEl)
+    totalEl.textContent = totalValue.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+    });
+  if (payEl)
+    payEl.textContent = downPayment.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+    });
+  if (paySmallEl)
+    paySmallEl.textContent = downPayment.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+    });
+  if (remainingEl)
+    remainingEl.textContent = (totalValue - downPayment).toLocaleString(
+      undefined,
+      { minimumFractionDigits: 2 },
+    );
 
   // Create single amenity item display (similar to multi-amenity)
   const singleAmenityItem = {
@@ -337,7 +402,7 @@ function populateSummaryFromSingleAmenity() {
     checkOut: checkOut,
     checkOutTime: checkOutTime,
     price: servicePrice,
-    inclusions: inclusions
+    inclusions: inclusions,
   };
 
   renderMultiAmenityItems([singleAmenityItem]);
@@ -350,50 +415,77 @@ async function fetchAndDisplaySummary(reservationId, reservationHash) {
     const data = await response.json();
     if (data.success) {
       const res = data.reservation;
-      const reservationTypeEl = document.getElementById("reservationTypeDisplay");
-      const nameEl = document.getElementById("summary-customer-name") || document.getElementById("summaryCustomerName");
-      const totalEl = document.getElementById("summary-total-cost") || document.getElementById("totalReservationCost");
-      const payEl = document.getElementById("summary-downpayment") || document.getElementById("paymentAmount");
+      const reservationTypeEl = document.getElementById(
+        "reservationTypeDisplay",
+      );
+      const nameEl =
+        document.getElementById("summary-customer-name") ||
+        document.getElementById("summaryCustomerName");
+      const totalEl =
+        document.getElementById("summary-total-cost") ||
+        document.getElementById("totalReservationCost");
+      const payEl =
+        document.getElementById("summary-downpayment") ||
+        document.getElementById("paymentAmount");
       const paySmallEl = document.getElementById("paymentAmountSmall");
       const remainingEl = document.getElementById("remainingBalance");
       const amenitiesListRow = document.getElementById("amenitiesListRow");
       const singleAmenityRow = document.getElementById("singleAmenityRow");
-      const singleAmenityDisplay = document.getElementById("singleAmenityDisplay");
-      
+      const singleAmenityDisplay = document.getElementById(
+        "singleAmenityDisplay",
+      );
+
       // For single reservations, show "Single Amenity"
       if (reservationTypeEl) reservationTypeEl.textContent = "Single Amenity";
-      
+
       // Show single amenity name in reservation summary
       if (singleAmenityRow && singleAmenityDisplay) {
         singleAmenityRow.style.display = "flex";
-        singleAmenityDisplay.textContent = res.serviceName || 'Service';
+        singleAmenityDisplay.textContent = res.serviceName || "Service";
       }
-      
+
       // Hide multi-amenity list row
       if (amenitiesListRow) amenitiesListRow.style.display = "none";
-      
+
       // Use correct field name from backend (full_name)
-      if (nameEl) nameEl.textContent = res.full_name || res.customer_name || '';
+      if (nameEl) nameEl.textContent = res.full_name || res.customer_name || "";
       const finalTotal = parseFloat(res.finalTotal || 0);
-      if (totalEl) totalEl.textContent = finalTotal.toLocaleString(undefined, {minimumFractionDigits:2});
+      if (totalEl)
+        totalEl.textContent = finalTotal.toLocaleString(undefined, {
+          minimumFractionDigits: 2,
+        });
       const downPayment = finalTotal * 0.5;
-      if (payEl) payEl.textContent = downPayment.toLocaleString(undefined, {minimumFractionDigits:2});
-      if (paySmallEl) paySmallEl.textContent = downPayment.toLocaleString(undefined, {minimumFractionDigits:2});
-      if (remainingEl) remainingEl.textContent = (finalTotal - downPayment).toLocaleString(undefined, {minimumFractionDigits:2});
-      
+      if (payEl)
+        payEl.textContent = downPayment.toLocaleString(undefined, {
+          minimumFractionDigits: 2,
+        });
+      if (paySmallEl)
+        paySmallEl.textContent = downPayment.toLocaleString(undefined, {
+          minimumFractionDigits: 2,
+        });
+      if (remainingEl)
+        remainingEl.textContent = (finalTotal - downPayment).toLocaleString(
+          undefined,
+          { minimumFractionDigits: 2 },
+        );
+
       // Render single amenity item card
       const singleAmenityItem = {
-        serviceName: res.serviceName || 'Service',
-        durationLabel: res.durationLabel || res.selectedDuration || 'N/A',
+        serviceName: res.serviceName || "Service",
+        durationLabel: res.durationLabel || res.selectedDuration || "N/A",
         guests: res.guests || 1,
-        checkIn: res.check_in ? new Date(res.check_in).toISOString().split('T')[0] : null,
+        checkIn: res.check_in
+          ? new Date(res.check_in).toISOString().split("T")[0]
+          : null,
         checkInTime: res.checkInTimeSlot || null,
-        checkOut: res.check_out ? new Date(res.check_out).toISOString().split('T')[0] : null,
+        checkOut: res.check_out
+          ? new Date(res.check_out).toISOString().split("T")[0]
+          : null,
         checkOutTime: res.checkOutTimeSlot || null,
         price: finalTotal,
-        inclusions: res.inclusions || []
+        inclusions: res.inclusions || [],
       };
-      
+
       renderMultiAmenityItems([singleAmenityItem]);
     }
   } catch (error) {
@@ -403,36 +495,47 @@ async function fetchAndDisplaySummary(reservationId, reservationHash) {
 
 // Initialization for payment.html
 document.addEventListener("DOMContentLoaded", () => {
-    if (window.location.pathname.includes("payment.html")) {
-        let resId = getUrlParameter("reservationId") || sessionStorage.getItem("payment_reservation_id");
-        let resHash = getUrlParameter("hash") || sessionStorage.getItem("payment_reservation_hash");
+  if (window.location.pathname.includes("payment.html")) {
+    let resId =
+      getUrlParameter("reservationId") ||
+      sessionStorage.getItem("payment_reservation_id");
+    let resHash =
+      getUrlParameter("hash") ||
+      sessionStorage.getItem("payment_reservation_hash");
 
-        const multiAmenityReservation = JSON.parse(
-          sessionStorage.getItem("multiAmenityReservation") || "null"
-        );
+    const multiAmenityReservation = JSON.parse(
+      sessionStorage.getItem("multiAmenityReservation") || "null",
+    );
 
-        // Multi-amenity reservation
-        if (multiAmenityReservation && multiAmenityReservation.amenities) {
-          populateSummaryFromMultiAmenity(multiAmenityReservation);
-        } 
-        // Single-amenity reservation from sessionStorage
-        else if (sessionStorage.getItem('selectedServiceName') && sessionStorage.getItem('selectedServicePrice')) {
-          populateSummaryFromSingleAmenity();
-        }
-        // Fallback: fetch from backend if we have ID and hash but no sessionStorage
-        else if (resId && resHash) {
-          fetchAndDisplaySummary(resId, resHash);
-        }
-        // No data available
-        else {
-          console.warn('⚠️ No reservation data found in sessionStorage or URL parameters');
-        }
-
-        const gcashForm = document.getElementById("gcashPaymentForm");
-        if (gcashForm) {
-            gcashForm.addEventListener("submit", (e) => processGCashPayment(e, resId, resHash));
-        }
+    // Multi-amenity reservation
+    if (multiAmenityReservation && multiAmenityReservation.amenities) {
+      populateSummaryFromMultiAmenity(multiAmenityReservation);
     }
+    // Single-amenity reservation from sessionStorage
+    else if (
+      sessionStorage.getItem("selectedServiceName") &&
+      sessionStorage.getItem("selectedServicePrice")
+    ) {
+      populateSummaryFromSingleAmenity();
+    }
+    // Fallback: fetch from backend if we have ID and hash but no sessionStorage
+    else if (resId && resHash) {
+      fetchAndDisplaySummary(resId, resHash);
+    }
+    // No data available
+    else {
+      console.warn(
+        "⚠️ No reservation data found in sessionStorage or URL parameters",
+      );
+    }
+
+    const gcashForm = document.getElementById("gcashPaymentForm");
+    if (gcashForm) {
+      gcashForm.addEventListener("submit", (e) =>
+        processGCashPayment(e, resId, resHash),
+      );
+    }
+  }
 });
 
 // Expose globals
