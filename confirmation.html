@@ -102,13 +102,31 @@
             <span class="detail-label">Service Type:</span>
             <span id="serviceDisplay" class="detail-value">Loading...</span>
         </div>
+
+        <div class="detail-item">
+            <span class="detail-label">Service Name:</span>
+            <span id="serviceNameDisplay" class="detail-value">Loading...</span>
+        </div>
+
+        <div class="detail-item">
+            <span class="detail-label">Check-in:</span>
+            <span id="checkInDisplay" class="detail-value">Loading...</span>
+        </div>
+
+        <div class="detail-item">
+            <span class="detail-label">Check-out:</span>
+            <span id="checkOutDisplay" class="detail-value">Loading...</span>
+        </div>
         
 
         
         <p style="margin-top: 30px; font-size: 0.8rem; color: #999;">
             Please present this page (printed or digital) upon arrival.
         </p>
-        <a href="customer-dashboard.html" class="btn btn-secondary" style="display:inline-block;margin-top:18px;padding:10px 24px;background:#007bff;color:#fff;border:none;border-radius:6px;text-decoration:none;font-weight:600;">Go Back to Profile</a>
+        <div style="display: flex; gap: 12px; justify-content: center; margin-top: 18px; flex-wrap: wrap;">
+            <button id="downloadQrBtn" type="button" style="padding:10px 24px;background:#198754;color:#fff;border:none;border-radius:6px;text-decoration:none;font-weight:600;cursor:pointer;">Download QR</button>
+            <a href="customer-dashboard.html" class="btn btn-secondary" style="display:inline-block;padding:10px 24px;background:#007bff;color:#fff;border:none;border-radius:6px;text-decoration:none;font-weight:600;">Go Back to Profile</a>
+        </div>
     </div>
 
 <script>
@@ -135,6 +153,33 @@
             colorLight : "#ffffff",
             correctLevel : QRCode.CorrectLevel.H
         });
+    };
+
+    const downloadQRCode = () => {
+        const qrContainer = document.getElementById('qrcodeCanvas');
+        if (!qrContainer) return;
+
+        const canvas = qrContainer.querySelector('canvas');
+        const img = qrContainer.querySelector('img');
+        let dataUrl = '';
+
+        if (canvas) {
+            dataUrl = canvas.toDataURL('image/png');
+        } else if (img && img.src) {
+            dataUrl = img.src;
+        }
+
+        if (!dataUrl) {
+            window.alert('QR code is not ready for download. Please try again.');
+            return;
+        }
+
+        const link = document.createElement('a');
+        link.href = dataUrl;
+        link.download = 'reservation-qr.png';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     };
 
     // Function to fetch confirmation details from the server
@@ -173,6 +218,10 @@
         const qrCodeHash = getUrlParameter('hash');
         const formalIdDisplay = document.getElementById('formalReservationIdDisplay');
         const serviceDisplay = document.getElementById('serviceDisplay');
+        const serviceNameDisplay = document.getElementById('serviceNameDisplay');
+        const checkInDisplay = document.getElementById('checkInDisplay');
+        const checkOutDisplay = document.getElementById('checkOutDisplay');
+        const downloadQrBtn = document.getElementById('downloadQrBtn');
         const card = document.getElementById('confirmationCard');
 
         if (qrCodeHash) {
@@ -181,6 +230,10 @@
 
             // 1. Generate QR Code (using full hash string for batch check-in support)
             generateQRCode(qrCodeHash);
+
+            if (downloadQrBtn) {
+                downloadQrBtn.addEventListener('click', downloadQRCode);
+            }
 
             // 2. Fetch Details for ALL reservations
             const reservations = await Promise.all(
@@ -208,6 +261,27 @@
                         .join(', ');
                     serviceDisplay.textContent = serviceNames;
                 }
+
+                if (serviceNameDisplay) {
+                    const serviceNameList = validReservations
+                        .map(res => res.serviceName || res.serviceType || 'Unknown Service')
+                        .join(', ');
+                    serviceNameDisplay.textContent = serviceNameList;
+                }
+
+                if (checkInDisplay) {
+                    const checkInText = firstReservation.check_in
+                        ? new Date(firstReservation.check_in).toLocaleString()
+                        : 'N/A';
+                    checkInDisplay.textContent = checkInText;
+                }
+
+                if (checkOutDisplay) {
+                    const checkOutText = firstReservation.check_out
+                        ? new Date(firstReservation.check_out).toLocaleString()
+                        : 'N/A';
+                    checkOutDisplay.textContent = checkOutText;
+                }
                 
                 // If multiple, update subtitle
                 if (validReservations.length > 1) {
@@ -223,6 +297,15 @@
                 if (serviceDisplay) {
                     serviceDisplay.textContent = 'N/A';
                 }
+                if (serviceNameDisplay) {
+                    serviceNameDisplay.textContent = 'N/A';
+                }
+                if (checkInDisplay) {
+                    checkInDisplay.textContent = 'N/A';
+                }
+                if (checkOutDisplay) {
+                    checkOutDisplay.textContent = 'N/A';
+                }
                 card.querySelector('h1').textContent = "Details Unavailable";
                 card.querySelector('p').textContent = "We confirmed your payment, but failed to retrieve full details. Please contact the resort.";
             }
@@ -232,6 +315,15 @@
             }
             if (serviceDisplay) {
                 serviceDisplay.textContent = 'N/A';
+            }
+            if (serviceNameDisplay) {
+                serviceNameDisplay.textContent = 'N/A';
+            }
+            if (checkInDisplay) {
+                checkInDisplay.textContent = 'N/A';
+            }
+            if (checkOutDisplay) {
+                checkOutDisplay.textContent = 'N/A';
             }
             card.querySelector('h1').textContent = "Invalid Link";
             card.querySelector('p').textContent = "The confirmation link is incomplete. Please use the link provided in your email.";
