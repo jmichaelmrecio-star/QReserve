@@ -6,30 +6,30 @@
   --primary-hover: #1e7a34; /* Darker green for hovers */
   --primary-light: #e8f5e9; /* Very light green for backgrounds */
   --primary-dark: #1b5e20; /* Deep green for accents */
-  
+
   /* Secondary Colors */
   --secondary-color: #d4a574; /* Gold/Amber for luxury feel */
   --secondary-hover: #c9a961; /* Darker gold on hover */
-  
+
   /* Neutral Colors */
   --background-color: #f5f4f1; /* Soft cream instead of pure white */
   --background-darker: #ede8df; /* Slightly darker cream for contrast */
   --text-color: #4a5568; /* Slate blue for better readability */
   --text-light: #6b7280; /* Lighter text for secondary content */
-  
+
   /* Status Colors */
   --success-color: #2d8f5c; /* Green for success states */
   --danger-color: #d97757; /* Coral/Terracotta for errors */
   --danger-hover: #c8644a; /* Darker coral on hover */
   --warning-color: #f59e0b; /* Amber for warnings */
   --info-color: #00897b; /* Teal for info/complementary */
-  
+
   /* UI Elements */
   --border-color: #d4ccc4; /* Softer borders matching cream */
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
   --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
-  
+
   /* ========== SPACING SCALE ========== */
   --spacing-xs: 0.5rem;
   --spacing-sm: 1rem;
@@ -37,7 +37,7 @@
   --spacing-lg: 2rem;
   --spacing-xl: 2.5rem;
   --spacing: 2.5rem; /* Legacy fallback */
-  
+
   /* ========== TYPOGRAPHY ========== */
   --font-size-sm: 0.875rem;
   --font-size-base: 1rem;
@@ -45,19 +45,19 @@
   --font-weight-normal: 400;
   --font-weight-semibold: 600;
   --font-weight-bold: 700;
-  
+
   /* ========== BORDERS & RADIUS ========== */
   --border-radius: 8px;
   --border-radius-sm: 4px;
   --border-radius-lg: 12px;
-  
+
   /* ========== TRANSITIONS & ANIMATIONS ========== */
   --transition-fast: 180ms;
   --transition-base: 300ms;
   --transition-slow: 500ms;
   --transition-easing: cubic-bezier(0.4, 0, 0.2, 1);
   --transition-default: all var(--transition-base) var(--transition-easing);
-  
+
   /* ========== LAYOUT ========== */
   --header-offset: 104px;
   --nav-height: 88px; /* visual height for header */
@@ -276,8 +276,10 @@ nav ul li a {
   letter-spacing: 0.2px;
   border-radius: calc(var(--border-radius) - 2px);
   position: relative;
-  transition: background-color var(--transition-fast) ease,
-    color var(--transition-fast) ease, transform var(--transition-fast) ease,
+  transition:
+    background-color var(--transition-fast) ease,
+    color var(--transition-fast) ease,
+    transform var(--transition-fast) ease,
     box-shadow var(--transition-fast) ease;
 }
 
@@ -362,8 +364,6 @@ main {
   margin: 0 auto;
 }
 
-
-
 /* Reservation page full-bleed parallax background */
 main.reserve-parallax {
   max-width: none;
@@ -398,7 +398,8 @@ main.services-parallax {
   padding-bottom: 0;
   padding-left: 0;
   padding-right: 0;
-  background: linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)),
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)),
     url("images/Sunsetting.jpg");
   background-size: cover;
   background-position: center;
@@ -424,7 +425,8 @@ main.services-parallax {
   border-radius: var(--border-radius);
   border: 2px solid transparent;
   cursor: pointer;
-  transition: background-color var(--transition-base) var(--transition-easing),
+  transition:
+    background-color var(--transition-base) var(--transition-easing),
     transform var(--transition-base) var(--transition-easing),
     box-shadow var(--transition-base) var(--transition-easing);
   font-size: 1rem;
@@ -540,7 +542,8 @@ fieldset:nth-of-type(even) {
 
 /* Center login form vertically */
 main#login-area {
-  background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)),
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)),
     url("images/resort-image.jpg");
   background-size: cover;
   background-position: center;
@@ -572,7 +575,8 @@ main#login-area .form-box-hero {
 
 /* Register area with background */
 main#register-area {
-  background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)),
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)),
     url("images/resort-image.jpg");
   background-size: cover;
   background-position: center;
@@ -672,7 +676,9 @@ main#register-area .form-box-hero {
   border: 1px solid #d4ccc4;
   border-radius: 6px;
   font-size: 1rem;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
   font-family: inherit;
 }
 
@@ -808,13 +814,6 @@ footer {
   flex: 1; /* Makes cards try to share equal space */
   min-width: 280px; /* Minimum size before wrapping */
   text-align: left;
-  transition: all var(--transition-base) var(--transition-easing);
-  cursor: pointer;
-}
-
-.card:hover {
-  transform: translateY(-5px) scale(1.02); /* Nice little lift effect with subtle scale */
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
 }
 
 .card h3 {
@@ -832,7 +831,8 @@ footer {
 /* --- NEW HERO STYLE (for index.html) --- */
 #hero-new {
   /* CRITICAL: Simulated background image for visual impact */
-  background: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)),
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)),
     url("images/resort-image.jpg");
   background-size: cover;
   background-position: center;
@@ -870,9 +870,10 @@ footer {
   line-height: 1.1;
   font-weight: 700;
   letter-spacing: 0.5px;
-  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.6),
-               0 2px 4px rgba(0, 0, 0, 0.5),
-               0 8px 16px rgba(0, 0, 0, 0.4);
+  text-shadow:
+    0 4px 8px rgba(0, 0, 0, 0.6),
+    0 2px 4px rgba(0, 0, 0, 0.5),
+    0 8px 16px rgba(0, 0, 0, 0.4);
 }
 
 .tagline {
@@ -881,9 +882,10 @@ footer {
   margin-bottom: 2rem;
   font-weight: 500;
   letter-spacing: 0.5px;
-  text-shadow: 0 3px 6px rgba(0, 0, 0, 0.6),
-               0 1px 3px rgba(0, 0, 0, 0.5),
-               0 6px 12px rgba(0, 0, 0, 0.4);
+  text-shadow:
+    0 3px 6px rgba(0, 0, 0, 0.6),
+    0 1px 3px rgba(0, 0, 0, 0.5),
+    0 6px 12px rgba(0, 0, 0, 0.4);
 }
 
 .quick-facts {
@@ -1170,7 +1172,9 @@ footer {
 
 /* Featured Amenities Section - Parallax Style */
 #featured-amenities {
-  background: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url("images/Pool_Area_top_view_2.jpg");
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)),
+    url("images/Pool_Area_top_view_2.jpg");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -1198,9 +1202,10 @@ footer {
   margin-bottom: 0.5rem;
   font-weight: 700;
   letter-spacing: 0.6px;
-  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.6),
-               0 2px 4px rgba(0, 0, 0, 0.5),
-               0 8px 16px rgba(0, 0, 0, 0.4);
+  text-shadow:
+    0 4px 8px rgba(0, 0, 0, 0.6),
+    0 2px 4px rgba(0, 0, 0, 0.5),
+    0 8px 16px rgba(0, 0, 0, 0.4);
 }
 
 #featured-amenities .hero-content-wrapper {
@@ -1219,7 +1224,8 @@ footer {
 /* --- AMENITIES PAGE ROTATING PARALLAX SECTIONS --- */
 /* Hero section at top of amenities.html with Pool_Area_top_view.jpg */
 .amenities-hero {
-  background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)),
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)),
     url("images/Pool_Area_top_view.jpg");
   background-size: cover;
   background-position: center;
@@ -1263,7 +1269,8 @@ footer {
 }
 
 .page-hero-section {
-  background: linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)),
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)),
     url("images/Sunsetting.jpg");
   background-size: cover;
   background-position: center;
@@ -1308,7 +1315,8 @@ footer {
 
 /* Generic page hero section for feedback, cart, help pages with resort-image.jpg */
 .page-hero-section {
-  background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)),
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)),
     url("images/resort-image.jpg");
   background-size: cover;
   background-position: center;
@@ -1428,7 +1436,9 @@ footer {
   font-size: 0.98rem;
   min-width: 220px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='20' height='20' fill='%232e3a46'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 12px center;
@@ -1456,7 +1466,8 @@ footer {
 
 /* Grid section with Sunsetting.jpg background */
 .amenities-grid-section {
-  background: linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)),
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)),
     url("images/Sunsetting.jpg");
   background-size: cover;
   background-position: center;
@@ -1510,7 +1521,9 @@ footer {
   border-radius: var(--border-radius);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   overflow: hidden;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
   text-align: center;
   display: flex;
   flex-direction: column;
@@ -1680,7 +1693,8 @@ footer {
 
 .carousel-service-link {
   display: inline-block;
-  transition: transform var(--transition-fast) var(--transition-easing),
+  transition:
+    transform var(--transition-fast) var(--transition-easing),
     color var(--transition-fast) var(--transition-easing),
     text-shadow var(--transition-fast) var(--transition-easing);
 }
@@ -1832,7 +1846,9 @@ footer {
   border-radius: var(--border-radius);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
   overflow: hidden;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
   text-align: left;
   display: flex;
   flex-direction: column;
@@ -1949,7 +1965,9 @@ footer {
   background-color: #f7f7f7;
   padding: 2rem;
   border-radius: var(--border-radius);
-  transition: transform 0.3s, box-shadow 0.3s;
+  transition:
+    transform 0.3s,
+    box-shadow 0.3s;
   text-align: center;
 }
 
@@ -2026,7 +2044,8 @@ footer {
   font-weight: bold;
   display: inline-block;
   font-size: 1rem;
-  transition: background-color var(--transition-base) var(--transition-easing),
+  transition:
+    background-color var(--transition-base) var(--transition-easing),
     color var(--transition-base) var(--transition-easing),
     border-color var(--transition-base) var(--transition-easing),
     box-shadow var(--transition-base) var(--transition-easing);
@@ -2144,7 +2163,9 @@ footer {
   align-items: center; /* Vertically center */
   justify-content: center; /* Horizontally center */
   box-sizing: border-box; /* Include padding and border in the element's total width and height */
-  transition: background-color 0.3s, border-color 0.3s; /* Smooth transition on hover */
+  transition:
+    background-color 0.3s,
+    border-color 0.3s; /* Smooth transition on hover */
 }
 
 .icon-button:hover {
@@ -2255,7 +2276,7 @@ footer {
 .data-table th,
 .data-table td {
   padding: 14px 16px;
-  text-align: center; 
+  text-align: center;
   border: 1px solid #d4ccc4;
   vertical-align: middle;
   font-size: 0.95rem;
@@ -2551,7 +2572,10 @@ footer {
   max-height: 0;
   overflow: hidden;
   transform: translateY(6px);
-  transition: opacity 0.28s ease, max-height 0.35s ease, transform 0.28s ease;
+  transition:
+    opacity 0.28s ease,
+    max-height 0.35s ease,
+    transform 0.28s ease;
 }
 
 .tab-pane.active {
@@ -2620,6 +2644,10 @@ footer {
   float: right;
   font-size: 28px;
   font-weight: bold;
+  border: none;
+  background: transparent;
+  padding: 0;
+  line-height: 1;
   cursor: pointer;
   transition: color 0.2s;
 }
@@ -2916,7 +2944,9 @@ footer {
   border: 2px solid #d4ccc4;
   border-radius: 6px;
   font-size: 0.95rem;
-  transition: border-color 0.3s, box-shadow 0.3s;
+  transition:
+    border-color 0.3s,
+    box-shadow 0.3s;
 }
 
 #gcashPaymentForm input[type="text"]:focus {
@@ -3302,8 +3332,12 @@ main.container > p {
 
 /* Loading/Spinner Animation */
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .spinner {
@@ -3318,8 +3352,15 @@ main.container > p {
 
 /* Pulse Animation for attention-grabbing elements */
 @keyframes pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.85; transform: scale(1.03); }
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.03);
+  }
 }
 
 .pulse {
@@ -3328,8 +3369,14 @@ main.container > p {
 
 /* Fade-in animation for content */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .fade-in {
@@ -3344,15 +3391,24 @@ main.container > p {
 
 /* Glow effect for focus states */
 .glow-focus:focus {
-  box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.15), 0 0 12px rgba(40, 167, 69, 0.2);
+  box-shadow:
+    0 0 0 3px rgba(40, 167, 69, 0.15),
+    0 0 12px rgba(40, 167, 69, 0.2);
   outline: none;
 }
 
 /* Shake animation for errors */
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-8px); }
-  75% { transform: translateX(8px); }
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-8px);
+  }
+  75% {
+    transform: translateX(8px);
+  }
 }
 
 .shake {
@@ -3361,8 +3417,14 @@ main.container > p {
 
 /* Slide-in animation */
 @keyframes slideIn {
-  from { transform: translateX(-100%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 .slide-in {
@@ -3371,8 +3433,13 @@ main.container > p {
 
 /* Badge pulse for notifications */
 @keyframes badge-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
-  50% { box-shadow: 0 0 0 6px rgba(220, 53, 69, 0); }
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(220, 53, 69, 0);
+  }
 }
 
 .badge-notification {
@@ -3408,8 +3475,12 @@ textarea:disabled {
 
 /* Skeleton loader for content loading */
 @keyframes skeleton-loading {
-  0% { background-position: -200px 0; }
-  100% { background-position: calc(200px + 100%) 0; }
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
 }
 
 .skeleton {
@@ -3421,9 +3492,18 @@ textarea:disabled {
 
 /* Success checkmark animation */
 @keyframes checkmark {
-  0% { transform: scale(0) rotate(-45deg); opacity: 0; }
-  50% { transform: scale(1.2) rotate(-45deg); opacity: 1; }
-  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  0% {
+    transform: scale(0) rotate(-45deg);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2) rotate(-45deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
 }
 
 .checkmark-icon {
@@ -3582,11 +3662,11 @@ textarea:disabled {
   .cart-item {
     flex-direction: column;
   }
-  
+
   .btn-remove-cart {
     align-self: flex-end;
   }
-  
+
   .cart-items-list {
     padding: 0 1rem;
   }
@@ -4048,7 +4128,7 @@ textarea:disabled {
   }
 
   /* ========== RESPONSIVE TABLES FOR SMALL SCREENS ========== */
-  
+
   /* Stack tables horizontally with scroll on 360-480px screens */
   .table-responsive {
     max-height: 500px;
@@ -4090,13 +4170,13 @@ textarea:disabled {
 
   /* Hide non-essential columns on ultra-small screens */
   @media (max-width: 360px) {
-    .table thead th:nth-child(n+5),
-    .table tbody td:nth-child(n+5) {
+    .table thead th:nth-child(n + 5),
+    .table tbody td:nth-child(n + 5) {
       display: none;
     }
 
-    .data-table thead th:nth-child(n+6),
-    .data-table tbody td:nth-child(n+6) {
+    .data-table thead th:nth-child(n + 6),
+    .data-table tbody td:nth-child(n + 6) {
       display: none;
     }
 
@@ -4301,10 +4381,18 @@ textarea:disabled {
   }
 
   /* Text scaling */
-  h1 { font-size: 1.75rem; }
-  h2 { font-size: 1.4rem; }
-  h3 { font-size: 1.15rem; }
-  p { font-size: 0.95rem; }
+  h1 {
+    font-size: 1.75rem;
+  }
+  h2 {
+    font-size: 1.4rem;
+  }
+  h3 {
+    font-size: 1.15rem;
+  }
+  p {
+    font-size: 0.95rem;
+  }
 }
 
 /* Small devices (480px - 768px) */
@@ -4546,8 +4634,6 @@ textarea:disabled {
 
 /* Ultra-large screens (1440px+) */
 @media (min-width: 1440px) {
-
-
   .amenities-grid {
     grid-template-columns: repeat(4, 1fr);
   }
@@ -4587,10 +4673,7 @@ textarea:disabled {
   /* Remove hover effects on touch devices, use active states */
   .btn:hover,
   .button-primary:hover,
-  .button-secondary:hover,
-  .card:hover,
-  .amenity-card:hover,
-  .testimonial-card:hover {
+  .button-secondary:hover {
     transform: none;
     box-shadow: var(--shadow-md);
   }
@@ -4662,9 +4745,6 @@ textarea:disabled {
   }
 
   /* Adjust shadows for retina */
-  .card:hover,
-  .amenity-card:hover,
-  .testimonial-card:hover,
   .btn:hover {
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
   }
@@ -4734,5 +4814,3 @@ textarea:disabled {
 ===== END COMMENTED SECTION ===== */
 
 /* ========== END ENHANCED MOBILE RESPONSIVENESS ========== */
-
-

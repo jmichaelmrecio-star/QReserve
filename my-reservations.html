@@ -1,187 +1,384 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>My Reservations - Tito Renz Resort</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css" />
     <style>
-        .cancel-confirm-btn {
-            position: relative;
-            overflow: hidden;
-            transition: transform 0.15s ease, box-shadow 0.2s ease;
-        }
+      .cancel-confirm-btn {
+        position: relative;
+        overflow: hidden;
+        transition:
+          transform 0.15s ease,
+          box-shadow 0.2s ease;
+      }
 
-        .cancel-confirm-btn:hover {
-            transform: translateY(-1px) scale(1.02);
-            box-shadow: 0 6px 14px rgba(217, 119, 87, 0.35);
-        }
+      .cancel-confirm-btn:hover {
+        transform: translateY(-1px) scale(1.02);
+        box-shadow: 0 6px 14px rgba(217, 119, 87, 0.35);
+      }
 
-        .cancel-confirm-btn:active {
-            transform: translateY(0) scale(0.99);
-        }
+      .cancel-confirm-btn:active {
+        transform: translateY(0) scale(0.99);
+      }
 
-        .cancel-confirm-btn.is-processing {
-            opacity: 0.8;
-            pointer-events: none;
-        }
+      .cancel-confirm-btn.is-processing {
+        opacity: 0.8;
+        pointer-events: none;
+      }
 
-        .cancel-result-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.6);
-            z-index: 10000;
-            align-items: center;
-            justify-content: center;
-            padding: 16px;
-        }
+      .cancel-result-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 10000;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+      }
 
-        .cancel-result-card {
-            background: white;
-            border-radius: 12px;
-            padding: 2rem;
-            max-width: 480px;
-            width: 100%;
-            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.2);
-            text-align: center;
-        }
+      .cancel-result-card {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        max-width: 480px;
+        width: 100%;
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.2);
+        text-align: center;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <header>
-        <nav>
-            <a href="index.html" class="nav-logo" aria-label="Tito Renz Resort">
-                <img src="images/logo.png" alt="Tito Renz Resort Logo">
-            </a>
-            <ul></ul>
-            <div class="nav-right" id="navRight"></div>
-        </nav>
+      <nav>
+        <a href="index.html" class="nav-logo" aria-label="Tito Renz Resort">
+          <img src="images/logo.png" alt="Tito Renz Resort Logo" />
+        </a>
+        <ul></ul>
+        <div class="nav-right" id="navRight"></div>
+      </nav>
     </header>
 
     <section class="page-hero-section">
-        <div class="hero-content">
-            <br><br>
-            <h1>My Reservations</h1>
-            <p>View and manage your booking history</p>
-        </div>
+      <div class="hero-content">
+        <br /><br />
+        <h1>My Reservations</h1>
+        <p>View and manage your booking history</p>
+      </div>
     </section>
 
     <main class="has-fixed-header-offset">
-        <section class="profile-card">
-            <div class="table-responsive">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Service Type</th>
-                            <th>Check-in Date</th>
-                            <th>Checkout Date</th>
-                            <th>Status</th>
-                            <th>Payment Type</th>
-                            <th>Payment Status</th>
-                            <th>Total Paid</th>
-                            <th>Payment Image</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="user-reservations-list">
-                        <!-- Reservation rows will be dynamically inserted here by JS -->
-                    </tbody>
-                </table>
-            </div>
-        </section>
+      <section class="profile-card">
+        <div
+          style="
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px;
+            margin: 16px 0;
+            padding: 0 20px;
+            justify-content: space-between;
+          "
+        >
+          <div
+            style="
+              display: flex;
+              flex-wrap: wrap;
+              align-items: center;
+              gap: 12px;
+            "
+          >
+            <label for="reservationStatusFilter" style="font-weight: 600"
+              >Filter by status:</label
+            >
+            <select
+              id="reservationStatusFilter"
+              style="
+                padding: 8px 12px;
+                border: 1px solid #d4ccc4;
+                border-radius: 8px;
+                min-width: 200px;
+              "
+            >
+              <option value="ALL">All</option>
+              <option value="PENDING">Pending</option>
+              <option value="CONFIRMED">Confirmed</option>
+              <option value="CHECKED_IN">Checked In</option>
+              <option value="COMPLETED">Completed</option>
+              <option value="CANCELLED">Cancelled</option>
+              <option value="REJECTED">Rejected</option>
+            </select>
+          </div>
+          <button
+            id="reservationsRefreshBtn"
+            class="btn btn-secondary"
+            type="button"
+            style="
+              padding: 8px 10px;
+              font-size: 0.9rem;
+              min-width: 0;
+              flex: 0 0 auto;
+            "
+          >
+            Refresh
+          </button>
+        </div>
+        <div class="table-responsive">
+          <table class="data-table" style="margin: 16px 0">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Service Type</th>
+                <th>Check-in Date</th>
+                <th>Checkout Date</th>
+                <th>Status</th>
+                <th>Payment Type</th>
+                <th>Payment Status</th>
+                <th>Total Paid</th>
+                <th>Payment Image</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="user-reservations-list">
+              <!-- Reservation rows will be dynamically inserted here by JS -->
+            </tbody>
+          </table>
+        </div>
+      </section>
     </main>
 
     <!-- Cancel Reservation Confirmation Modal -->
-    <div id="cancelReservationModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.6); z-index: 9999; align-items: center; justify-content: center;">
-        <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 500px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);">
-            <h2 style="margin-top: 0; color: #d97757; font-size: 1.4rem; margin-bottom: 1rem;">⚠️ Cancel Reservation</h2>
-            <p style="color: #4a5568; margin-bottom: 1.5rem; line-height: 1.6;">
-                Are you sure you want to cancel your <strong id="cancelServiceName"></strong> reservation?
-            </p>
-            <p style="color: #666; font-size: 0.95rem; margin-bottom: 2rem;">
-                This action cannot be undone. Your payment will be subject to our cancellation policy.
-            </p>
-            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                <button id="confirmCancelBtn" class="btn btn-danger cancel-confirm-btn" style="flex: 1; min-width: 150px;">Confirm Cancel</button>
-                <button id="keepReservationBtn" class="btn btn-primary" style="flex: 1; min-width: 150px;">Keep Reservation</button>
-            </div>
+    <div
+      id="cancelReservationModal"
+      style="
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+      "
+    >
+      <div
+        style="
+          background: white;
+          border-radius: 12px;
+          padding: 2rem;
+          max-width: 500px;
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        "
+      >
+        <h2
+          style="
+            margin-top: 0;
+            color: #d97757;
+            font-size: 1.4rem;
+            margin-bottom: 1rem;
+          "
+        >
+          ⚠️ Cancel Reservation
+        </h2>
+        <p style="color: #4a5568; margin-bottom: 1.5rem; line-height: 1.6">
+          Are you sure you want to cancel your
+          <strong id="cancelServiceName"></strong> reservation?
+        </p>
+        <p style="color: #666; font-size: 0.95rem; margin-bottom: 2rem">
+          This action cannot be undone. Your payment will be subject to our
+          cancellation policy.
+        </p>
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap">
+          <button
+            id="confirmCancelBtn"
+            class="btn btn-danger cancel-confirm-btn"
+            style="flex: 1; min-width: 150px"
+          >
+            Confirm Cancel
+          </button>
+          <button
+            id="keepReservationBtn"
+            class="btn btn-primary"
+            style="flex: 1; min-width: 150px"
+          >
+            Keep Reservation
+          </button>
         </div>
+      </div>
     </div>
 
     <!-- Cancellation Reason Modal -->
-    <div id="cancelReasonModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.65); z-index: 10001; align-items: center; justify-content: center;">
-        <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 560px; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.25);">
-            <h2 style="margin-top: 0; color: #d97757; font-size: 1.4rem; margin-bottom: 1rem;">✍️ Cancellation Reason</h2>
-            <p style="color: #4a5568; margin-bottom: 1.25rem; line-height: 1.6;">
-                Please tell us why you are cancelling your <strong id="cancelReasonServiceName"></strong> reservation. This will be sent to the admin dashboard.
-            </p>
-            <label for="cancelReasonSelect" style="display:block;font-weight:600;margin-bottom:0.5rem;">Reason Category</label>
-            <select id="cancelReasonSelect" style="width:100%;padding:10px;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:1rem;">
-                <option value="">Select a reason</option>
-                <option value="Change of plans">Change of plans</option>
-                <option value="Found a different date">Found a different date</option>
-                <option value="Pricing concerns">Pricing concerns</option>
-                <option value="Booking details need update">Booking details need update</option>
-                <option value="Other">Other</option>
-            </select>
-            <label for="cancelReasonText" style="display:block;font-weight:600;margin-bottom:0.5rem;">Additional Details</label>
-            <textarea id="cancelReasonText" rows="4" style="width:100%;padding:12px;border:1px solid #e2e8f0;border-radius:8px;resize:vertical;"></textarea>
-            <p style="color:#718096;font-size:0.85rem;margin-top:0.5rem;">Please provide at least 10 characters.</p>
-            <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:1.5rem;">
-                <button id="submitCancelReasonBtn" class="btn btn-danger cancel-confirm-btn" style="flex:1;min-width:170px;">Submit Cancellation</button>
-                <button id="backToCancelBtn" class="btn btn-secondary" style="flex:1;min-width:170px;">Back</button>
-            </div>
+    <div
+      id="cancelReasonModal"
+      style="
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.65);
+        z-index: 10001;
+        align-items: center;
+        justify-content: center;
+      "
+    >
+      <div
+        style="
+          background: white;
+          border-radius: 12px;
+          padding: 2rem;
+          max-width: 560px;
+          box-shadow: 0 10px 28px rgba(0, 0, 0, 0.25);
+        "
+      >
+        <h2
+          style="
+            margin-top: 0;
+            color: #d97757;
+            font-size: 1.4rem;
+            margin-bottom: 1rem;
+          "
+        >
+          ✍️ Cancellation Reason
+        </h2>
+        <p style="color: #4a5568; margin-bottom: 1.25rem; line-height: 1.6">
+          Please tell us why you are cancelling your
+          <strong id="cancelReasonServiceName"></strong> reservation. This will
+          be sent to the admin dashboard.
+        </p>
+        <label
+          for="cancelReasonSelect"
+          style="display: block; font-weight: 600; margin-bottom: 0.5rem"
+          >Reason Category</label
+        >
+        <select
+          id="cancelReasonSelect"
+          style="
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+          "
+        >
+          <option value="">Select a reason</option>
+          <option value="Change of plans">Change of plans</option>
+          <option value="Found a different date">Found a different date</option>
+          <option value="Pricing concerns">Pricing concerns</option>
+          <option value="Booking details need update">
+            Booking details need update
+          </option>
+          <option value="Other">Other</option>
+        </select>
+        <label
+          for="cancelReasonText"
+          style="display: block; font-weight: 600; margin-bottom: 0.5rem"
+          >Additional Details</label
+        >
+        <textarea
+          id="cancelReasonText"
+          rows="4"
+          style="
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            resize: vertical;
+          "
+        ></textarea>
+        <p style="color: #718096; font-size: 0.85rem; margin-top: 0.5rem">
+          Please provide at least 10 characters.
+        </p>
+        <div
+          style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1.5rem"
+        >
+          <button
+            id="submitCancelReasonBtn"
+            class="btn btn-danger cancel-confirm-btn"
+            style="flex: 1; min-width: 170px"
+          >
+            Submit Cancellation
+          </button>
+          <button
+            id="backToCancelBtn"
+            class="btn btn-secondary"
+            style="flex: 1; min-width: 170px"
+          >
+            Back
+          </button>
         </div>
+      </div>
     </div>
 
     <!-- Cancel Reservation Result Modal -->
     <div id="cancelResultModal" class="cancel-result-modal">
-        <div class="cancel-result-card">
-            <h2 id="cancelResultTitle" style="margin-top: 0; font-size: 1.4rem;">Reservation Update</h2>
-            <p id="cancelResultMessage" style="color: #4a5568; margin: 1rem 0 2rem; line-height: 1.6;">Message</p>
-            <button id="cancelResultBtn" class="btn btn-primary" style="min-width: 160px;">OK</button>
-        </div>
+      <div class="cancel-result-card">
+        <h2 id="cancelResultTitle" style="margin-top: 0; font-size: 1.4rem">
+          Reservation Update
+        </h2>
+        <p
+          id="cancelResultMessage"
+          style="color: #4a5568; margin: 1rem 0 2rem; line-height: 1.6"
+        >
+          Message
+        </p>
+        <button
+          id="cancelResultBtn"
+          class="btn btn-primary"
+          style="min-width: 160px"
+        >
+          OK
+        </button>
+      </div>
     </div>
 
     <footer>
-        <div class="footer-content">
-            <div class="footer-section contact-info">
-                <h3>Tito Renz Resort</h3>
-                <p>Your seamless booking experience starts here.</p>
-                <p>📍 Sitio Bulalo, Norzagaray, Philippines</p>
-                <p>📞 0977 246 8920 or 0916 640 3411</p>
-                <p>📧 titorenznorzagaray@gmail.com</p>
-            </div>
-
-            <div class="footer-section quick-links">
-                <h3>Quick Links</h3>
-                <ul>
-                    <!-- Dynamically populated by renderFooterQuickLinks() -->
-                </ul>
-            </div>
-
-            <div class="footer-section about-contact">
-                <h3>About & Contact</h3>
-                <ul>
-                    <li><a href="contact.html">Send Us a Message</a></li>
-                    <li><a href="help.html">Help / Guides</a></li>
-                </ul>
-            </div>
+      <div class="footer-content">
+        <div class="footer-section contact-info">
+          <h3>Tito Renz Resort</h3>
+          <p>Your seamless booking experience starts here.</p>
+          <p>📍 Sitio Bulalo, Norzagaray, Philippines</p>
+          <p>📞 0977 246 8920 or 0916 640 3411</p>
+          <p>📧 titorenznorzagaray@gmail.com</p>
         </div>
-        <div class="footer-bottom">
-            <p>&copy; 2025 QReserve Project - All Rights Reserved.</p>
-            <p style="margin-top:8px;">
-                <a href="#" id="termsLinkFooter" style="color:#d4a574;text-decoration:underline;font-weight:600;">View Terms and Conditions</a>
-            </p>
+
+        <div class="footer-section quick-links">
+          <h3>Quick Links</h3>
+          <ul>
+            <!-- Dynamically populated by renderFooterQuickLinks() -->
+          </ul>
         </div>
+
+        <div class="footer-section about-contact">
+          <h3>About & Contact</h3>
+          <ul>
+            <li><a href="contact.html">Send Us a Message</a></li>
+            <li><a href="help.html">Help / Guides</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2025 QReserve Project - All Rights Reserved.</p>
+        <p style="margin-top: 8px">
+          <a
+            href="#"
+            id="termsLinkFooter"
+            style="color: #d4a574; text-decoration: underline; font-weight: 600"
+            >View Terms and Conditions</a
+          >
+        </p>
+      </div>
     </footer>
 
     <script src="ui-core.js"></script>
     <script src="my-reservations.js"></script>
-</body>
+  </body>
 </html>
