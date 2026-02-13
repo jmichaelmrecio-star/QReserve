@@ -934,20 +934,30 @@
 						document.getElementById('checkout').value = checkoutFromStorage;
 					}
 					if (durationFromStorage && document.getElementById('duration-selector')) {
-						document.getElementById('duration-selector').value = durationFromStorage;
+						const durationSelect = document.getElementById('duration-selector');
+						const previousDuration = durationSelect.value;
+						durationSelect.value = durationFromStorage;
 						if (durationLabelFromStorage) {
 							const durationDisplay = document.getElementById('durationDisplay');
 							if (durationDisplay) {
 								durationDisplay.textContent = durationLabelFromStorage;
 							}
 						}
+						if (durationSelect.value && durationSelect.value !== previousDuration) {
+							durationSelect.dispatchEvent(new Event('change'));
+						}
 					}
 					
 					// Flag to prevent auto-fill on initial load when data is already restored
-					sessionStorage.setItem('isResumingReservation', 'true');
+					const shouldResume = !params.serviceId && !!sessionStorage.getItem('selectedServiceId');
+					if (shouldResume) {
+						sessionStorage.setItem('isResumingReservation', 'true');
+					} else {
+						sessionStorage.removeItem('isResumingReservation');
+					}
 
 					// Restore promo codes and totals from sessionStorage ONLY when resuming
-					if (sessionStorage.getItem('isResumingReservation') === 'true') {
+					if (shouldResume) {
 						const promoCode = sessionStorage.getItem('promoCode') || sessionStorage.getItem('appliedPromoCode');
 						const discountValue = sessionStorage.getItem('discountValue');
 						const finalTotal = sessionStorage.getItem('finalTotal');
@@ -1563,6 +1573,16 @@
 
 		try {
 			// Build reservation data
+			const basePriceValue = parseFloat(document.getElementById('basePriceInput')?.value) || price;
+			const discountValue = parseFloat(document.getElementById('discountValueInput')?.value) || 0;
+			let finalTotalValue = parseFloat(document.getElementById('finalTotalInput')?.value);
+			if (!Number.isFinite(finalTotalValue)) {
+				finalTotalValue = basePriceValue;
+			}
+			if (discountValue > 0) {
+				finalTotalValue = Math.max(basePriceValue - discountValue, 0);
+			}
+
 			const reservationData = {
 				serviceId: serviceId,
 				serviceType: sessionStorage.getItem('selectedServiceType') || '',
@@ -1574,12 +1594,19 @@
 				customer_email: document.getElementById('email')?.value || '',
 				customer_address: document.getElementById('address')?.value || '',
 				customer_notes: document.getElementById('notes')?.value || '',
-				basePrice: parseFloat(document.getElementById('basePriceInput')?.value) || price,
-				finalTotal: price,
+				basePrice: basePriceValue,
+				finalTotal: finalTotalValue,
 				selectedDuration: sessionStorage.getItem('selectedDuration') || '',
 				discountCode: document.getElementById('discountCodeInput')?.value || '',
-				discountValue: parseFloat(document.getElementById('discountValueInput')?.value) || 0
+				discountValue: discountValue
 			};
+
+			console.log('🧾 Reservation pricing payload:', {
+				basePrice: reservationData.basePrice,
+				discountValue: reservationData.discountValue,
+				finalTotal: reservationData.finalTotal,
+				selectedDuration: reservationData.selectedDuration
+			});
 
 			// Submit to backend
 			const response = await fetch('http://localhost:3000/api/reservations/create-reservation', {

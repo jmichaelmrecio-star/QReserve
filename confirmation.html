@@ -71,8 +71,8 @@
   </head>
   <body>
     <div id="confirmationCard" class="confirmation-card">
-      <h1>✅ Reservation Confirmed</h1>
-      <p>
+      <h1 id="statusHeading">✅ Reservation Confirmed</h1>
+      <p id="statusSubtitle">
         Thank you for booking with Tito Renz Resort! Scan the QR code below for
         check-in.
       </p>
@@ -318,6 +318,49 @@
 
           if (validReservations.length > 0) {
             const firstReservation = validReservations[0];
+
+            // Update heading and subtitle based on reservation status
+            const statusHeading = document.getElementById("statusHeading");
+            const statusSubtitle = document.getElementById("statusSubtitle");
+            
+            if (statusHeading && statusSubtitle) {
+              const status = firstReservation.status;
+              
+              switch(status) {
+                case "CONFIRMED":
+                  statusHeading.innerHTML = "✅ Reservation Confirmed";
+                  statusSubtitle.textContent = "Thank you for booking with Tito Renz Resort! Scan the QR code below for check-in.";
+                  break;
+                case "CHECKED_IN":
+                  statusHeading.innerHTML = "🏨 Currently Checked-In";
+                  statusSubtitle.textContent = "Welcome! You are currently checked in. Enjoy your stay at Tito Renz Resort!";
+                  break;
+                case "COMPLETED":
+                  statusHeading.innerHTML = "✨ Stay Completed";
+                  statusSubtitle.textContent = "Thank you for staying with us! We hope you had a wonderful experience.";
+                  break;
+                case "PENDING":
+                  statusHeading.innerHTML = "⏳ Reservation Pending";
+                  statusSubtitle.textContent = "Your reservation is pending approval. Please wait for confirmation.";
+                  break;
+                case "CANCELLED":
+                  statusHeading.innerHTML = "❌ Reservation Cancelled";
+                  statusSubtitle.textContent = "This reservation has been cancelled.";
+                  break;
+                case "REJECTED":
+                  statusHeading.innerHTML = "⚠️ Reservation Rejected";
+                  statusSubtitle.textContent = "Unfortunately, this reservation has been rejected. Please contact us for details.";
+                  break;
+                default:
+                  statusHeading.innerHTML = "✅ Reservation Confirmed";
+                  statusSubtitle.textContent = "Thank you for booking with Tito Renz Resort! Scan the QR code below for check-in.";
+              }
+              
+              // Override subtitle if multiple reservations
+              if (validReservations.length > 1) {
+                statusSubtitle.textContent = `Thank you! Your ${validReservations.length} reservations are ready. Scan below for check-in.`;
+              }
+            }
 
             // Display formal reservation ID
             if (formalIdDisplay) {

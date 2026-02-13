@@ -118,6 +118,86 @@ async function findServiceByAnyId(serviceId, { includeInactive = false } = {}) {
     return Service.findOne(query);
 }
 
+async function validatePromoCodeUsage(code, baseAmount) {
+    if (!code) return { ok: true, promo: null };
+
+    const promoCode = await PromoCode.findOne({ code: code.toUpperCase() });
+    if (!promoCode) {
+        return { ok: false, message: 'Promo code not found or invalid.' };
+    }
+
+    const now = new Date();
+    if (new Date(promoCode.expirationDate) < now) {
+        return { ok: false, message: 'Promo code has expired.' };
+    }
+
+    if (promoCode.timesUsed >= promoCode.usageLimit) {
+        return { ok: false, message: 'Promo code has reached its usage limit.' };
+    }
+
+    if (promoCode.minPurchaseAmount && baseAmount < promoCode.minPurchaseAmount) {
+        return { ok: false, message: `This promo code requires a minimum purchase of ₱${promoCode.minPurchaseAmount.toLocaleString()}.` };
+    }
+
+    return { ok: true, promo: promoCode };
+}
+
+async function incrementPromoUsage(promoCodeId, usageLimit) {
+    if (!promoCodeId) return true;
+
+    const updateResult = await PromoCode.updateOne(
+        { _id: promoCodeId, timesUsed: { $lt: usageLimit } },
+        { $inc: { timesUsed: 1 } }
+    );
+
+    return updateResult.modifiedCount > 0;
+}
+
+async function applyPromoUsageForReservations(reservations) {
+    if (!Array.isArray(reservations) || reservations.length === 0) {
+        return { ok: true };
+    }
+
+    const alreadyApplied = reservations.some(reservation => reservation.promoUsageApplied);
+    if (alreadyApplied) {
+        return { ok: true };
+    }
+
+    const promoReservation = reservations.find(reservation => reservation.discountCode)
+        || reservations.find(reservation => reservation.multiAmenityGroupPrimary);
+
+    const discountCode = promoReservation?.discountCode;
+    if (!discountCode) {
+        return { ok: true };
+    }
+
+    const promoCode = await PromoCode.findOne({ code: discountCode.toUpperCase() });
+    if (!promoCode) {
+        return { ok: false, message: 'Promo code not found or invalid.' };
+    }
+
+    const now = new Date();
+    if (new Date(promoCode.expirationDate) < now) {
+        return { ok: false, message: 'Promo code has expired.' };
+    }
+
+    if (promoCode.timesUsed >= promoCode.usageLimit) {
+        return { ok: false, message: 'Promo code has reached its usage limit.' };
+    }
+
+    const incremented = await incrementPromoUsage(promoCode._id, promoCode.usageLimit);
+    if (!incremented) {
+        return { ok: false, message: 'Promo code has reached its usage limit.' };
+    }
+
+    await Reservation.updateMany(
+        { _id: { $in: reservations.map(reservation => reservation._id) } },
+        { $set: { promoUsageApplied: true } }
+    );
+
+    return { ok: true };
+}
+
 // Helper: Validate reservation lead time requirements using Rolling 30-Minute Rule
 // Standard Rooms (accommodation): Rolling 30-Minute Rule
 //   - If current time is MM:00 to MM:30, can book current hour
@@ -204,6 +284,64 @@ async function validateLeadTime(serviceId, checkInDateTime, serviceTypeFromReque
         // Don't fail the reservation if validation function has an error
         // Just log it and allow the reservation
         return { valid: true };
+    }
+}
+
+// Helper: Validate reschedule availability and lead time
+async function validateRescheduleAvailability(reservations, checkInDateTime, checkOutDateTime, userEmail, accountId) {
+    try {
+        if (!Array.isArray(reservations) || reservations.length === 0) {
+            return { ok: false, message: 'No reservations to validate.' };
+        }
+
+        // Check 14-day minimum lead time before new check-in date
+        const now = new Date();
+        const proposedCheckIn = new Date(checkInDateTime);
+        const daysUntilCheckIn = Math.ceil((proposedCheckIn - now) / (1000 * 60 * 60 * 24));
+
+        if (daysUntilCheckIn < 14) {
+            return { ok: false, message: `Rescheduling requires a minimum 14-day lead time. You have ${daysUntilCheckIn} days. Please choose a date at least 14 days from now.` };
+        }
+
+        // Check if new dates conflict with other reservations for the same user
+        for (const reservation of reservations) {
+            const conflictingReservations = await Reservation.find({
+                _id: { $ne: reservation._id }, // Exclude current reservation
+                accountId: accountId || reservation.accountId,
+                status: { $in: ['CONFIRMED', 'CHECKED_IN', 'PENDING', 'partially-paid', 'fully-paid'] },
+                $or: [
+                    { check_in: { $lt: checkOutDateTime }, check_out: { $gt: checkInDateTime } }
+                ]
+            });
+
+            if (conflictingReservations.length > 0) {
+                return { 
+                    ok: false, 
+                    message: `The new dates conflict with your existing reservation(s). Please choose different dates.` 
+                };
+            }
+        }
+
+        // Check if new dates conflict with blocked dates (maintenance, etc.)
+        const blockedDates = await BlockedDate.findOne({
+            $or: [
+                { appliesToAllServices: true }, // Global blocks
+                { serviceIds: { $in: reservations.map(r => r.serviceId) } }
+            ],
+            $and: [
+                { startDate: { $lt: checkOutDateTime } },
+                { endDate: { $gt: checkInDateTime } }
+            ]
+        });
+
+        if (blockedDates) {
+            return { ok: false, message: `The new dates fall on blocked/maintenance dates. Please choose dates when the resort is open.` };
+        }
+
+        return { ok: true };
+    } catch (error) {
+        console.error('❌ Error validating reschedule availability:', error);
+        return { ok: true }; // Allow reschedule even if validation fails (fail-open approach)
     }
 }
 
@@ -775,6 +913,12 @@ exports.createReservation = async (req, res) => {
         // Server-side price validation (prevent frontend manipulation)
         const expectedBasePrice = priceData.price;
         const expectedFinalTotal = discountValue ? (expectedBasePrice - discountValue) : expectedBasePrice;
+
+        const promoValidation = await validatePromoCodeUsage(discountCode, expectedBasePrice);
+        if (!promoValidation.ok) {
+            return res.status(400).json({ success: false, message: promoValidation.message });
+        }
+        const appliedPromo = promoValidation.promo;
         
         console.log('💵 Price validation:', { expectedBasePrice, receivedBase: basePrice, expectedFinalTotal, receivedFinal: finalTotal });
         
@@ -835,6 +979,7 @@ exports.createReservation = async (req, res) => {
 
         console.log('💾 Saving reservation to database...');
         await newReservation.save();
+
         console.log('✅ Reservation saved successfully:', newReservation._id);
 
         res.status(201).json({ 
@@ -1129,6 +1274,12 @@ exports.createMultiAmenityReservation = async (req, res) => {
             }
         }
         console.log('✅ Lead time validation passed for all amenities');
+
+        const promoValidation = await validatePromoCodeUsage(appliedPromo?.code, pricing.originalTotal || 0);
+        if (!promoValidation.ok) {
+            return res.status(400).json({ success: false, message: promoValidation.message });
+        }
+        const appliedPromoDoc = promoValidation.promo;
 
         // --- E. Generate Reservation Hash and Formal ID ---
         console.log('🔐 Generating reservation hash and formal ID...');
@@ -1452,12 +1603,28 @@ exports.updateReservationStatus = async (req, res) => {
 
         const nextFields = { status: normalizedStatus };
 
+        const currentReservation = await Reservation.findById(id);
+        if (!currentReservation) {
+            return res.status(404).json({ message: 'Reservation not found.' });
+        }
+
+        let reservationsToUpdate = [currentReservation];
+        if (currentReservation.isMultiAmenity && currentReservation.multiAmenityGroupId) {
+            reservationsToUpdate = await Reservation.find({
+                multiAmenityGroupId: currentReservation.multiAmenityGroupId
+            }).sort({ multiAmenityIndex: 1 });
+        }
+
         if (normalizedStatus === 'CANCELLED') {
             nextFields.paymentStatus = 'REFUNDED';
         } else if (['CONFIRMED', 'CHECKED_IN', 'COMPLETED'].includes(normalizedStatus)) {
+            const promoUsageResult = await applyPromoUsageForReservations(reservationsToUpdate);
+            if (!promoUsageResult.ok) {
+                return res.status(400).json({ message: promoUsageResult.message });
+            }
+
             nextFields.paymentStatus = 'PAID';
             // Set payment confirmed timestamp if not already set
-            const currentReservation = await Reservation.findById(id);
             if (currentReservation && !currentReservation.paymentConfirmedAt) {
                 nextFields.paymentConfirmedAt = new Date();
             }
@@ -1553,6 +1720,361 @@ exports.requestCancellation = async (req, res) => {
     }
 };
 
+// Customer reschedule request (admin approval required)
+exports.requestReschedule = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { proposedCheckIn, proposedCheckOut, reason, requestedBy, requestedByEmail } = req.body;
+
+        if (!id) {
+            return res.status(400).json({ message: 'Reservation ID is required.' });
+        }
+
+        if (!proposedCheckIn || !proposedCheckOut) {
+            return res.status(400).json({ message: 'Proposed check-in and check-out dates are required.' });
+        }
+
+        if (!reason || !reason.toString().trim()) {
+            return res.status(400).json({ message: 'Reschedule reason is required.' });
+        }
+
+        const reservation = await Reservation.findById(id);
+        if (!reservation) {
+            return res.status(404).json({ message: 'Reservation not found.' });
+        }
+
+        if (requestedByEmail && reservation.email &&
+            requestedByEmail.toLowerCase() !== reservation.email.toLowerCase()) {
+            return res.status(403).json({ message: 'You are not authorized to reschedule this reservation.' });
+        }
+
+        const proposedCheckInDate = new Date(proposedCheckIn);
+        const proposedCheckOutDate = new Date(proposedCheckOut);
+        if (isNaN(proposedCheckInDate.getTime()) || isNaN(proposedCheckOutDate.getTime())) {
+            return res.status(400).json({ message: 'Invalid proposed dates.' });
+        }
+        if (proposedCheckOutDate <= proposedCheckInDate) {
+            return res.status(400).json({ message: 'Check-out must be after check-in.' });
+        }
+
+        let reservationsToUpdate = [reservation];
+        if (reservation.isMultiAmenity && reservation.multiAmenityGroupId) {
+            reservationsToUpdate = await Reservation.find({
+                multiAmenityGroupId: reservation.multiAmenityGroupId
+            }).sort({ multiAmenityIndex: 1 });
+        }
+
+        const earliestCheckIn = reservationsToUpdate.reduce((minDate, r) => {
+            if (!r.check_in) return minDate;
+            return r.check_in < minDate ? r.check_in : minDate;
+        }, reservation.check_in || new Date());
+
+        const now = new Date();
+        const minRescheduleMs = 14 * 24 * 60 * 60 * 1000;
+        if (earliestCheckIn && earliestCheckIn.getTime() - now.getTime() < minRescheduleMs) {
+            return res.status(400).json({
+                message: 'Reschedules must be requested at least 14 days before the check-in date.'
+            });
+        }
+
+        const availabilityCheck = await validateRescheduleAvailability(
+            reservationsToUpdate,
+            proposedCheckInDate,
+            proposedCheckOutDate,
+            requestedByEmail || reservation.email,
+            reservation.accountId
+        );
+
+        if (!availabilityCheck.ok) {
+            return res.status(400).json({ message: availabilityCheck.message });
+        }
+
+        const rescheduleReason = reason.toString().trim();
+        const rescheduleRequestedAt = new Date();
+
+        for (const r of reservationsToUpdate) {
+            r.rescheduleStatus = 'PENDING';
+            r.rescheduleReason = rescheduleReason;
+            r.rescheduleRequestedAt = rescheduleRequestedAt;
+            r.rescheduleRequestedBy = requestedBy || r.full_name || null;
+            r.rescheduleRequestedByEmail = requestedByEmail || r.email || null;
+            r.rescheduleProposedCheckIn = proposedCheckInDate;
+            r.rescheduleProposedCheckOut = proposedCheckOutDate;
+            r.rescheduleApprovedAt = null;
+            r.rescheduleApprovedBy = null;
+            r.rescheduleRejectedAt = null;
+            r.rescheduleRejectedBy = null;
+            r.updatedAt = new Date();
+            await r.save();
+        }
+
+        res.status(200).json({
+            success: true,
+            message: 'Reschedule request submitted for admin approval.',
+            reservation: reservationsToUpdate[0]
+        });
+    } catch (error) {
+        console.error('SERVER ERROR requesting reschedule:', error);
+        res.status(500).json({
+            message: 'Internal server error while requesting reschedule.',
+            details: error.message
+        });
+    }
+};
+
+// Admin approves reschedule request
+exports.approveReschedule = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { approvedBy } = req.body;
+
+        if (!id) {
+            return res.status(400).json({ message: 'Reservation ID is required.' });
+        }
+
+        const reservation = await Reservation.findById(id);
+        if (!reservation) {
+            return res.status(404).json({ message: 'Reservation not found.' });
+        }
+
+        if (reservation.rescheduleStatus !== 'PENDING' ||
+            !reservation.rescheduleProposedCheckIn ||
+            !reservation.rescheduleProposedCheckOut) {
+            return res.status(400).json({ message: 'No pending reschedule request found.' });
+        }
+
+        let reservationsToUpdate = [reservation];
+        if (reservation.isMultiAmenity && reservation.multiAmenityGroupId) {
+            reservationsToUpdate = await Reservation.find({
+                multiAmenityGroupId: reservation.multiAmenityGroupId
+            }).sort({ multiAmenityIndex: 1 });
+        }
+
+        const promoUsageResult = await applyPromoUsageForReservations(reservationsToUpdate);
+        if (!promoUsageResult.ok) {
+            return res.status(400).json({ message: promoUsageResult.message });
+        }
+
+        const availabilityCheck = await validateRescheduleAvailability(
+            reservationsToUpdate,
+            reservation.rescheduleProposedCheckIn,
+            reservation.rescheduleProposedCheckOut,
+            reservation.rescheduleRequestedByEmail || reservation.email,
+            reservation.accountId
+        );
+
+        if (!availabilityCheck.ok) {
+            return res.status(400).json({ message: availabilityCheck.message });
+        }
+
+        for (const r of reservationsToUpdate) {
+            await removePrivatePoolGlobalLock(r);
+        }
+
+        const approvedAt = new Date();
+        const approvedByValue = approvedBy || (req.user && req.user.email) || null;
+
+        for (const r of reservationsToUpdate) {
+            r.check_in = reservation.rescheduleProposedCheckIn;
+            r.check_out = reservation.rescheduleProposedCheckOut;
+            r.rescheduleStatus = 'APPROVED';
+            r.rescheduleApprovedAt = approvedAt;
+            r.rescheduleApprovedBy = approvedByValue;
+            r.updatedAt = new Date();
+            await r.save();
+        }
+
+        for (const r of reservationsToUpdate) {
+            await createPrivatePoolGlobalLock(r);
+        }
+
+        // Send email to customer about approved reschedule
+        const customerEmail = reservation.email;
+        const customerName = reservation.full_name || 'Guest';
+        const newCheckInDate = new Date(reservation.rescheduleProposedCheckIn).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        const newCheckOutDate = new Date(reservation.rescheduleProposedCheckOut).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        
+        const approvalEmailSubject = `✅ Your Reschedule Request Has Been Approved - Reservation ${reservation.reservationId}`;
+        const approvalEmailBody = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <style>
+                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+                    .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+                    .details { background: #e8f4f8; padding: 20px; border-left: 4px solid #28a745; margin: 20px 0; border-radius: 5px; }
+                    .footer { text-align: center; margin-top: 20px; color: #888; font-size: 12px; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h1>✅ Reschedule Request Approved</h1>
+                    </div>
+                    <div class="content">
+                        <h2>Hi ${customerName},</h2>
+                        <p>Great news! Your reschedule request for reservation <strong>${reservation.reservationId}</strong> has been <strong style="color: #28a745;">APPROVED</strong>.</p>
+                        
+                        <div class="details">
+                            <h3 style="margin-top: 0; color: #28a745;">📅 Your New Reservation Dates:</h3>
+                            <p><strong>New Check-In Date:</strong> ${newCheckInDate}</p>
+                            <p><strong>New Check-Out Date:</strong> ${newCheckOutDate}</p>
+                        </div>
+                        
+                        <p>Your reservation has been updated in the system with the new dates. Please review the details above and make sure they match your expectations.</p>
+                        
+                        <p>If you have any questions or need further assistance, please don't hesitate to contact us at <strong>titorenznorzagaray@gmail.com</strong> or call <strong>0977 246 8920 / 0916 640 3411</strong>.</p>
+                        
+                        <p>We look forward to welcoming you at Tito Renz Resort!</p>
+                        
+                        <p>Best regards,<br><strong>Tito Renz Resort Team</strong></p>
+                    </div>
+                    <div class="footer">
+                        <p>&copy; ${new Date().getFullYear()} Tito Renz Resort. All rights reserved.</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+        `;
+        
+        try {
+            await emailService.sendGenericEmail(customerEmail, approvalEmailSubject, approvalEmailBody);
+            console.log(`✅ Approval email sent to ${customerEmail} for reservation ${reservation.reservationId}`);
+        } catch (emailError) {
+            console.error(`⚠️ Failed to send approval email to ${customerEmail}:`, emailError.message);
+            // Don't fail the request if email fails, just log it
+        }
+
+        res.status(200).json({
+            success: true,
+            message: `Reschedule approved for reservation ${id}.`,
+            reservation: reservationsToUpdate[0]
+        });
+    } catch (error) {
+        console.error('SERVER ERROR approving reschedule:', error);
+        res.status(500).json({
+            message: 'Internal server error while approving reschedule.',
+            details: error.message
+        });
+    }
+};
+
+// Admin rejects reschedule request
+exports.rejectReschedule = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { rejectedBy, rejectionReason } = req.body;
+
+        if (!id) {
+            return res.status(400).json({ message: 'Reservation ID is required.' });
+        }
+
+        const reservation = await Reservation.findById(id);
+        if (!reservation) {
+            return res.status(404).json({ message: 'Reservation not found.' });
+        }
+
+        if (reservation.rescheduleStatus !== 'PENDING') {
+            return res.status(400).json({ message: 'No pending reschedule request found.' });
+        }
+
+        let reservationsToUpdate = [reservation];
+        if (reservation.isMultiAmenity && reservation.multiAmenityGroupId) {
+            reservationsToUpdate = await Reservation.find({
+                multiAmenityGroupId: reservation.multiAmenityGroupId
+            }).sort({ multiAmenityIndex: 1 });
+        }
+
+        const rejectedAt = new Date();
+        const rejectedByValue = rejectedBy || (req.user && req.user.email) || null;
+
+        for (const r of reservationsToUpdate) {
+            r.rescheduleStatus = 'REJECTED';
+            r.rescheduleRejectedAt = rejectedAt;
+            r.rescheduleRejectedBy = rejectedByValue;
+            r.rescheduleRejectionReason = rejectionReason || 'No reason provided';
+            r.updatedAt = new Date();
+            await r.save();
+        }
+
+        // Send email to customer about rejected reschedule
+        const customerEmail = reservation.email;
+        const customerName = reservation.full_name || 'Guest';
+        
+        const rejectionEmailSubject = `❌ Your Reschedule Request Has Been Rejected - Reservation ${reservation.reservationId}`;
+        const rejectionEmailBody = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <style>
+                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                    .header { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+                    .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+                    .reason-box { background: #fff3cd; padding: 20px; border-left: 4px solid #f5576c; margin: 20px 0; border-radius: 5px; }
+                    .footer { text-align: center; margin-top: 20px; color: #888; font-size: 12px; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h1>❌ Reschedule Request Not Approved</h1>
+                    </div>
+                    <div class="content">
+                        <h2>Hi ${customerName},</h2>
+                        <p>We regret to inform you that your reschedule request for reservation <strong>${reservation.reservationId}</strong> has been <strong style="color: #f5576c;">REJECTED</strong>.</p>
+                        
+                        <div class="reason-box">
+                            <h3 style="margin-top: 0; color: #f5576c;">🔍 Reason for Rejection:</h3>
+                            <p>${rejectionReason || 'No specific reason was provided.'}</p>
+                        </div>
+                        
+                        <p>Your original reservation dates remain unchanged. If you would like to discuss this decision or need assistance, please contact us directly.</p>
+                        
+                        <p>Contact us at:</p>
+                        <ul>
+                            <li><strong>Email:</strong> titorenznorzagaray@gmail.com</li>
+                            <li><strong>Phone:</strong> 0977 246 8920 or 0916 640 3411</li>
+                        </ul>
+                        
+                        <p>We appreciate your understanding and look forward to your visit to Tito Renz Resort.</p>
+                        
+                        <p>Best regards,<br><strong>Tito Renz Resort Team</strong></p>
+                    </div>
+                    <div class="footer">
+                        <p>&copy; ${new Date().getFullYear()} Tito Renz Resort. All rights reserved.</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+        `;
+        
+        try {
+            await emailService.sendGenericEmail(customerEmail, rejectionEmailSubject, rejectionEmailBody);
+            console.log(`✅ Rejection email sent to ${customerEmail} for reservation ${reservation.reservationId}`);
+        } catch (emailError) {
+            console.error(`⚠️ Failed to send rejection email to ${customerEmail}:`, emailError.message);
+            // Don't fail the request if email fails, just log it
+        }
+
+        res.status(200).json({
+            success: true,
+            message: `Reschedule rejected for reservation ${id}.`,
+            reservation: reservationsToUpdate[0]
+        });
+    } catch (error) {
+        console.error('SERVER ERROR rejecting reschedule:', error);
+        res.status(500).json({
+            message: 'Internal server error while rejecting reschedule.',
+            details: error.message
+        });
+    }
+};
+
 // Function to get all reservations for a specific user email
 exports.getUserReservations = async (req, res) => {
     try {
@@ -1639,10 +2161,12 @@ exports.staffCheckIn = async (req, res) => {
         }
         
         // --- 3. Payment Status Check (CRITICAL) ---
-        if (reservation.paymentStatus !== 'PAID') {
+        // Accept: PAID (legacy), fully-paid (new), DOWNPAYMENT_PAID (legacy), partially-paid (50% down)
+        const validPaymentStatuses = ['PAID', 'fully-paid', 'DOWNPAYMENT_PAID', 'partially-paid'];
+        if (!validPaymentStatuses.includes(reservation.paymentStatus)) {
             return res.status(403).json({ 
                 success: false, 
-                message: `Check-in Failed: Payment status is ${reservation.paymentStatus}. Payment must be PAID.`,
+                message: `Check-in Failed: Payment status is ${reservation.paymentStatus}. Payment must be approved first.`,
                 status: 'PAYMENT_PENDING',
                 reservationDetails: {
                     formalReservationId: reservation.reservationId || reservation._id,
@@ -2419,6 +2943,12 @@ exports.approvePayment = async (req, res) => {
             }).sort({ multiAmenityIndex: 1 });
         }
 
+        // Apply promo usage tracking
+        const promoUsageResult = await applyPromoUsageForReservations(reservationsToUpdate);
+        if (!promoUsageResult.ok) {
+            return res.status(400).json({ message: promoUsageResult.message });
+        }
+
         for (const r of reservationsToUpdate) {
             r.paymentStatus = resolvedPaymentStatus;
             r.status = resolvedStatus;
@@ -2594,6 +3124,12 @@ exports.approvePartialPayment = async (req, res) => {
             }).sort({ multiAmenityIndex: 1 });
         }
 
+        // Apply promo usage tracking
+        const promoUsageResult = await applyPromoUsageForReservations(reservationsToUpdate);
+        if (!promoUsageResult.ok) {
+            return res.status(400).json({ message: promoUsageResult.message });
+        }
+
         for (const r of reservationsToUpdate) {
             r.paymentStatus = 'partially-paid';
             r.status = 'CONFIRMED';
@@ -2704,6 +3240,12 @@ exports.approveFullPayment = async (req, res) => {
             reservationsToUpdate = await Reservation.find({
                 multiAmenityGroupId: reservation.multiAmenityGroupId
             }).sort({ multiAmenityIndex: 1 });
+        }
+
+        // Apply promo usage tracking
+        const promoUsageResult = await applyPromoUsageForReservations(reservationsToUpdate);
+        if (!promoUsageResult.ok) {
+            return res.status(400).json({ message: promoUsageResult.message });
         }
 
         for (const r of reservationsToUpdate) {

@@ -34,6 +34,7 @@ const ReservationSchema = new mongoose.Schema({
     basePrice: { type: Number, required: true },
     discountCode: { type: String },
     discountValue: { type: Number, default: 0 },
+    promoUsageApplied: { type: Boolean, default: false },
     finalTotal: { type: Number, required: true },
     
     // Downpayment Information
@@ -106,6 +107,19 @@ const ReservationSchema = new mongoose.Schema({
     cancelRequestedAt: { type: Date, required: false },
     cancelRequestedBy: { type: String, required: false },
     cancelRequestedByEmail: { type: String, required: false },
+    
+    // Reschedule Details (customer-initiated)
+    rescheduleStatus: { type: String, enum: ['PENDING', 'APPROVED', 'REJECTED'], required: false },
+    rescheduleReason: { type: String, required: false },
+    rescheduleRequestedAt: { type: Date, required: false },
+    rescheduleRequestedBy: { type: String, required: false },
+    rescheduleRequestedByEmail: { type: String, required: false },
+    rescheduleProposedCheckIn: { type: Date, required: false },
+    rescheduleProposedCheckOut: { type: Date, required: false },
+    rescheduleApprovedAt: { type: Date, required: false },
+    rescheduleApprovedBy: { type: String, required: false },
+    rescheduleRejectedAt: { type: Date, required: false },
+    rescheduleRejectedBy: { type: String, required: false },
     
     // QR Code Data
     qrCodeData: { type: String },

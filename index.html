@@ -242,6 +242,23 @@
             <div id="calendar-grid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.5rem;">
               <!-- Calendar will be populated by JavaScript -->
             </div>
+            <div
+              id="calendar-details"
+              style="
+                display: none;
+                margin-top: 1.5rem;
+                padding: 1rem;
+                border: 1px solid #e2e8f0;
+                border-radius: 10px;
+                background: #f8fafc;
+              "
+            >
+              <div
+                id="calendar-details-title"
+                style="font-weight: 700; color: #2d3748; margin-bottom: 0.75rem;"
+              ></div>
+              <div id="calendar-details-body"></div>
+            </div>
           </div>
         </div>
       </section>
@@ -435,6 +452,7 @@
       let blockedDatesByDate = {}; // Store full blocked date details
       let reservationDatesData = [];
       let reservationsByDate = {}; // Store full reservation details by date
+      let selectedCalendarCell = null;
 
       async function fetchBlockedDatesForCalendar() {
         try {
@@ -601,6 +619,85 @@
         return html;
       }
 
+      function buildDetailsPanelHtml(reservations, blockedDates) {
+        let html = '';
+
+        if (blockedDates && blockedDates.length > 0) {
+          html += '<div style="font-weight: 700; margin-bottom: 0.5rem; color: #c62828;">Blocked Dates</div>';
+
+          const uniqueBlocks = [];
+          const seenReasons = new Set();
+          blockedDates.forEach(block => {
+            const reason = block.reason || 'Fully Booked';
+            if (!seenReasons.has(reason)) {
+              seenReasons.add(reason);
+              uniqueBlocks.push(block);
+            }
+          });
+
+          uniqueBlocks.forEach((block, idx) => {
+            if (idx > 0) html += '<div style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid #e2e8f0;"></div>';
+            html += `
+              <div>
+                <div style="font-weight: 600; color: #c62828;">${escapeHtml(block.reason || 'Fully Booked')}</div>
+                <div style="color: #555; font-size: 0.85rem; margin-top: 0.25rem;">
+                  <div>From: ${escapeHtml(formatDateTime(block.startDate))}</div>
+                  <div>Until: ${escapeHtml(formatDateTime(block.endDate))}</div>
+                  ${block.appliesToAllServices ? '<div style="color: #c62828; font-weight: 600;">Entire resort blocked</div>' : ''}
+                </div>
+              </div>
+            `;
+          });
+        }
+
+        if (reservations && reservations.length > 0) {
+          if (html) html += '<div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 2px solid #e2e8f0;"></div>';
+          html += '<div style="font-weight: 700; margin-bottom: 0.5rem; color: var(--primary-color);">Bookings</div>';
+
+          const uniqueReservations = [];
+          const seenIds = new Set();
+          reservations.forEach(res => {
+            if (!seenIds.has(res.reservationId)) {
+              seenIds.add(res.reservationId);
+              uniqueReservations.push(res);
+            }
+          });
+
+          uniqueReservations.forEach((res, idx) => {
+            if (idx > 0) html += '<div style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid #e2e8f0;"></div>';
+            html += `
+              <div>
+                <div style="font-weight: 600; color: #333;">${escapeHtml(res.amenity)}</div>
+                <div style="color: #555; font-size: 0.85rem; margin-top: 0.25rem;">
+                  <div>Check-in: ${escapeHtml(formatDateTime(res.checkIn))}</div>
+                  <div>Check-out: ${escapeHtml(formatDateTime(res.checkOut))}</div>
+                  <div>Duration: ${escapeHtml(res.duration)}</div>
+                  <div>ID: ${escapeHtml(res.reservationId)}</div>
+                </div>
+              </div>
+            `;
+          });
+        }
+
+        if (!html) {
+          html = '<div style="color: #666;">No bookings or blocks for this date.</div>';
+        }
+
+        return html;
+      }
+
+      function showCalendarDetails(date, reservations, blockedDates) {
+        const detailsEl = document.getElementById('calendar-details');
+        const titleEl = document.getElementById('calendar-details-title');
+        const bodyEl = document.getElementById('calendar-details-body');
+
+        if (!detailsEl || !titleEl || !bodyEl) return;
+
+        titleEl.textContent = `Details for ${date.toDateString()}`;
+        bodyEl.innerHTML = buildDetailsPanelHtml(reservations, blockedDates);
+        detailsEl.style.display = 'block';
+      }
+
       function createTooltip(reservations, blockedDates) {
         const tooltip = document.createElement('div');
         tooltip.style.cssText = `
@@ -717,7 +814,6 @@
         
         // Day cells
         const today = new Date();
-        let activeTooltip = null;
         
         for (let day = 1; day <= daysInMonth; day++) {
           const date = new Date(currentYear, currentMonth, day);
@@ -762,37 +858,24 @@
             border-radius: 6px;
             color: ${textColor};
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: none;
             font-size: 0.95rem;
             position: relative;
             ${isToday ? 'font-weight: bold;' : ''}
           `;
-          
-          dayCell.addEventListener('mouseenter', () => {
-            if (!isPast) {
-              dayCell.style.transform = 'scale(1.05)';
-              dayCell.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+
+          dayCell.addEventListener('click', () => {
+            const blockedInfo = blockedDatesByDate[dateString] || [];
+            const reservationInfo = reservationsByDate[dateString] || [];
+
+            if (selectedCalendarCell) {
+              selectedCalendarCell.style.boxShadow = 'none';
             }
 
-            const hasBlockedInfo = isBlocked && blockedDatesByDate[dateString];
-            const hasReservationInfo = hasReservation && reservationsByDate[dateString];
+            selectedCalendarCell = dayCell;
+            dayCell.style.boxShadow = '0 0 0 3px rgba(45, 143, 92, 0.25)';
 
-            if (hasBlockedInfo || hasReservationInfo) {
-              const blockedInfo = hasBlockedInfo ? blockedDatesByDate[dateString] : null;
-              const reservationInfo = hasReservationInfo ? reservationsByDate[dateString] : null;
-
-              dayCell.dataset.originalContent = dayCell.innerHTML;
-              dayCell.innerHTML = `<div style="font-weight: 700;">${day}</div>${buildCellDetails(reservationInfo, blockedInfo)}`;
-            }
-          });
-
-          dayCell.addEventListener('mouseleave', () => {
-            dayCell.style.transform = 'scale(1)';
-            dayCell.style.boxShadow = 'none';
-
-            if (dayCell.dataset.originalContent) {
-              dayCell.innerHTML = dayCell.dataset.originalContent;
-            }
+            showCalendarDetails(date, reservationInfo, blockedInfo);
           });
           
           calendarGrid.appendChild(dayCell);
