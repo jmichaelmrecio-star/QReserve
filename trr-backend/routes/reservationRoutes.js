@@ -51,6 +51,15 @@ router.put('/update-status/:id', reservationController.updateReservationStatus);
 
 // Customer cancellation request with reason
 router.put('/request-cancel/:id', reservationController.requestCancellation);
+
+// Customer reschedule request (admin approval required)
+router.put('/request-reschedule/:id', reservationController.requestReschedule);
+
+// Admin approve reschedule request
+router.patch('/:id/approve-reschedule', verifyToken, requireRole('Admin', 'Manager'), reservationController.approveReschedule);
+
+// Admin reject reschedule request
+router.patch('/:id/reject-reschedule', verifyToken, requireRole('Admin', 'Manager'), reservationController.rejectReschedule);
 router.get(
     '/check-in/:reservationHash', 
     reservationController.staffCheckIn

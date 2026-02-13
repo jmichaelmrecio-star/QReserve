@@ -30,6 +30,7 @@
         <div id="schedule-management-container"></div>
         <div id="user-management-container"></div>
         <div id="dashboard-area-container"></div>
+        <div id="reschedule-management-container"></div>
         <div id="nav-promocodes-container"></div>
         <div id="service-management-container"></div>
         <div id="payment-verifications-section-container"></div>
@@ -285,6 +286,7 @@
             { path: '/admin/admin-schedule.html', target: 'schedule-management-container' },
             { path: '/admin/admin-users.html', target: 'user-management-container' },
             { path: '/admin/admin-reservations.html', target: 'dashboard-area-container' },
+            { path: '/admin/admin-reschedule.html', target: 'reschedule-management-container' },
             { path: '/admin/admin-promo-codes.html', target: 'nav-promocodes-container' },
             { path: '/admin/admin-services.html', target: 'service-management-container' },
             { path: '/admin/payment-verifications.html', target: 'payment-verifications-section-container' }
@@ -316,7 +318,7 @@
         // Wait a bit for components to render
         setTimeout(() => {
             // Ensure sections have .tab-pane class (removed Home, Checkin Demo, Dining, Promotions)
-            ['schedule-management','nav-promocodes','service-management','user-management','dashboard-area','payment-verifications'].forEach(id => {
+            ['schedule-management','nav-promocodes','service-management','user-management','dashboard-area','reschedule-management','payment-verifications'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.classList.add('tab-pane');
             });
