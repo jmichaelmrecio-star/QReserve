@@ -621,6 +621,9 @@ async function processGroupPaymentAction(
   if (typeof renderAdminReservations === "function") {
     setTimeout(() => renderAdminReservations(), 300);
   }
+  if (typeof renderPromoCodeTable === "function") {
+    setTimeout(() => renderPromoCodeTable(), 300);
+  }
 
   buttonEl.disabled = false;
   buttonEl.textContent = originalText;
@@ -765,6 +768,9 @@ async function processSinglePaymentAction(
     renderPendingPayments();
     if (typeof renderAdminReservations === "function") {
       setTimeout(() => renderAdminReservations(), 300);
+    }
+    if (typeof renderPromoCodeTable === "function") {
+      setTimeout(() => renderPromoCodeTable(), 300);
     }
   } catch (error) {
     console.error("Payment action error:", error);

@@ -266,6 +266,17 @@ window.showReservationQRModal = function (reservationId) {
 async function renderPromoCodeTable() {
   const tbody = document.getElementById("promoCodeTableBody");
   if (!tbody) return;
+  
+  // Add visual feedback to refresh button
+  const refreshBtn = document.getElementById("refreshPromoCodesBtn");
+  const refreshIcon = refreshBtn?.querySelector("i");
+  if (refreshIcon) {
+    refreshIcon.classList.add("fa-spin");
+  }
+  if (refreshBtn) {
+    refreshBtn.disabled = true;
+  }
+  
   tbody.innerHTML =
     '<tr><td colspan="7" class="text-center p-4">Loading promo codes...</td></tr>';
   try {
@@ -293,7 +304,7 @@ async function renderPromoCodeTable() {
         <td>${Math.round((code.discountPercentage || 0) * 100)}%</td>
         <td>${formatDate(code.expirationDate)}</td>
         <td>₱${parseFloat(code.minPurchaseAmount || 0).toLocaleString()}</td>
-        <td>${code.timesUsed || 0} / ${code.usageLimit || 0}</td>
+        <td><strong>${code.timesUsed || 0} / ${code.usageLimit || 0}</strong></td>
         <td>${statusBadge}</td>
         <td><button class="btn btn-danger btn-sm" onclick="deletePromoCode('${code._id}')">Delete</button></td>
       </tr>`;
@@ -311,6 +322,14 @@ async function renderPromoCodeTable() {
   } catch (e) {
     tbody.innerHTML =
       '<tr><td colspan="7" class="text-center text-danger">Error loading promo codes.</td></tr>';
+  } finally {
+    // Remove visual feedback from refresh button
+    if (refreshIcon) {
+      refreshIcon.classList.remove("fa-spin");
+    }
+    if (refreshBtn) {
+      refreshBtn.disabled = false;
+    }
   }
 }
 
