@@ -976,7 +976,7 @@
 								const promoMsg = document.getElementById('promoCodeMessage');
 								if (promoMsg) {
 									promoMsg.textContent = `✓ Promo code applied! You saved ₱${Number(discountValue).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`;
-									promoMsg.style.color = '#28a745';
+									promoMsg.style.color = getComputedStyle(document.documentElement).getPropertyValue('--primary-color');
 								}
 							}
 						}
@@ -1034,7 +1034,7 @@
 							const basePrice = sessionStorage.getItem('selectedServicePrice') || price;
 							const discountPercent = (parseFloat(discountValue) / parseFloat(basePrice)) * 100;
 							promoMessage.textContent = `✓ Promo code applied! You saved ${discountPercent.toFixed(0)}% (₱${parseFloat(discountValue).toLocaleString('en-PH', {minimumFractionDigits:2})})`;
-							promoMessage.style.color = '#28a745';
+							promoMessage.style.color = getComputedStyle(document.documentElement).getPropertyValue('--primary-color');
 						}
 						
 						// Change button to "Remove"
@@ -2016,7 +2016,7 @@
 	            
 	            // Show success message
 	            promoMessage.textContent = `✓ Promo code applied! You saved ${(discountPercentage * 100).toFixed(0)}% (₱${discountAmount.toLocaleString('en-PH', {minimumFractionDigits:2})})`;
-	            promoMessage.style.color = '#28a745';
+promoMessage.style.color = getComputedStyle(document.documentElement).getPropertyValue('--primary-color');
 	            
 	            // Disable input and change button to "Remove"
 	            promoInput.disabled = true;

@@ -467,7 +467,9 @@
       const result = await response.json();
       if (response.ok) {
         messageDiv.textContent = "Service created successfully!";
-        messageDiv.style.color = "green";
+        messageDiv.style.color = getComputedStyle(
+          document.documentElement,
+        ).getPropertyValue("--primary-color");
         form.reset();
         document.getElementById("serviceImageName").textContent = "None";
         document.getElementById("serviceGalleryCount").textContent = "0";
@@ -752,7 +754,9 @@
       const result = await response.json();
       if (response.ok) {
         messageDiv.textContent = "Service updated successfully!";
-        messageDiv.style.color = "green";
+        messageDiv.style.color = getComputedStyle(
+          document.documentElement,
+        ).getPropertyValue("--primary-color");
         setTimeout(() => {
           closeEditServiceModal();
           if (typeof fetchAllServicesAdmin === "function") {

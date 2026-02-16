@@ -94,6 +94,11 @@ async function processGCashPayment(event, reservationId, reservationHash) {
 
     const result = await response.json();
     if (response.ok) {
+      // Clear selected items from cart after successful payment
+      if (typeof window.clearAllAmenities === "function") {
+        window.clearAllAmenities();
+      }
+
       showAlert(
         "Payment submitted. Awaiting admin verification. Your QR code will be emailed after approval.",
         "success",
@@ -170,7 +175,8 @@ function renderMultiAmenityItems(amenities) {
       </div>
       
       <div style="color: #666; font-size: 0.9rem; margin-bottom: 1rem;">
-        <span style="font-weight: 700;">Check-in and Check-out date and time:</span> ${checkInText} → ${checkOutText}
+        <span style="font-weight: 700;">Check-in Date and Time:</span> ${checkInText} ${item.checkInTime || ""} <br> 
+        <span style="font-weight: 700;">Checkout Date and Time:</span> ${checkOutText} ${item.checkOutTime || ""}
       </div>
       
       ${
