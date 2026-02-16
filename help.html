@@ -1,175 +1,264 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>QReserve: Help & Guides</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css" />
     <style>
-        .guide-section {
-            background-color: transparent;
-        }
+      .guide-section {
+        background-color: transparent;
+      }
+      .guides-container {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 2rem;
+        margin-top: 2rem;
+      }
+      @media (max-width: 992px) {
         .guides-container {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 2rem;
-            margin-top: 2rem;
+          grid-template-columns: repeat(2, 1fr);
         }
-        @media (max-width: 992px) {
-            .guides-container {
-                grid-template-columns: repeat(2, 1fr);
-            }
+      }
+      @media (max-width: 768px) {
+        .guides-container {
+          grid-template-columns: 1fr;
         }
-        @media (max-width: 768px) {
-            .guides-container {
-                grid-template-columns: 1fr;
-            }
-        }
-        .guide-item {
-            background-color: white;
-            padding: 2rem;
-            border-radius: var(--border-radius);
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-        }
-        .guide-item:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-        }
-        .guide-item h3 {
-            color: var(--primary-color);
-            margin-bottom: 1rem;
-            font-size: 1.5rem;
-            padding-bottom: 0.75rem;
-            border-bottom: 2px solid var(--primary-color);
-        }
-        .guide-item ol {
-            margin-left: 1.5rem;
-            line-height: 1.8;
-            flex-grow: 1;
-        }
-        .guide-item ol li {
-            margin-bottom: 1rem;
-            padding-left: 0.5rem;
-        }
-        .guide-item p {
-            margin-bottom: 1rem;
-            color: #666;
-            font-style: italic;
-        }
+      }
+      .guide-item {
+        background-color: white;
+        padding: 2rem;
+        border-radius: var(--border-radius);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        transition:
+          transform 0.3s ease,
+          box-shadow 0.3s ease;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+      .guide-item:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+      }
+      .guide-item h3 {
+        color: var(--primary-color);
+        margin-bottom: 1rem;
+        font-size: 1.5rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 2px solid var(--primary-color);
+      }
+      .guide-item ol {
+        margin-left: 1.5rem;
+        line-height: 1.8;
+        flex-grow: 1;
+      }
+      .guide-item ol li {
+        margin-bottom: 1rem;
+        padding-left: 0.5rem;
+      }
+      .guide-item p {
+        margin-bottom: 1rem;
+        color: #666;
+        font-style: italic;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <header>
-        <nav>
-            <a href="index.html" class="nav-logo" aria-label="Tito Renz Resort">
-                <img src="images/logo.png" alt="Tito Renz Resort Logo">
-            </a>
-            <ul>
-                </ul>
-            <div class="nav-right" id="navRight"></div>
-        </nav>
+      <nav>
+        <a href="index.html" class="nav-logo" aria-label="Tito Renz Resort">
+          <img src="images/logo.png" alt="Tito Renz Resort Logo" />
+        </a>
+        <ul></ul>
+        <div class="nav-right" id="navRight"></div>
+      </nav>
     </header>
 
     <main class="has-fixed-header-offset">
-        <!-- Page Header with Hero Background -->
-        <section class="page-hero-section">
-            <div class="hero-content">
-                <br><br>
-                <h1>Help & Guides</h1>
-                <p>Step-by-step instructions for using our reservation system</p>
-            </div>
-        </section>
+      <!-- Page Header with Hero Background -->
+      <section class="page-hero-section">
+        <div class="hero-content">
+          <br /><br />
+          <h1>Help & Guides</h1>
+          <p>Step-by-step instructions for using our reservation system</p>
+        </div>
+      </section>
 
-        <section class="guide-section" style=" max-width: 1600px; margin-left: auto; margin-right: auto; padding: 2rem; padding-top: 0;">
-            <div class="guides-container">
-            <div class="guide-item">
-                <h3>Guide 1: How to Book a Reservation</h3>
-                <ol>
-                    <li>Click the <strong>Amenities</strong> in the navigation bar.</li>
-                    <li>Select your desired service type <strong>(Room or Venue)</strong>.</li>
-                    <li>After selecting the service type you want, choose your desired <strong>Duration/Time-Slot</strong>.</li>
-                    <li>Once you have decided the amenity and duration of your liking, click <strong>Proceed to Reservation Form</strong> button.</li>
-                    <li>Fill out the reservation form with your personal information, then submit the form to complete your booking.</li>
-                    <li>After submitting the form, complete the payment process to finalize your reservation.</li>
-                </ol>
-            </div>
+      <section
+        class="guide-section"
+        style="
+          max-width: 1600px;
+          margin-left: auto;
+          margin-right: auto;
+          padding: 2rem;
+          padding-top: 0;
+        "
+      >
+        <div class="guides-container">
+          <div class="guide-item">
+            <h3>Guide 1: How to Book a Reservation</h3>
+            <ol>
+              <li>
+                Click the <strong>Amenities</strong> in the navigation bar.
+              </li>
+              <li>
+                Select your desired service type
+                <strong>(Room or Venue)</strong>.
+              </li>
+              <li>
+                Choose your preferred <strong>Duration/Time-Slot</strong> for
+                the selected service.
+              </li>
+              <li>
+                Add one or more amenities to your
+                <strong>Selected Items</strong> section if you wish to reserve
+                multiple services at once.
+              </li>
+              <li>
+                Review your selected items. You can remove individual items or
+                clear all before proceeding.
+              </li>
+              <li>
+                Click <strong>Proceed to Reservation Form</strong> to fill out
+                your personal information and submit your reservation.
+              </li>
+              <li>
+                After submitting the reservation form, complete the payment
+                process by providing your GCash reference number and uploading
+                your payment receipt.
+              </li>
+              <li>
+                Once payment is submitted, your selected items will be
+                automatically cleared, and you will receive a notification that
+                your payment is pending admin verification.
+              </li>
+            </ol>
+          </div>
 
-            <div class="guide-item">
-                <h3>Guide 2: How to Check-in with/using QR Code</h3>
-                <ol>
-                    <li>After confirming your reservation, you will be shown a unique <strong>QR Code</strong>.</li>
-                    <li>Save this page or take a screenshot of the <strong>QR Code</strong>.</li>
-                    <li>Upon arrival at the resort, present the <strong>QR Code</strong> to the staff member.</li>
-                    <li>The staff will scan the <strong>QR Code</strong> using the QReserve system to instantly verify your booking details and process your <strong>check-in</strong> seamlessly.</li>
-                </ol>
-            </div>
+          <div class="guide-item">
+            <h3>Guide 2: How to Reschedule a Reservation</h3>
+            <p style="color: #b85c00; font-weight: bold; margin-bottom: 1rem">
+              <u>Important Policy:</u> You must submit your reschedule request
+              at least <strong>14 days before</strong> your reserved check-in
+              date. This policy ensures the resort can efficiently manage
+              bookings and provide fair opportunities for all guests. If your
+              check-in date is today, you can only reschedule to a date that is
+              at least 14 days from now.
+            </p>
+            <ol>
+              <li>
+                Go to the <strong>My Reservations</strong> page using the
+                navigation bar.
+              </li>
+              <li>
+                Find the reservation you wish to reschedule and click the
+                <strong>Reschedule</strong> button (if available for that
+                reservation).
+              </li>
+              <li>
+                Select your new desired date, time, or amenity as prompted by
+                the system. <br />
+                <em
+                  >Note: The system will only allow you to pick a new date that
+                  is at least 14 days from today, in accordance with the
+                  resort's rescheduling policy.</em
+                >
+              </li>
+              <li>
+                Submit your reschedule request. The system may require admin
+                approval before the changes take effect.
+              </li>
+              <li>
+                You will receive an email notification once your reschedule
+                request has been approved or if further action is needed.
+              </li>
+            </ol>
+          </div>
 
-            <div class="guide-item">
-                <h3>Guide 3: How to View Reservations</h3>
-                <p>Registered users can view their current and past reservations.</p>
-                <ol>
-                    <li>Ensure you are logged into your account.</li>
-                    <li>Click the <strong>Profile icon</strong> in the navigation bar.</li>
-                    <li>Click the <strong>My Profile</strong></li>
-                    <li>Scroll down until you see <strong>My Recent Reservations</strong> section to view your reservation details and history.</li>
-                </ol>
-            </div>
+          <div class="guide-item">
+            <h3>Guide 3: How to View Reservations</h3>
+            <ol>
+              <li>Log in to your account.</li>
+              <li>
+                Click the <strong>My Reservations</strong> link in the
+                navigation bar.
+              </li>
+              <li>
+                On the <strong>My Reservations</strong> page, you can view all
+                your current and past reservations, including their status
+                (e.g., Pending, Paid, Confirmed, Checked In, Completed,
+                Cancelled).
+              </li>
+              <li>
+                You will also receive email notifications for any updates to
+                your reservation status.
+              </li>
+            </ol>
+          </div>
 
-            <div class ="guide-item">
-                <h3>Guide 4: How to Reserve Multiple Services at Once</h3>
-                <p>You can cancel your reservation up to 24 hours before your scheduled check-in time.</p>
-                <ol>
-                    <li>Click the <strong>Cart</strong> button in the navigation bar.</li>
-                    <li>Review the items in your cart to ensure they are correct.</li>
-                    <li>To remove an item, click the <strong>Remove</strong> button next to the item you wish to delete.</li>
-                    <li>To clear your cart, click the <strong>Clear Cart</strong> button.</li>
-                    <li>Once you have reviewed and are satisfied with your cart, click the <strong>Proceed to Checkout</strong> button to finalize your reservation.</li>
-                </ol>
-            
-            </div>
-            </div>
-        </section>
+          <div class="guide-item">
+            <h3>Guide 4: How to Check-in with/using QR Code</h3>
+            <ol>
+              <li>
+                After your reservation is confirmed by the admin, you will
+                receive an email with a unique <strong>QR Code</strong> for your
+                booking.
+              </li>
+              <li>
+                Save the email or take a screenshot of the
+                <strong>QR Code</strong>.
+              </li>
+              <li>
+                Upon arrival at the resort, present your
+                <strong>QR Code</strong> to the staff.
+              </li>
+              <li>
+                The staff will scan your <strong>QR Code</strong> using the
+                QReserve system to instantly verify your booking and process
+                your check-in.
+              </li>
+            </ol>
+          </div>
+        </div>
+      </section>
     </main>
 
     <footer>
-        <div class="footer-content">
-            <div class="footer-section contact-info">
-                <h3>Tito Renz Resort</h3>
-                <p>Your seamless booking experience starts here.</p>
-                <p>📍 Norzagaray, Bulacan, Philippines</p>
-                <p>📞 0977 246 8920 or 0916 640 3411</p>
-                <p>📧 titorenznorzagaray@gmail.com</p>
-            </div>
-
-            <div class="footer-section quick-links">
-                <h3>Quick Links</h3>
-                <ul>
-                    <!-- Dynamically populated by renderFooterQuickLinks() -->
-                </ul>
-            </div>
-
-            <div class="footer-section about-contact">
-                <h3>About & Contact</h3>
-                <ul>
-                    <li><a href="about.html">Our Story</a></li>
-                    <li><a href="contact.html">Send Us a Message</a></li>
-                    <li><a href="help.html">Help / Guides</a></li>
-                </ul>
-            </div>
+      <div class="footer-content">
+        <div class="footer-section contact-info">
+          <h3>Tito Renz Resort</h3>
+          <p>Your seamless booking experience starts here.</p>
+          <p>📍 Norzagaray, Bulacan, Philippines</p>
+          <p>📞 0977 246 8920 or 0916 640 3411</p>
+          <p>📧 titorenznorzagaray@gmail.com</p>
         </div>
-        <div class="footer-bottom">
-            <p>&copy; 2025 QReserve Project - All Rights Reserved.</p>
+
+        <div class="footer-section quick-links">
+          <h3>Quick Links</h3>
+          <ul>
+            <!-- Dynamically populated by renderFooterQuickLinks() -->
+          </ul>
         </div>
+
+        <div class="footer-section about-contact">
+          <h3>About & Contact</h3>
+          <ul>
+            <li><a href="about.html">Our Story</a></li>
+            <li><a href="contact.html">Send Us a Message</a></li>
+            <li><a href="help.html">Help / Guides</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2025 QReserve Project - All Rights Reserved.</p>
+      </div>
     </footer>
 
-	<script src="notifications.js"></script>
-	<script src="ui-core.js"></script>
-	<script src="auth-profile.js"></script>
-	<script src="reservation.js"></script>
-</body>
+    <script src="notifications.js"></script>
+    <script src="ui-core.js"></script>
+    <script src="auth-profile.js"></script>
+    <script src="reservation.js"></script>
+  </body>
 </html>
