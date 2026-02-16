@@ -1,3 +1,15 @@
+.status-rejected {
+  display: inline-block;
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 0.85em;
+  font-weight: 700;
+  min-width: 100px;
+  text-align: center;
+  letter-spacing: 0.3px;
+  background-color: #f44336; /* Red */
+  color: #ffffff;
+}
 /* --- Utility: Forest Green Info Box --- */
 .forest-green-box {
   padding: 0.75rem;

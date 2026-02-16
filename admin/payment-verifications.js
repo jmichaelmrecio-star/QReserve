@@ -278,23 +278,25 @@ function renderSingleReservations(tbody, reservations) {
           ? "btn-info"
           : "btn-success";
 
-      const row = document.createElement("tr");
-      row.innerHTML = `
-            <td>${reservationId}</td>
-            <td>${escapeHtml(customerName)}</td>
-            <td>${serviceDisplay}</td>
-            <td>${escapeHtml(reference)}</td>
-            <td>${paymentTypeBadge}</td>
-            <td>${paymentStatusBadge}</td>
-            <td>₱${amount}</td>
-            <td>${uploaded}</td>
-            <td>
-                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                    <button class="btn btn-sm btn-outline-primary expand-payment-btn" onclick="togglePaymentDetails(this, '${reservation._id}')" style="width: 100%;">View More</button>
-                    <button class="btn ${approveButtonClass} btn-sm" data-action="${actionLabel.action}" data-id="${reservation._id}">${actionLabel.button}</button>
-                    <button class="btn btn-danger btn-sm" data-action="reject" data-id="${reservation._id}">Reject</button>
-                </div>
-            </td>
+
+        const showReject = !["partially-paid", "fully-paid"].includes(reservation.paymentStatus);
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${reservationId}</td>
+          <td>${escapeHtml(customerName)}</td>
+          <td>${serviceDisplay}</td>
+          <td>${escapeHtml(reference)}</td>
+          <td>${paymentTypeBadge}</td>
+          <td>${paymentStatusBadge}</td>
+          <td>₱${amount}</td>
+          <td>${uploaded}</td>
+          <td>
+            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+              <button class="btn btn-sm btn-outline-primary expand-payment-btn" onclick="togglePaymentDetails(this, '${reservation._id}')" style="width: 100%;">View More</button>
+              <button class="btn ${approveButtonClass} btn-sm" data-action="${actionLabel.action}" data-id="${reservation._id}">${actionLabel.button}</button>
+              ${showReject ? `<button class="btn btn-danger btn-sm" data-action="reject" data-id="${reservation._id}">Reject</button>` : ""}
+            </div>
+          </td>
         `;
 
       tbody.appendChild(row);
@@ -364,23 +366,25 @@ function renderMultiAmenityGroups(tbody, groups) {
     const displayId =
       firstRes.reservationId ||
       (group.groupId ? String(group.groupId).substring(0, 12) + "..." : "N/A");
+
+    const showReject = !["partially-paid", "fully-paid"].includes(firstRes.paymentStatus);
     groupRow.innerHTML = `
-            <td><span class="badge bg-warning">Multi-Amenity</span><br>${escapeHtml(displayId)}</td>
-            <td>${escapeHtml(customerName)}</td>
-            <td>${servicesDisplay}</td>
-            <td>${escapeHtml(reference)}</td>
-            <td>${paymentTypeBadge}</td>
-            <td>${paymentStatusBadge}</td>
-            <td><strong>₱${paymentAmount.toLocaleString("en-PH", { minimumFractionDigits: 2 })}</strong></td>
-            <td>${uploaded}</td>
-            <td>
-                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                    <button class="btn btn-sm btn-outline-warning expand-payment-btn" onclick="toggleMultiAmenityGroup(this, ${groupIndex})" style="width: 100%;">View More</button>
-                    <button class="btn ${approveButtonClass} btn-sm" data-action="${actionLabel.action}-group" data-group-index="${groupIndex}">${actionLabel.button}</button>
-                    <button class="btn btn-danger btn-sm" data-action="reject-group" data-group-index="${groupIndex}">Reject All</button>
-                </div>
-            </td>
-        `;
+        <td><span class="badge bg-warning">Multi-Amenity</span><br>${escapeHtml(displayId)}</td>
+        <td>${escapeHtml(customerName)}</td>
+        <td>${servicesDisplay}</td>
+        <td>${escapeHtml(reference)}</td>
+        <td>${paymentTypeBadge}</td>
+        <td>${paymentStatusBadge}</td>
+        <td><strong>₱${paymentAmount.toLocaleString("en-PH", { minimumFractionDigits: 2 })}</strong></td>
+        <td>${uploaded}</td>
+        <td>
+          <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+            <button class="btn btn-sm btn-outline-warning expand-payment-btn" onclick="toggleMultiAmenityGroup(this, ${groupIndex})" style="width: 100%;">View More</button>
+            <button class="btn ${approveButtonClass} btn-sm" data-action="${actionLabel.action}-group" data-group-index="${groupIndex}">${actionLabel.button}</button>
+            ${showReject ? `<button class="btn btn-danger btn-sm" data-action="reject-group" data-group-index="${groupIndex}">Reject All</button>` : ""}
+          </div>
+        </td>
+      `;
 
     tbody.appendChild(groupRow);
   });
@@ -497,6 +501,7 @@ async function handleGroupPaymentAction(groupIndex, action, buttonEl) {
         action,
         confirmMsg,
         isApprove,
+        group
       );
     },
     {
@@ -513,6 +518,7 @@ async function processGroupPaymentAction(
   action,
   confirmMsg,
   isApprove,
+  group
 ) {
   const originalText = buttonEl.textContent;
   buttonEl.disabled = true;
