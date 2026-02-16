@@ -1,3 +1,50 @@
+// Reverse global lock: block Private Pool if any amenity is reserved (CONFIRMED) for overlapping dates
+async function createReversePrivatePoolLock(reservation) {
+  try {
+    // Only apply for CONFIRMED status
+    if (reservation.status !== 'CONFIRMED') return;
+
+    // Get Private Pool serviceId from config
+    const privatePool = servicesData.find(s => s.id === 'private_pool_area');
+    if (!privatePool) return;
+    const privatePoolId = privatePool.id;
+
+    // Check if this reservation is for the Private Pool itself; if so, skip (handled by normal global lock)
+    if (reservation.serviceId === privatePoolId) return;
+
+    // Check if a block already exists for this date range and Private Pool
+    const overlappingBlock = await BlockedDate.findOne({
+      serviceIds: { $in: [privatePoolId] },
+      $or: [
+        { startDate: { $lt: reservation.check_out }, endDate: { $gt: reservation.check_in } },
+      ],
+    });
+    if (overlappingBlock) return; // Already blocked
+
+    // Create a BlockedDate for Private Pool only
+    const blockedDate = new BlockedDate({
+      startDate: reservation.check_in,
+      endDate: reservation.check_out,
+      date: reservation.check_in,
+      serviceIds: [privatePoolId],
+      appliesToAllServices: false,
+      reason: `Private Pool blocked due to reservation of another amenity (${reservation.reservationId})`,
+      blockedBy: null,
+      reservedByAccountId: reservation.accountId || null,
+      reservedByEmail: reservation.email || null,
+    });
+    await blockedDate.save();
+    console.log('✅ Reverse Private Pool lock created:', {
+      blockedDateId: blockedDate._id,
+      startDate: blockedDate.startDate,
+      endDate: blockedDate.endDate,
+      reason: blockedDate.reason,
+    });
+    return blockedDate;
+  } catch (error) {
+    console.error('❌ Error creating reverse Private Pool lock:', error);
+  }
+}
 // ============================================================
 // IMPORTS - All at the top of the file
 // ============================================================
@@ -1231,6 +1278,11 @@ exports.createReservation = async (req, res) => {
 
     console.log("✅ Reservation saved successfully:", newReservation._id);
 
+    // If reservation is auto-confirmed, apply reverse lock now
+    if (newReservation.status === 'CONFIRMED') {
+      await createReversePrivatePoolLock(newReservation);
+    }
+
     res.status(201).json({
       success: true,
       message: "Reservation created successfully. Proceed to payment.",
@@ -1523,6 +1575,15 @@ exports.createMultiAmenityReservation = async (req, res) => {
     }
 
     // --- D2. Validate Lead Time Requirements for Each Amenity ---
+
+    // After all validations, if you create and save reservations here, call reverse lock for CONFIRMED
+    // (Assuming you have a loop to save each amenity as a Reservation)
+    // Example:
+    // for (const reservation of createdReservations) {
+    //   if (reservation.status === 'CONFIRMED') {
+    //     await createReversePrivatePoolLock(reservation);
+    //   }
+    // }
     console.log("⏰ Validating lead time requirements for multi-amenity...");
     for (let i = 0; i < amenities.length; i++) {
       const amenity = amenities[i];
@@ -3156,18 +3217,39 @@ exports.checkAvailability = async (req, res) => {
         .json({ message: "Service not found", available: true });
     }
 
+
     // Find overlapping reservations (excluding cancelled/rejected)
-    const overlapping = await Reservation.find({
+    let overlapping = await Reservation.find({
       $or: [
         { serviceId: serviceId },
         { serviceId: service.id },
         { serviceId: service._id?.toString() },
       ],
       status: { $nin: ["cancelled", "rejected"] },
-      // Overlap: new check_in < existing check_out AND new check_out > existing check_in
       check_in: { $lt: checkout },
       check_out: { $gt: checkin },
     });
+
+    // --- REVERSE GLOBAL LOCK: If checking Private Pool, block if any other amenity is CONFIRMED for overlap ---
+    const privatePoolId = 'private_pool_area';
+    if (
+      serviceId === privatePoolId || service.id === privatePoolId || service._id?.toString() === privatePoolId
+    ) {
+      // Look for any CONFIRMED reservation for any other amenity (not Private Pool) that overlaps
+      const reverseBlock = await Reservation.findOne({
+        serviceId: { $ne: privatePoolId },
+        status: 'CONFIRMED',
+        check_in: { $lt: checkout },
+        check_out: { $gt: checkin },
+      });
+      if (reverseBlock) {
+        return res.json({
+          available: false,
+          conflictingReservations: 1,
+          reason: 'Private Pool is unavailable because another amenity is already reserved for this date/time.',
+        });
+      }
+    }
 
     if (overlapping.length > 0) {
       return res.json({
