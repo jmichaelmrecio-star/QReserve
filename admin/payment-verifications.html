@@ -1,120 +1,148 @@
 <!-- Payment Verifications Section -->
 <section id="payment-verifications" class="tab-pane">
-    <div class="card p-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2 class="mb-0">Payment Verifications</h2>
-            <div class="d-flex gap-2 align-items-center">
-                <label for="reservation-type-filter" class="mb-0 me-2">Filter:</label>
-                <select id="reservation-type-filter" class="form-select form-select-sm" style="width: auto; min-width: 180px;">
-                    <option value="all">All Reservations</option>
-                    <option value="single">Single-Amenity Only</option>
-                    <option value="multi">Multi-Amenity Only</option>
-                </select>
-                <button id="refresh-pending-payments" class="btn btn-outline-primary btn-sm">Refresh</button>
-            </div>
-        </div>
-
-        <div class="table-responsive">
-            <table id="payment-verifications-table" class="table table-striped table-hover">
-                <thead class="table-dark">
-                    <tr>
-                        <th>Reservation ID</th>
-                        <th>Customer</th>
-                        <th>Service</th>
-                        <th>Reference #</th>
-                        <th>Payment Type</th>
-                        <th>Payment Status</th>
-                        <th>Amount</th>
-                        <th>Uploaded</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="pending-payments-list">
-                    <tr><td colspan="9" class="text-center">Loading pending payments...</td></tr>
-                </tbody>
-            </table>
-        </div>
+  <div class="card p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2 class="mb-0">Payment Verifications</h2>
+      <div class="d-flex gap-2 align-items-center">
+        <label for="reservation-type-filter" class="mb-0 me-2">Filter:</label>
+        <select
+          id="reservation-type-filter"
+          class="form-select form-select-sm"
+          style="width: auto; min-width: 180px"
+        >
+          <option value="all">All Reservations</option>
+          <option value="single">Single-Amenity Only</option>
+          <option value="multi">Multi-Amenity Only</option>
+        </select>
+        <button
+          id="refresh-pending-payments"
+          class="btn btn-outline-primary btn-sm"
+        >
+          Refresh
+        </button>
+      </div>
     </div>
 
-    <style>
-        .payment-details-row {
-            background-color: #f8f9fa;
-        }
-        .multi-amenity-details-row {
-            background-color: #fff9e6;
-        }
-        .details-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            padding: 15px 0;
-        }
-        .detail-section {
-            padding: 10px;
-            background: white;
-            border-radius: 4px;
-            border-left: 4px solid #007bff;
-        }
-        .detail-section h6 {
-            color: #007bff;
-            margin-bottom: 10px;
-            font-weight: 600;
-        }
-        .detail-section p {
-            margin: 5px 0;
-            font-size: 0.95rem;
-        }
-        @media (max-width: 768px) {
-            .details-container {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+    <div class="table-responsive">
+      <table
+        id="payment-verifications-table"
+        class="table table-striped table-hover"
+      >
+        <thead class="table-dark">
+          <tr>
+            <th>Reservation ID</th>
+            <th>Customer</th>
+            <th>Service</th>
+            <th>Reference #</th>
+            <th>Payment Type</th>
+            <th>Payment Status</th>
+            <th>Amount</th>
+            <th>Uploaded</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="pending-payments-list">
+          <tr>
+            <td colspan="9" class="text-center">Loading pending payments...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <style>
+    .payment-details-row {
+      background-color: #f8f9fa;
+    }
+    .multi-amenity-details-row {
+      background-color: #fff9e6;
+    }
+    .details-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      padding: 15px 0;
+    }
+    .detail-section {
+      padding: 10px;
+      background: white;
+      border-radius: 4px;
+      border-left: 4px solid #007bff;
+    }
+    .detail-section h6 {
+      color: #007bff;
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+    .detail-section p {
+      margin: 5px 0;
+      font-size: 0.95rem;
+    }
+    @media (max-width: 768px) {
+      .details-container {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </section>
 
 <script src="/admin/payment-verifications.js"></script>
 <script>
-(function initPaymentVerifications() {
-    if (typeof renderPendingPayments === 'function') {
+  (function initPaymentVerifications() {
+    // Ensure the function is available before trying to call it
+    const initializeData = () => {
+      if (typeof renderPendingPayments === "function") {
         renderPendingPayments();
+      } else {
+        // If function not available yet, retry in a short moment
+        setTimeout(initializeData, 100);
+      }
+    };
+
+    // Call initial load
+    initializeData();
+
+    const refreshBtn = document.getElementById("refresh-pending-payments");
+    if (refreshBtn) {
+      refreshBtn.addEventListener("click", function () {
+        if (typeof renderPendingPayments === "function") {
+          renderPendingPayments();
+        }
+      });
     }
 
-    const refreshBtn = document.getElementById('refresh-pending-payments');
-    if (refreshBtn) {
-        refreshBtn.addEventListener('click', function() {
-            if (typeof renderPendingPayments === 'function') {
-                renderPendingPayments();
-            }
-        });
-    }
-    
     // Filter change handler
-    const filterSelect = document.getElementById('reservation-type-filter');
+    const filterSelect = document.getElementById("reservation-type-filter");
     if (filterSelect) {
-        filterSelect.addEventListener('change', function() {
-            if (typeof renderPendingPayments === 'function') {
-                renderPendingPayments();
-            }
-        });
+      filterSelect.addEventListener("change", function () {
+        if (typeof renderPendingPayments === "function") {
+          renderPendingPayments();
+        }
+      });
     }
-    
+
     // Set up auto-refresh of admin-reservations tab when this component is visible
-    const paymentVerificationsTab = document.getElementById('payment-verifications');
+    const paymentVerificationsTab = document.getElementById(
+      "payment-verifications",
+    );
     if (paymentVerificationsTab) {
-        // Listen for tab visibility changes
-        const observer = new MutationObserver(function() {
-            // Tab became visible, refresh pending payments
-            if (paymentVerificationsTab.classList.contains('show')) {
-                if (typeof renderPendingPayments === 'function') {
-                    renderPendingPayments();
-                }
-            }
-        });
-        
-        observer.observe(paymentVerificationsTab, { 
-            attributes: true, 
-            attributeFilter: ['class'] 
-        });
+      // Listen for tab visibility changes
+      const observer = new MutationObserver(function () {
+        // Tab became visible, refresh pending payments
+        if (
+          paymentVerificationsTab.classList.contains("show") ||
+          paymentVerificationsTab.classList.contains("active")
+        ) {
+          if (typeof renderPendingPayments === "function") {
+            renderPendingPayments();
+          }
+        }
+      });
+
+      observer.observe(paymentVerificationsTab, {
+        attributes: true,
+        attributeFilter: ["class"],
+      });
     }
-})();
+  })();
 </script>

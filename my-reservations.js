@@ -277,9 +277,12 @@ async function loadAndRenderReservations() {
       const qrEnabled =
         ["CONFIRMED", "CHECKED_IN", "COMPLETED"].includes(res.status) &&
         res.reservationHash;
-      const canCancel = !["COMPLETED", "CANCELLED", "REJECTED"].includes(
-        res.status,
-      );
+      const canCancel = ![
+        "COMPLETED",
+        "CANCELLED",
+        "REJECTED",
+        "CHECKED_IN",
+      ].includes(res.status);
 
       let actionButton = "";
       if (shouldShowPayNow) {
@@ -296,10 +299,10 @@ async function loadAndRenderReservations() {
         actionButton =
           '<a href="confirmation.html?hash=' +
           res.reservationHash +
-          '" style="display: inline-flex; align-items: center; justify-content: center; padding: 6px 10px; background-color: var(--primary-color); color: white; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 0.85rem; transition: background-color 0.3s; border: none; cursor: pointer; min-width: 90px;" onmouseover="this.style.backgroundColor=\'#1e7a34\'" onmouseout="this.style.backgroundColor=\'var(--primary-color)\'">View QR</a>';
+          '" style="display: inline-flex; align-items: center; justify-content: center; padding: 4px 10px; background-color: var(--primary-color); color: white; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 0.85rem; transition: background-color 0.3s; border: none; cursor: pointer; min-width: 90px;" onmouseover="this.style.backgroundColor=\'#1e7a34\'" onmouseout="this.style.backgroundColor=\'var(--primary-color)\'">View QR</a>';
       } else {
         actionButton =
-          '<button style="display: inline-flex; align-items: center; justify-content: center; padding: 6px 10px; background-color: #cccccc; color: #666666; border: none; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: not-allowed; min-width: 90px;" disabled>View QR</button>';
+          '<button style="display: inline-flex; align-items: center; justify-content: center; padding: 4px 10px; background-color: #cccccc; color: #666666; border: none; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: not-allowed; min-width: 90px;" disabled>View QR</button>';
       }
 
       if (canCancel) {
@@ -318,14 +321,17 @@ async function loadAndRenderReservations() {
         '\')\" style="display: inline-flex; align-items: center; justify-content: center; padding: 6px 10px; background-color: #6c757d; color: white; border: none; border-radius: 6px; font-weight: 600; font-size: 0.85rem; transition: background-color 0.3s; cursor: pointer; min-width: 90px;" onmouseover="this.style.backgroundColor=\'#5a6268\'" onmouseout="this.style.backgroundColor=\'#6c757d\'">View More</button>';
 
       // Add reschedule button for CONFIRMED reservations only
-      const canReschedule = res.status === "CONFIRMED" || (res.status === "PENDING" && ["partially-paid", "fully-paid"].includes(res.paymentStatus));
+      const canReschedule =
+        res.status === "CONFIRMED" ||
+        (res.status === "PENDING" &&
+          ["partially-paid", "fully-paid"].includes(res.paymentStatus));
       if (canReschedule) {
         actionButton +=
           " <button onclick=\"customerRequestReschedule('" +
           (res._id || res.reservationId) +
           "', '" +
           (res.serviceName || res.serviceType || "Reservation") +
-          '\')\" style="display: inline-flex; align-items: center; justify-content: center; padding: 6px 10px; background-color: #0066cc; color: white; border: none; border-radius: 6px; font-weight: 600; font-size: 0.85rem; transition: background-color 0.3s; cursor: pointer; min-width: 100px;" onmouseover="this.style.backgroundColor=\'#0052a3\'" onmouseout="this.style.backgroundColor=\'#0066cc\'">Reschedule</button>';
+          '\')\" style="display: inline-flex; align-items: center; justify-content: center; padding: 6px 10px; background-color: #0066cc; color: white; border: none; border-radius: 6px; font-weight: 600; font-size: 0.85rem; transition: background-color 0.3s; cursor: pointer; min-width: 80px;" onmouseover="this.style.backgroundColor=\'#0052a3\'" onmouseout="this.style.backgroundColor=\'#0066cc\'">Reschedule</button>';
       }
 
       actionButton =
@@ -412,7 +418,13 @@ function customerCancelReservation(reservationId, serviceName) {
     if (!resultModal || !resultTitle || !resultMessage || !resultBtn) return;
     resultTitle.textContent = title;
     resultMessage.textContent = message;
-    resultTitle.style.color = isSuccess ? "#1e7a34" : "#d97757";
+    resultTitle.style.color = isSuccess
+      ? getComputedStyle(document.documentElement).getPropertyValue(
+          "--primary-color",
+        )
+      : getComputedStyle(document.documentElement).getPropertyValue(
+          "--danger-color",
+        );
     resultModal.style.display = "flex";
     document.body.style.overflow = "hidden";
 
@@ -553,7 +565,7 @@ function manualCalculateRescheduleCheckout() {
   const checkoutDateEl = document.getElementById("rescheduleCheckoutDate");
   const checkoutTimeEl = document.getElementById("rescheduleCheckoutTime");
   const formMessage = document.getElementById("rescheduleFormMessage");
-  
+
   // Validate inputs exist
   if (!dateInput || !timeInput) {
     if (formMessage) {
@@ -562,10 +574,10 @@ function manualCalculateRescheduleCheckout() {
     }
     return;
   }
-  
+
   const checkinDateStr = dateInput.value;
   const checkinTimeStr = timeInput.value;
-  
+
   if (!checkinDateStr || !checkinTimeStr) {
     if (formMessage) {
       formMessage.textContent = "Please select both a check-in date and time";
@@ -573,36 +585,40 @@ function manualCalculateRescheduleCheckout() {
     }
     return;
   }
-  
+
   if (!rescheduleReservationData) {
     if (formMessage) {
-      formMessage.textContent = "Reservation data not loaded. Please try again.";
+      formMessage.textContent =
+        "Reservation data not loaded. Please try again.";
       formMessage.classList.remove("d-none");
     }
     return;
   }
-  
+
   // Hide error message if calculation succeeds
   if (formMessage) {
     formMessage.classList.add("d-none");
   }
-  
+
   // Parse check-in date and time
   const [year, month, day] = checkinDateStr.split("-");
   const checkinDate = new Date(year, month - 1, day);
   const checkinHour = parseInt(checkinTimeStr);
   checkinDate.setHours(checkinHour, 0, 0, 0);
-  
+
   // Calculate duration from original reservation to determine if hour-based or night-based
   let durationHours = 0;
   let nights = 1;
   let isHourBased = false;
-  
-  if (rescheduleReservationData.check_in && rescheduleReservationData.check_out) {
+
+  if (
+    rescheduleReservationData.check_in &&
+    rescheduleReservationData.check_out
+  ) {
     const origIn = new Date(rescheduleReservationData.check_in);
     const origOut = new Date(rescheduleReservationData.check_out);
     const totalHours = (origOut - origIn) / (1000 * 60 * 60);
-    
+
     if (totalHours < 24) {
       // Hour-based duration (e.g., 22 hours)
       isHourBased = true;
@@ -612,10 +628,10 @@ function manualCalculateRescheduleCheckout() {
       nights = Math.ceil(totalHours / 24);
     }
   }
-  
+
   let checkoutDate = new Date(checkinDate);
   let checkoutHour = checkinHour;
-  
+
   if (isHourBased) {
     // Add hours to check-in time
     checkoutDate.setHours(checkinDate.getHours() + durationHours);
@@ -624,19 +640,24 @@ function manualCalculateRescheduleCheckout() {
     // Add nights (keep same time)
     checkoutDate.setDate(checkinDate.getDate() + nights);
   }
-  
+
   // Format display
-  const dateFormatter = new Intl.DateTimeFormat("en-US", { 
-    year: "numeric", 
-    month: "long", 
-    day: "numeric" 
+  const dateFormatter = new Intl.DateTimeFormat("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
   });
-  
+
   const checkoutDateStr = dateFormatter.format(checkoutDate);
   const period = checkoutHour >= 12 ? "PM" : "AM";
-  const displayHour = checkoutHour > 12 ? checkoutHour - 12 : checkoutHour === 0 ? 12 : checkoutHour;
+  const displayHour =
+    checkoutHour > 12
+      ? checkoutHour - 12
+      : checkoutHour === 0
+        ? 12
+        : checkoutHour;
   const checkoutTimeStr = `${displayHour}:00 ${period}`;
-  
+
   // Update display
   checkoutDateEl.textContent = checkoutDateStr;
   checkoutTimeEl.textContent = checkoutTimeStr;
@@ -667,7 +688,9 @@ function customerRequestReschedule(reservationId, serviceName) {
   setTimeout(() => {
     const dateInput = document.getElementById("rescheduleCheckInDate");
     const timeInput = document.getElementById("rescheduleCheckInTime");
-    const checkoutDisplay = document.getElementById("rescheduleCheckoutDisplay");
+    const checkoutDisplay = document.getElementById(
+      "rescheduleCheckoutDisplay",
+    );
     const calculateBtn = document.getElementById("calculateCheckoutBtn");
 
     // Reset
@@ -698,24 +721,28 @@ function customerRequestReschedule(reservationId, serviceName) {
         Authorization: "Bearer " + (sessionStorage.getItem("authToken") || ""),
       },
     })
-      .then(res => {
+      .then((res) => {
         console.log("📡 Fetch response status:", res.status);
         return res.json();
       })
-      .then(data => {
+      .then((data) => {
         console.log("✅ Received data:", data);
-        
+
         // Handle both formats: data.reservation OR data is the reservation directly
         const reservation = data.reservation || data;
-        
+
         if (reservation && reservation.serviceName) {
           rescheduleReservationData = reservation;
-          console.log("✓ Reservation data loaded:", rescheduleReservationData.serviceName);
-          
+          console.log(
+            "✓ Reservation data loaded:",
+            rescheduleReservationData.serviceName,
+          );
+
           // Set time options based on amenity
-          const isPrivatePool = reservation.serviceName && 
-                                 reservation.serviceName.toLowerCase().includes("private pool");
-          
+          const isPrivatePool =
+            reservation.serviceName &&
+            reservation.serviceName.toLowerCase().includes("private pool");
+
           if (isPrivatePool) {
             timeInput.innerHTML = `
               <option value="">-- Select Time --</option>
@@ -743,15 +770,17 @@ function customerRequestReschedule(reservationId, serviceName) {
         } else {
           console.error("⚠️ No reservation data found:", data);
           if (formMessage) {
-            formMessage.textContent = "Failed to load reservation data. Please try refreshing the page.";
+            formMessage.textContent =
+              "Failed to load reservation data. Please try refreshing the page.";
             formMessage.classList.remove("d-none");
           }
         }
       })
-      .catch(error => {
+      .catch((error) => {
         console.error("❌ Error fetching reservation:", error);
         if (formMessage) {
-          formMessage.textContent = "Error loading reservation: " + error.message;
+          formMessage.textContent =
+            "Error loading reservation: " + error.message;
           formMessage.classList.remove("d-none");
         }
       });
@@ -776,14 +805,26 @@ function customerRequestReschedule(reservationId, serviceName) {
 
   submitBtn.onclick = async function () {
     // Get current values from the DOM elements
-    const currentCheckInInput = document.getElementById("rescheduleCheckInDate");
-    const currentCheckInTimeInput = document.getElementById("rescheduleCheckInTime");
-    const checkoutDisplay = document.getElementById("rescheduleCheckoutDisplay");
-    
+    const currentCheckInInput = document.getElementById(
+      "rescheduleCheckInDate",
+    );
+    const currentCheckInTimeInput = document.getElementById(
+      "rescheduleCheckInTime",
+    );
+    const checkoutDisplay = document.getElementById(
+      "rescheduleCheckoutDisplay",
+    );
+
     // Validate inputs
-    if (!currentCheckInInput.value || !currentCheckInTimeInput.value || !checkoutDisplay || checkoutDisplay.style.display === "none") {
+    if (
+      !currentCheckInInput.value ||
+      !currentCheckInTimeInput.value ||
+      !checkoutDisplay ||
+      checkoutDisplay.style.display === "none"
+    ) {
       if (formMessage) {
-        formMessage.textContent = "Please select check-in date and time, then click 'Calculate Checkout Date & Time' to proceed.";
+        formMessage.textContent =
+          "Please select check-in date and time, then click 'Calculate Checkout Date & Time' to proceed.";
         formMessage.classList.remove("d-none");
       }
       return;
@@ -793,7 +834,9 @@ function customerRequestReschedule(reservationId, serviceName) {
     const now = new Date();
 
     // Check 14-day lead time
-    const daysUntilCheckIn = Math.ceil((checkInDate - now) / (1000 * 60 * 60 * 24));
+    const daysUntilCheckIn = Math.ceil(
+      (checkInDate - now) / (1000 * 60 * 60 * 24),
+    );
     if (daysUntilCheckIn < 14) {
       if (formMessage) {
         formMessage.textContent = `Rescheduling requires a minimum 14-day lead time. You have ${daysUntilCheckIn} days.`;
@@ -805,7 +848,8 @@ function customerRequestReschedule(reservationId, serviceName) {
     // Validate reservation data exists
     if (!rescheduleReservationData) {
       if (formMessage) {
-        formMessage.textContent = "Unable to load reservation data. Please try again.";
+        formMessage.textContent =
+          "Unable to load reservation data. Please try again.";
         formMessage.classList.remove("d-none");
       }
       return;
@@ -821,21 +865,29 @@ function customerRequestReschedule(reservationId, serviceName) {
     try {
       // Calculate check-in datetime
       const checkInDateTime = new Date(currentCheckInInput.value);
-      checkInDateTime.setHours(parseInt(currentCheckInTimeInput.value), 0, 0, 0);
-      
+      checkInDateTime.setHours(
+        parseInt(currentCheckInTimeInput.value),
+        0,
+        0,
+        0,
+      );
+
       // Calculate check-out datetime based on duration
       let checkOutDateTime = new Date(checkInDateTime);
-      
+
       // Determine if hour-based or night-based from original reservation duration
       let durationHours = 0;
       let nights = 1;
       let isHourBased = false;
-      
-      if (rescheduleReservationData.check_in && rescheduleReservationData.check_out) {
+
+      if (
+        rescheduleReservationData.check_in &&
+        rescheduleReservationData.check_out
+      ) {
         const origCheckIn = new Date(rescheduleReservationData.check_in);
         const origCheckOut = new Date(rescheduleReservationData.check_out);
         const totalHours = (origCheckOut - origCheckIn) / (1000 * 60 * 60);
-        
+
         if (totalHours < 24) {
           // Hour-based duration (e.g., 22 hours)
           isHourBased = true;
@@ -845,7 +897,7 @@ function customerRequestReschedule(reservationId, serviceName) {
           nights = Math.ceil(totalHours / 24);
         }
       }
-      
+
       if (isHourBased) {
         // Add hours to check-in time
         checkOutDateTime.setHours(checkOutDateTime.getHours() + durationHours);
@@ -853,7 +905,7 @@ function customerRequestReschedule(reservationId, serviceName) {
         // Add nights (keep same time)
         checkOutDateTime.setDate(checkOutDateTime.getDate() + nights);
       }
-      
+
       const response = await fetch(
         `http://localhost:3000/api/reservations/request-reschedule/${reservationId}`,
         {
@@ -867,7 +919,9 @@ function customerRequestReschedule(reservationId, serviceName) {
             proposedCheckIn: checkInDateTime.toISOString(),
             proposedCheckOut: checkOutDateTime.toISOString(),
             reason: reasonInput.value || "Requested reschedule",
-            requestedByEmail: JSON.parse(sessionStorage.getItem("loggedInUser") || "{}").email,
+            requestedByEmail: JSON.parse(
+              sessionStorage.getItem("loggedInUser") || "{}",
+            ).email,
           }),
         },
       );
@@ -883,13 +937,18 @@ function customerRequestReschedule(reservationId, serviceName) {
         const error = await response.json();
         showResultModal(
           "Reschedule Request Failed",
-          error.message || "Failed to submit reschedule request. Please try again.",
+          error.message ||
+            "Failed to submit reschedule request. Please try again.",
           false,
         );
       }
     } catch (error) {
       console.error("Error submitting reschedule request:", error);
-      showResultModal("Reschedule Request Failed", "Error: " + error.message, false);
+      showResultModal(
+        "Reschedule Request Failed",
+        "Error: " + error.message,
+        false,
+      );
     } finally {
       submitBtn.classList.remove("is-processing");
       submitBtn.textContent = originalText;
@@ -950,7 +1009,7 @@ function showViewMoreModal(reservationJson) {
 
   try {
     const res = JSON.parse(decodeURIComponent(reservationJson));
-    
+
     // Format dates
     const checkinDate = res.check_in
       ? new Date(res.check_in).toLocaleDateString("en-US", {
@@ -986,13 +1045,16 @@ function showViewMoreModal(reservationJson) {
     // Calculate nights
     let nights = 0;
     let durationDisplay = "N/A";
-    
+
     if (res.check_in && res.check_out) {
       const checkInDateTime = new Date(res.check_in);
       const checkOutDateTime = new Date(res.check_out);
-      const totalHours = Math.abs(checkOutDateTime - checkInDateTime) / (1000 * 60 * 60);
-      nights = Math.ceil((checkOutDateTime - checkInDateTime) / (1000 * 60 * 60 * 24));
-      
+      const totalHours =
+        Math.abs(checkOutDateTime - checkInDateTime) / (1000 * 60 * 60);
+      nights = Math.ceil(
+        (checkOutDateTime - checkInDateTime) / (1000 * 60 * 60 * 24),
+      );
+
       // For day-use amenities (less than 24 hours), show hours instead of nights
       if (totalHours < 24) {
         const hours = Math.round(totalHours);
@@ -1015,9 +1077,12 @@ function showViewMoreModal(reservationJson) {
     let remainingBalance = totalAmount;
 
     // Determine payment type and calculate amounts
-    if (res.paymentType === "downpayment" || res.paymentType === "down-payment") {
+    if (
+      res.paymentType === "downpayment" ||
+      res.paymentType === "down-payment"
+    ) {
       downPaymentAmount = totalAmount * 0.5;
-      
+
       // For down payment, use paymentStatus as the source of truth (don't use reservation status)
       if (res.paymentStatus === "fully-paid") {
         amountPaid = totalAmount;
@@ -1025,7 +1090,10 @@ function showViewMoreModal(reservationJson) {
       } else if (res.paymentStatus === "partially-paid") {
         amountPaid = downPaymentAmount;
         remainingBalance = totalAmount - downPaymentAmount;
-      } else if (res.paymentStatus === "partial-payment" || res.paymentStatus === "full-payment") {
+      } else if (
+        res.paymentStatus === "partial-payment" ||
+        res.paymentStatus === "full-payment"
+      ) {
         amountPaid = downPaymentAmount;
         remainingBalance = totalAmount - downPaymentAmount;
       } else if (["PAID", "CHECKED_IN", "COMPLETED"].includes(res.status)) {
@@ -1038,11 +1106,14 @@ function showViewMoreModal(reservationJson) {
       }
     } else if (res.paymentType === "full") {
       downPaymentAmount = 0;
-      
+
       if (res.paymentStatus === "fully-paid") {
         amountPaid = totalAmount;
         remainingBalance = 0;
-      } else if (res.paymentStatus === "full-payment" || ["PAID", "CHECKED_IN", "COMPLETED"].includes(res.status)) {
+      } else if (
+        res.paymentStatus === "full-payment" ||
+        ["PAID", "CHECKED_IN", "COMPLETED"].includes(res.status)
+      ) {
         amountPaid = totalAmount;
         remainingBalance = 0;
       } else {
@@ -1051,7 +1122,9 @@ function showViewMoreModal(reservationJson) {
       }
     } else {
       // Standard payment
-      if (["PAID", "CONFIRMED", "CHECKED_IN", "COMPLETED"].includes(res.status)) {
+      if (
+        ["PAID", "CONFIRMED", "CHECKED_IN", "COMPLETED"].includes(res.status)
+      ) {
         amountPaid = totalAmount;
         remainingBalance = 0;
       } else {
@@ -1065,7 +1138,12 @@ function showViewMoreModal(reservationJson) {
     const formattedRemainingBalance = formatter.format(remainingBalance);
 
     // Determine status color for remaining balance
-    const balanceColor = remainingBalance === 0 ? "#1e7a34" : remainingBalance > 0 && remainingBalance < downPaymentAmount ? "#ff6b6b" : "#d97757";
+    const balanceColor =
+      remainingBalance === 0
+        ? "#1e7a34"
+        : remainingBalance > 0 && remainingBalance < downPaymentAmount
+          ? "#ff6b6b"
+          : "#d97757";
     const balanceLabel = remainingBalance === 0 ? "Fully Paid" : "Pending";
 
     const totalPrice = formatter.format(totalAmount);
@@ -1143,48 +1221,64 @@ function showViewMoreModal(reservationJson) {
         </div>
 
         <!-- Financial Breakdown -->
-        <div style="background: white; padding: 1rem; border-radius: 6px; border-left: 4px solid #0066cc;">
+        <div style="background: white; padding: 1rem; border-radius: 6px;">
           <h5 style="margin: 0 0 0.75rem 0; color: #333; font-size: 1rem;">Financial Breakdown</h5>
           <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #e2e8f0;">
             <span style="color: #666; font-weight: 600;">Total Amount:</span>
             <span style="color: #333; font-weight: 600; font-size: 1.05rem;">${totalPrice}</span>
           </div>
-          ${downPaymentAmount > 0 ? `
+          ${
+            downPaymentAmount > 0
+              ? `
           <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #e2e8f0;">
             <span style="color: #666;">Down Payment (50%):</span>
             <span style="color: #0066cc; font-weight: 600;">${formattedDownPayment}</span>
-          </div>` : ""}
+          </div>`
+              : ""
+          }
           <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #e2e8f0;">
             <span style="color: #666;">Amount Paid:</span>
             <span style="color: #1e7a34; font-weight: 600;">${formattedAmountPaid}</span>
           </div>
-          <div style="display: flex; justify-content: space-between; padding: 0.75rem 0; background: ${remainingBalance === 0 ? '#d4edda' : '#fff3cd'}; padding: 0.75rem; border-radius: 4px;">
+          <div style="display: flex; justify-content: space-between; padding: 0.75rem 0; background: ${remainingBalance === 0 ? "#d4edda" : "#fff3cd"}; padding: 0.75rem; border-radius: 4px;">
             <span style="color: #333; font-weight: 700;">Remaining Balance:</span>
             <span style="color: ${balanceColor}; font-weight: 700; font-size: 1.1rem;">${formattedRemainingBalance}</span>
           </div>
-          ${remainingBalance > 0 ? `
+          ${
+            remainingBalance > 0
+              ? `
           <div style="margin-top: 0.75rem; padding: 0.5rem; background: #fff3cd; border-radius: 4px; font-size: 0.85rem; color: #856404;">
             ⚠️ Please complete payment of ${formattedRemainingBalance} to finalize your reservation.
-          </div>` : `
+          </div>`
+              : `
           <div style="margin-top: 0.75rem; padding: 0.5rem; background: #d4edda; border-radius: 4px; font-size: 0.85rem; color: #155724;">
             ✓ This reservation is fully paid and confirmed.
-          </div>`}
+          </div>`
+          }
         </div>
 
-        ${res.discountCode ? `
-          <div style="margin-top: 1rem; padding: 0.75rem; background: #e7f3ff; border-radius: 4px; border-left: 4px solid #0066cc;">
+        ${
+          res.discountCode
+            ? `
+          <div style="margin-top: 1rem; padding: 0.75rem; background: #e7f3ff; border-radius: 4px;">
             <div style="font-weight: 600; font-size: 0.9rem; color: #0066cc;">Promo Code Applied</div>
             <div style="font-size: 1rem; color: #333; margin-top: 0.25rem; font-weight: 600;">${res.discountCode}</div>
           </div>
-        ` : ""}
+        `
+            : ""
+        }
       </div>
 
-      ${res.specialRequests ? `
+      ${
+        res.specialRequests
+          ? `
       <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px;">
         <h4 style="margin: 0 0 0.5rem 0; color: #0066cc;">Special Requests</h4>
         <div style="font-size: 0.95rem; color: #333; line-height: 1.6;">${res.specialRequests}</div>
       </div>
-      ` : ""}
+      `
+          : ""
+      }
     `;
 
     content.innerHTML = detailsHTML;
@@ -1202,7 +1296,8 @@ function showViewMoreModal(reservationJson) {
     };
   } catch (error) {
     console.error("Error parsing reservation data:", error);
-    content.innerHTML = '<div style="color: #d97757;">Error loading reservation details.</div>';
+    content.innerHTML =
+      '<div style="color: #d97757;">Error loading reservation details.</div>';
   }
 }
 

@@ -66,7 +66,10 @@ function showToast(
 
   // Determine color based on type
   const colorMap = {
-    success: "#2f8f2f", // Deep green (confirmed)
+    success:
+      getComputedStyle(document.documentElement).getPropertyValue(
+        "--primary-color",
+      ) || "#14532d", // Brand green
     error: "#d63b45", // Red (cancelled)
     warning: "#f4c542", // Amber (pending)
     info: "#1f7ed0", // Rich blue (info / checked-in)
@@ -161,7 +164,10 @@ function showModal(title, message, type = "info", options = {}) {
   const { buttonText = "OK", onClose = null } = options;
 
   const colorMap = {
-    success: "#28a745",
+    success:
+      getComputedStyle(document.documentElement).getPropertyValue(
+        "--primary-color",
+      ) || "#14532d",
     error: "#dc3545",
     warning: "#ffc107",
     info: "#17a2b8",
@@ -201,6 +207,10 @@ function showModal(title, message, type = "info", options = {}) {
         justify-content: center;
     `;
 
+  // Detect if message contains an image and add modifier class to remove body padding
+  const hasImage = /<img[\s>]/i.test(message || "");
+  const bodyClass = hasImage ? "modal-body modal-body--image" : "modal-body";
+
   modal.innerHTML = `
         <div class="modal-content modal-${type}" style="
             max-width: 500px;
@@ -220,7 +230,7 @@ function showModal(title, message, type = "info", options = {}) {
                     flex: 1;
                 ">
                     <div style="
-                        width: 40px;
+                                width: 40px;
                         height: 40px;
                         border-radius: 50%;
                         background-color: ${borderColor}20;
@@ -257,24 +267,11 @@ function showModal(title, message, type = "info", options = {}) {
                 </button>
             </div>
             
-            <div style="
-                color: #555;
-                margin-bottom: 20px;
-                line-height: 1.6;
-                max-height: 300px;
-                overflow-y: auto;
-                font-size: 0.95rem;
-                margin-left: 52px;
-            ">
+            <div class="modal-body">
                 ${message}
             </div>
             
-            <div style="
-                display: flex;
-                gap: 10px;
-                justify-content: flex-end;
-                margin-left: 52px;
-            ">
+            <div class="modal-actions">
                 <button onclick="
                     const m = document.getElementById('notification-modal');
                     if (m) m.remove();
@@ -297,6 +294,16 @@ function showModal(title, message, type = "info", options = {}) {
     `;
 
   document.body.appendChild(modal);
+
+  // If we detected an image in the message, add modifier class and remove padding on the body element
+  if (hasImage) {
+    const bodyEl = document.querySelector("#notification-modal .modal-body");
+    if (bodyEl) {
+      bodyEl.classList.add("modal-body--image");
+      // ensure any default padding is removed (inline style fallback)
+      bodyEl.style.padding = "0";
+    }
+  }
 
   // Close on backdrop click
   modal.addEventListener("click", (e) => {
@@ -477,7 +484,10 @@ function showLoginConfirm(title, message, onLoginClick, options = {}) {
     onBrowseClick = null,
   } = options;
 
-  const borderColor = "#28a745"; // Green for login action
+  const borderColor =
+    getComputedStyle(document.documentElement).getPropertyValue(
+      "--primary-color",
+    ) || "#14532d"; // Green for login action
 
   // Remove existing modal if any
   const existingModal = document.getElementById("notification-modal");
@@ -559,24 +569,11 @@ function showLoginConfirm(title, message, onLoginClick, options = {}) {
                 </button>
             </div>
             
-            <div style="
-                color: #555;
-                margin-bottom: 25px;
-                line-height: 1.6;
-                max-height: 300px;
-                overflow-y: auto;
-                font-size: 0.95rem;
-                margin-left: 52px;
-            ">
+            <div class="modal-body">
                 ${message}
             </div>
             
-            <div style="
-                display: flex;
-                gap: 10px;
-                justify-content: flex-end;
-                margin-left: 52px;
-            ">
+            <div class="modal-actions">
                 <button onclick="
                     document.getElementById('notification-modal').remove();
                     if (typeof window.notificationBrowseCallback === 'function') {

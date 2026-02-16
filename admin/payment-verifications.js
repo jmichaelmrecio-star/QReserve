@@ -123,16 +123,13 @@ async function renderPendingPayments() {
           localStorage.getItem("token") ||
           "";
 
-    const response = await fetch(
-      "http://localhost:3000/api/reservations/pending-payments",
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+    const response = await fetch("/api/reservations/pending-payments", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
-    );
+    });
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }
@@ -293,7 +290,7 @@ function renderSingleReservations(tbody, reservations) {
             <td>${uploaded}</td>
             <td>
                 <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                    <button class="btn btn-sm btn-outline-primary expand-payment-btn" onclick="togglePaymentDetails(this, '${reservation._id}')" style="width: 100%;">+</button>
+                    <button class="btn btn-sm btn-outline-primary expand-payment-btn" onclick="togglePaymentDetails(this, '${reservation._id}')" style="width: 100%;">View More</button>
                     <button class="btn ${approveButtonClass} btn-sm" data-action="${actionLabel.action}" data-id="${reservation._id}">${actionLabel.button}</button>
                     <button class="btn btn-danger btn-sm" data-action="reject" data-id="${reservation._id}">Reject</button>
                 </div>
@@ -378,7 +375,7 @@ function renderMultiAmenityGroups(tbody, groups) {
             <td>${uploaded}</td>
             <td>
                 <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                    <button class="btn btn-sm btn-outline-warning expand-payment-btn" onclick="toggleMultiAmenityGroup(this, ${groupIndex})" style="width: 100%;">+</button>
+                    <button class="btn btn-sm btn-outline-warning expand-payment-btn" onclick="toggleMultiAmenityGroup(this, ${groupIndex})" style="width: 100%;">View More</button>
                     <button class="btn ${approveButtonClass} btn-sm" data-action="${actionLabel.action}-group" data-group-index="${groupIndex}">${actionLabel.button}</button>
                     <button class="btn btn-danger btn-sm" data-action="reject-group" data-group-index="${groupIndex}">Reject All</button>
                 </div>
