@@ -6,7 +6,7 @@
 
 Welcome to the Tito Renz Resort Norzagaray Reservation System! This project is a comprehensive web-based application designed to manage resort operations, including reservations, payments, user management, and more.
 
-# Purpose: Made to comply to the requirements of the subject MCSPROJ.
+### Purpose: Made to comply to the requirements of the subject MCSPROJ.
 
 ## Table of Contents
 
