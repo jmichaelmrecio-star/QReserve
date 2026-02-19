@@ -1,11 +1,8 @@
 # Tito Renz Resort Norzagaray Reservation System
-
-### Made by Team Angat from IT235
-
-### Contributors: Apuli, Jhazel John & Recio, John Michael
-
 Welcome to the Tito Renz Resort Norzagaray Reservation System! This project is a comprehensive web-based application designed to manage resort operations, including reservations, payments, user management, and more.
 
+### Made by Team Angat from IT235
+### Contributors: Apuli, Jhazel John & Recio, John Michael
 ### Purpose: Made to comply to the requirements of the subject MCSPROJ.
 
 ## Table of Contents
